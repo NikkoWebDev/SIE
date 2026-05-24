@@ -1,0 +1,106 @@
+---
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
+const subjects = ['Matematicas ABP', 'Ciencias ABP', 'Humanidades ABP', 'Tecnologia ABP', 'Emprendimiento ABP']
+const grades = ['6', '7', '8', '9', '10', '11']
+---
+<div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+  <div class="border-b border-gray-200 dark:border-gray-800 px-5 py-4 flex items-center gap-3">
+    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-maroon/10 dark:bg-brand-maroon/20">
+      <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+    </div>
+    <div>
+      <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Registrar Nota</h2>
+      <p class="text-xs text-gray-400">Ingreso de calificaciones · Metodología ABP</p>
+    </div>
+  </div>
+  <form id="grade-form" class="p-5 space-y-4" data-endpoint={apiUrl + '/api/teacher/submit-grade'}>
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Estudiante ID</label>
+        <input id="gf-student" type="text" required placeholder="Documento identidad"
+          class="w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-maroon/30 focus:border-brand-maroon transition-all" />
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Curso</label>
+        <select id="gf-course"
+          class="w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-maroon/30 focus:border-brand-maroon transition-all">
+          {grades.map(g => <option value={g}>{g}°</option>)}
+        </select>
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Asignatura ABP</label>
+        <select id="gf-subject"
+          class="w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-maroon/30 focus:border-brand-maroon transition-all">
+          {subjects.map(s => <option value={s}>{s}</option>)}
+        </select>
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Proyecto ABP</label>
+        <select id="gf-project"
+          class="w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-maroon/30 focus:border-brand-maroon transition-all">
+          <option value="Proyecto Transversal 1">Proyecto Transversal 1</option>
+          <option value="Proyecto Transversal 2">Proyecto Transversal 2</option>
+          <option value="Proyecto Transversal 3">Proyecto Transversal 3</option>
+        </select>
+      </div>
+    </div>
+    <div class="space-y-1.5">
+      <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nota (0.0 - 5.0)</label>
+      <input id="gf-score" type="number" step="0.1" min="0" max="5" required
+        class="w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-maroon/30 focus:border-brand-maroon transition-all" placeholder="Ej: 4.2" />
+    </div>
+    <div class="flex items-center gap-3 pt-2">
+      <button type="submit"
+        class="flex-1 h-11 rounded-xl bg-brand-maroon text-white text-sm font-bold uppercase tracking-wider hover:bg-brand-maroon/90 transition-all disabled:opacity-50"
+        id="gf-submit">
+        Guardar Nota
+      </button>
+      <div id="gf-feedback" class="text-xs font-medium empty:hidden min-w-[120px]"></div>
+    </div>
+  </form>
+</div>
+<script define:vars={{ apiUrl }}>
+  var form = document.getElementById('grade-form')
+  if (form) {
+    var endpoint = form.getAttribute('data-endpoint')
+    var feedback = document.getElementById('gf-feedback')
+    var btn = document.getElementById('gf-submit')
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault()
+      var token = localStorage.getItem('auth_token')
+      var teacherId = localStorage.getItem('userId')
+      if (!token || !teacherId) { feedback.textContent = 'Sesion requerida'; return }
+      var payload = {
+        student_id: document.getElementById('gf-student').value.trim(),
+        teacher_id: teacherId,
+        course_id: document.getElementById('gf-course').value,
+        subject_id: document.getElementById('gf-subject').value,
+        project_id: document.getElementById('gf-project').value,
+        score: parseFloat(document.getElementById('gf-score').value),
+      }
+      btn.disabled = true
+      btn.textContent = 'Guardando...'
+      feedback.textContent = ''
+      try {
+        var res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) {
+          var err = await res.json().catch(function () { return {} })
+          throw new Error(err.detail || 'Error al guardar')
+        }
+        feedback.className = 'text-xs font-medium text-brand-green'
+        feedback.textContent = 'Nota registrada'
+        form.reset()
+      } catch (err) {
+        feedback.className = 'text-xs font-medium text-brand-danger'
+        feedback.textContent = err.message
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'Guardar Nota'
+      }
+    })
+  }
+</script>

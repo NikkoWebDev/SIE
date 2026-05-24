@@ -1,0 +1,97 @@
+---
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
+const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
+---
+<div id="risk-alert-slot" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+<script define:vars={{ wsUrl }}>
+  (function () {
+    var container = document.getElementById('risk-alert-slot')
+    if (!container) return
+    var ws = null
+    var reconnectTimer = null
+    var MAX_RECONNECT_DELAY = 30000
+    var delay = 1000
+
+    function connect() {
+      var token = localStorage.getItem('auth_token')
+      if (!token) { scheduleReconnect(); return }
+      try {
+        ws = new WebSocket(wsUrl + '?token=' + encodeURIComponent(token))
+      } catch (e) { scheduleReconnect(); return }
+
+      ws.onopen = function () { delay = 1000 }
+
+      ws.onmessage = function (e) {
+        try {
+          var msg = JSON.parse(e.data)
+          if (msg.type === 'RISK_ALERT') {
+            showRiskAlert(msg)
+            playAlertSound()
+          }
+        } catch (_) {}
+      }
+
+      ws.onclose = function () {
+        ws = null
+        scheduleReconnect()
+      }
+
+      ws.onerror = function () { ws && ws.close() }
+    }
+
+    function scheduleReconnect() {
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      reconnectTimer = setTimeout(function () {
+        delay = Math.min(delay * 1.5, MAX_RECONNECT_DELAY)
+        connect()
+      }, delay)
+    }
+
+    function showRiskAlert(msg) {
+      var el = document.createElement('div')
+      el.className =
+        'pointer-events-auto animate-slide-down rounded-2xl border-2 border-brand-danger/40 bg-white dark:bg-gray-900 shadow-2xl p-4 flex items-start gap-3 transition-all duration-500'
+      el.innerHTML =
+        '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-danger/10"><svg class="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>' +
+        '<div class="flex-1 min-w-0"><p class="text-sm font-bold text-brand-danger truncate">' +
+        (msg.msg || 'Alerta académica') +
+        '</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">Estudiante: ' +
+        (msg.student_id || '') +
+        ' · Nota: ' + (msg.score || '') +
+        '</p></div>' +
+        '<button class="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-brand-danger/10 hover:text-brand-danger transition-colors" data-dismiss-risk>&times;</button>'
+      container.appendChild(el)
+      el.querySelector('[data-dismiss-risk]').addEventListener('click', function () {
+        el.style.opacity = '0'
+        el.style.transform = 'translateX(100%)'
+        setTimeout(function () { el.remove() }, 300)
+      })
+      setTimeout(function () {
+        if (el.parentNode) {
+          el.style.opacity = '0'
+          el.style.transform = 'translateX(100%)'
+          setTimeout(function () { el.remove() }, 300)
+        }
+      }, 8000)
+    }
+
+    function playAlertSound() {
+      try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)()
+        var osc = ctx.createOscillator()
+        var gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.frequency.setValueAtTime(800, ctx.currentTime)
+        osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.1)
+        gain.gain.setValueAtTime(0.15, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3)
+        osc.start(ctx.currentTime)
+        osc.stop(ctx.currentTime + 0.3)
+      } catch (_) {}
+    }
+
+    document.addEventListener('DOMContentLoaded', connect)
+    if (document.readyState !== 'loading') connect()
+  })()
+</script>

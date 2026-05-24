@@ -1,88 +1,36 @@
 ---
 import Layout from '@layouts/Layout.astro'
-import MetricCard from '@components/MetricCard.astro'
-import PerformanceBadge from '@components/PerformanceBadge.astro'
-import ScoreOrbital from '@components/ScoreOrbital.astro'
-import DangerAlert from '@components/DangerAlert.astro'
-import AIChat from '@components/AIChat.astro'
-import GalleryGrid from '@components/GalleryGrid.astro'
-import { CIRCUMFERENCE } from '@lib/utils'
-
-const alumno = {
-  nombre: 'Samantha Rojas',
-  grado: '11°',
-  jornada: 'Mañana',
-  promedio: 3.9,
-  asistencias: 94,
-  metrics: [
-    { label: 'Matemáticas ABP', value: 4.2 },
-    { label: 'Ciencias ABP', value: 3.8 },
-    { label: 'Humanidades ABP', value: 3.2 },
-    { label: 'Tecnología ABP', value: 4.5 },
-    { label: 'Emprendimiento ABP', value: 3.6 },
-  ],
-}
-
-const dangerMetrics = alumno.metrics.filter(m => m.value < 3.5)
-
-const stats = [
-  { label: 'Estudiantes activos', value: '1,247', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
-  { label: 'Promedio general', value: '3.8', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-  { label: 'Asistencia global', value: '92%', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { label: 'Proyectos ABP activos', value: '18', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
-]
+import FloatingPillNav from '@components/FloatingPillNav.astro'
+import WsRiskAlert from '@components/WsRiskAlert.astro'
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
 ---
-<Layout titulo="Tablero · C sol SIE">
-  {dangerMetrics.length > 0 && <DangerAlert metrics={dangerMetrics} />}
-  <div class="mb-8">
-    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Tablero de Rendimiento</h1>
-    <p class="mt-1 text-gray-500 dark:text-gray-400">Panorama general de la Comunidad Soleísta · {new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-  </div>
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-    {stats.map(s => (
-      <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all hover:shadow-md hover:-translate-y-0.5">
-        <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-maroon/10 dark:bg-brand-maroon/20">
-            <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={s.icon}/></svg>
-          </div>
-          <div>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white">{s.value}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
-          </div>
-        </div>
+<Layout titulo="C sol · SIE">
+  <FloatingPillNav />
+  <div class="relative z-10 px-4 md:px-6 lg:px-8 pt-4 lg:pt-6 max-w-7xl mx-auto">
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 auto-rows-min">
+      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 mb-2">
+        <h1 class="text-xl md:text-3xl font-bold text-gray-900 dark:text-white" id="hub-title">Redirigiendo...</h1>
+        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400" id="hub-sub">Portal Soleísta</p>
       </div>
-    ))}
-  </div>
-  <div class="grid lg:grid-cols-3 gap-6 mb-8">
-    <div class="lg:col-span-2 space-y-4">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Rendimiento por Área ABP</h2>
-      <div class="grid sm:grid-cols-2 gap-4">
-        {alumno.metrics.map(m => <MetricCard label={m.label} value={m.value} />)}
-      </div>
-    </div>
-    <div class="space-y-4">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Promedio General</h2>
-      <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 flex flex-col items-center">
-        <ScoreOrbital value={alumno.promedio} />
-        <div class="mt-4 text-center">
-          <PerformanceBadge value={alumno.promedio} />
-          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Basado en {alumno.metrics.length} áreas ABP</p>
+      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8" id="hub-redirect">
+        <div class="flex items-center justify-center py-20">
+          <div class="h-10 w-10 rounded-full border-4 border-brand-maroon border-t-transparent animate-spin"></div>
         </div>
-      </div>
-      <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Asistencia</span>
-          <span class="text-sm font-bold text-brand-green">{alumno.asistencias}%</span>
-        </div>
-        <div class="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-          <div class="h-full rounded-full bg-gradient-to-r from-brand-green to-brand-green/60 transition-all duration-1000" style={`width: ${alumno.asistencias}%`}></div>
-        </div>
-        <p class="mt-2 text-xs text-gray-400">{alumno.grado} · Jornada {alumno.jornada}</p>
       </div>
     </div>
   </div>
-  <div class="grid lg:grid-cols-2 gap-6 mb-8">
-    <GalleryGrid />
-    <AIChat />
-  </div>
+  <WsRiskAlert />
 </Layout>
+<script>
+  (function () {
+    var role = localStorage.getItem('userRole') || ''
+    var name = localStorage.getItem('userName') || ''
+    var target = ''
+    if (role === 'PROFESOR') target = '/docente'
+    else if (role === 'RECTOR') target = '/admin'
+    else target = '/estudiante'
+    if (name) document.getElementById('hub-title').textContent = 'Bienvenido, ' + name
+    document.getElementById('hub-sub').textContent = 'Redirigiendo a tu panel...'
+    setTimeout(function () { window.location.href = target }, 800)
+  })()
+</script>

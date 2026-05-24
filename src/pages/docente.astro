@@ -1,0 +1,105 @@
+---
+import Layout from '@layouts/Layout.astro'
+import FloatingPillNav from '@components/FloatingPillNav.astro'
+import WsRiskAlert from '@components/WsRiskAlert.astro'
+import GradeInputForm from '@components/GradeInputForm.astro'
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
+---
+<Layout titulo="Control de Notas · Docente">
+  <FloatingPillNav userRole="PROFESOR" />
+  <div class="relative z-10 px-4 md:px-6 lg:px-8 pt-4 lg:pt-6 max-w-7xl mx-auto">
+    <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 auto-rows-min">
+      <div class="col-span-2 sm:col-span-6 lg:col-span-6 xl:col-span-8 mb-2">
+        <h1 class="text-xl md:text-3xl font-bold text-gray-900 dark:text-white">Control de Notas</h1>
+        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Registro de calificaciones · Metodología ABP</p>
+      </div>
+
+      <div class="col-span-2 sm:col-span-3 lg:col-span-3 xl:col-span-4">
+        <GradeInputForm />
+      </div>
+
+      <div class="col-span-2 sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
+        <div class="flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 pb-3 mb-4">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gold/20">
+            <svg class="h-5 w-5 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          </div>
+          <div>
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Últimos Registros</h2>
+            <p class="text-xs text-gray-400">Historial de notas ingresadas</p>
+          </div>
+        </div>
+        <div id="recent-grades" class="space-y-2 text-sm">
+          <p class="text-gray-400">Cargando...</p>
+        </div>
+      </div>
+
+      <div class="col-span-2 sm:col-span-6 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
+          <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Alertas de Riesgo Activas</h2>
+        </div>
+        <div class="p-5" id="teacher-risk-feed">
+          <p class="text-sm text-gray-400">Conectando con el sistema de alertas...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <WsRiskAlert />
+</Layout>
+<script define:vars={{ apiUrl }}>
+  (function () {
+    var token = localStorage.getItem('auth_token')
+    if (!token) { window.location.href = '/'; return }
+
+    var recentEl = document.getElementById('recent-grades')
+    var riskFeed = document.getElementById('teacher-risk-feed')
+
+    async function loadRecent() {
+      try {
+        var userId = localStorage.getItem('userId')
+        var res = await fetch(apiUrl + '/api/grades?teacher_id=' + encodeURIComponent(userId), {
+          headers: { 'Authorization': 'Bearer ' + token },
+        })
+        if (!res.ok) throw new Error()
+        var data = await res.json()
+        if (!data || data.length === 0) {
+          recentEl.innerHTML = '<p class="text-gray-400 text-sm">Sin registros recientes</p>'
+          return
+        }
+        recentEl.innerHTML = data.slice(0, 10).map(function (g) {
+          var c = g.score >= 3.5 ? '#4caf50' : '#ba1a1a'
+          return '<div class="flex items-center gap-3 py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0">' +
+            '<span class="h-2 w-2 shrink-0 rounded-full" style="background:' + c + '"></span>' +
+            '<span class="flex-1 truncate text-gray-700 dark:text-gray-300">' + (g.student_id || '-') + '</span>' +
+            '<span class="text-xs text-gray-400 truncate hidden sm:inline">' + (g.subject_id || '') + '</span>' +
+            '<span class="font-semibold" style="color:' + c + '">' + (g.score != null ? g.score.toFixed(1) : '-') + '</span>' +
+            '</div>'
+        }).join('')
+      } catch (_) {
+        recentEl.innerHTML = '<p class="text-gray-400 text-sm">Error al cargar historial</p>'
+      }
+
+      try {
+        var riskRes = await fetch(apiUrl + '/api/students/risk', {
+          headers: { 'Authorization': 'Bearer ' + token },
+        })
+        if (riskRes.ok) {
+          var riskData = await riskRes.json()
+          if (riskData && riskData.length > 0) {
+            riskFeed.innerHTML = riskData.map(function (s) {
+              return '<div class="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">' +
+                '<span class="h-2 w-2 shrink-0 rounded-full bg-brand-danger animate-pulse"></span>' +
+                '<span class="flex-1 truncate text-sm font-medium text-gray-900 dark:text-white">' + (s.nombre || s._id) + '</span>' +
+                '<span class="text-xs text-brand-danger font-bold uppercase tracking-wider">En riesgo</span>' +
+                '</div>'
+            }).join('')
+          } else {
+            riskFeed.innerHTML = '<div class="flex items-center gap-2 text-brand-green"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="text-sm">Sin estudiantes en riesgo</span></div>'
+          }
+        }
+      } catch (_) {}
+    }
+
+    loadRecent()
+    setInterval(loadRecent, 15000)
+  })()
+</script>

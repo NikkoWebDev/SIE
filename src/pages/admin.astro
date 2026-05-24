@@ -1,0 +1,134 @@
+---
+import Layout from '@layouts/Layout.astro'
+import FloatingPillNav from '@components/FloatingPillNav.astro'
+import WsRiskAlert from '@components/WsRiskAlert.astro'
+import FinancialToggle from '@components/FinancialToggle.astro'
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
+---
+<Layout titulo="Panel Administrativo · C sol SIE">
+  <FloatingPillNav userRole="RECTOR" />
+  <div class="relative z-10 px-4 md:px-6 lg:px-8 pt-4 lg:pt-6 max-w-7xl mx-auto">
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 auto-rows-min">
+      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 mb-2">
+        <h1 class="text-xl md:text-3xl font-bold text-gray-900 dark:text-white">Panel Administrativo</h1>
+        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Gestión financiera · Estado de pagos estudiantiles</p>
+      </div>
+      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-maroon/10">
+              <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Estado Financiero</h2>
+              <p class="text-xs text-gray-400">Alternar estado de pagos por estudiante</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="h-2 w-2 rounded-full bg-brand-green"></span>
+            <span class="text-gray-500" id="paid-count">--</span>
+            <span class="text-gray-400 mx-1">/</span>
+            <span class="h-2 w-2 rounded-full bg-brand-danger"></span>
+            <span class="text-gray-500" id="unpaid-count">--</span>
+          </div>
+        </div>
+        <div class="p-5 space-y-2 max-h-[600px] overflow-y-auto" id="student-financial-list">
+          <p class="text-sm text-gray-400">Cargando estudiantes...</p>
+        </div>
+      </div>
+      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gold/20">
+            <svg class="h-5 w-5 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen Financiero</h2>
+            <p class="text-xs text-gray-400">Panorama general de pagos</p>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-3 gap-3" id="finance-summary">
+          <div class="rounded-xl bg-gray-50 dark:bg-gray-800 p-4 text-center">
+            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="total-students">--</p>
+            <p class="text-xs text-gray-400">Total estudiantes</p>
+          </div>
+          <div class="rounded-xl bg-brand-green/10 p-4 text-center">
+            <p class="text-2xl font-bold text-brand-green" id="total-paid">--</p>
+            <p class="text-xs text-gray-400">Al día</p>
+          </div>
+          <div class="rounded-xl bg-brand-danger/10 p-4 text-center">
+            <p class="text-2xl font-bold text-brand-danger" id="total-unpaid">--</p>
+            <p class="text-xs text-gray-400">En mora</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <WsRiskAlert />
+</Layout>
+<script define:vars={{ apiUrl }}>
+  (function () {
+    var token = localStorage.getItem('auth_token')
+    if (!token) { window.location.href = '/'; return }
+
+    var listEl = document.getElementById('student-financial-list')
+
+    async function loadStudents() {
+      try {
+        var res = await fetch(apiUrl + '/api/admin/students', {
+          headers: { 'Authorization': 'Bearer ' + token },
+        })
+        if (!res.ok) throw new Error()
+        var students = await res.json()
+        if (!students || students.length === 0) {
+          listEl.innerHTML = '<p class="text-sm text-gray-400 py-8 text-center">No hay estudiantes registrados</p>'
+          return
+        }
+        var paid = 0, unpaid = 0
+        listEl.innerHTML = students.map(function (s) {
+          if (s.is_paid !== false) paid++; else unpaid++
+          return '<div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 flex items-center gap-3 transition-all hover:shadow-sm">' +
+            '<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-maroon/10 dark:bg-brand-maroon/20 text-sm font-bold text-brand-maroon dark:text-brand-gold">' + (s.nombre ? s.nombre.charAt(0).toUpperCase() : '?') + '</div>' +
+            '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-900 dark:text-white truncate">' + (s.nombre || s._id) + '</p><p class="text-xs text-gray-400 truncate">ID: ' + (s._id || '') + ' · ' + (s.grado || '-') + '</p></div>' +
+            '<div class="flex items-center gap-2 shrink-0">' +
+            '<span class="text-[10px] font-bold uppercase tracking-wider ' + (s.is_paid !== false ? 'text-brand-green' : 'text-brand-danger') + '">' + (s.is_paid !== false ? 'Pagado' : 'En mora') + '</span>' +
+            '<label class="relative inline-flex h-6 w-11 cursor-pointer items-center">' +
+            '<input type="checkbox" class="peer sr-only" ' + (s.is_paid !== false ? 'checked' : '') + ' data-student="' + (s._id || '') + '" />' +
+            '<span class="absolute inset-0 rounded-full bg-gray-300 dark:bg-gray-700 peer-checked:bg-brand-green transition-colors duration-300"></span>' +
+            '<span class="absolute left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-300 peer-checked:translate-x-5"></span></label></div></div>'
+        }).join('')
+        document.getElementById('total-students').textContent = students.length
+        document.getElementById('total-paid').textContent = paid
+        document.getElementById('total-unpaid').textContent = unpaid
+        document.getElementById('paid-count').textContent = paid
+        document.getElementById('unpaid-count').textContent = unpaid
+
+        listEl.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+          cb.addEventListener('change', async function () {
+            var sid = cb.getAttribute('data-student')
+            var newStatus = cb.checked
+            try {
+              var r = await fetch(apiUrl + '/api/admin/students/' + encodeURIComponent(sid) + '/financial', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ is_paid: newStatus }),
+              })
+              if (!r.ok) throw new Error()
+              var row = cb.closest('[class*="rounded-xl"]')
+              if (row) {
+                var span = row.querySelector('span.font-bold')
+                if (span) {
+                  span.textContent = newStatus ? 'Pagado' : 'En mora'
+                  span.className = 'text-[10px] font-bold uppercase tracking-wider ' + (newStatus ? 'text-brand-green' : 'text-brand-danger')
+                }
+              }
+              loadStudents()
+            } catch (_) { cb.checked = !newStatus }
+          })
+        })
+      } catch (_) {
+        listEl.innerHTML = '<p class="text-sm text-brand-danger py-8 text-center">Error al cargar estudiantes. Verifica tu conexión.</p>'
+      }
+    }
+    loadStudents()
+  })()
+</script>
