@@ -1,0 +1,42 @@
+---
+export interface Props { metrics: { label: string; value: number }[] }
+const { metrics } = Astro.props
+---
+<div id="danger-alert" class="mb-6 rounded-xl border-2 border-brand-danger/30 bg-brand-danger/5 p-4 animate-slide-down" role="alert">
+  <div class="flex items-start gap-3">
+    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-danger/10">
+      <svg class="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+      </svg>
+    </div>
+    <div class="flex-1 min-w-0">
+      <h3 class="text-sm font-semibold text-brand-danger">Alerta de rendimiento crítico</h3>
+      <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        {metrics.length} área(s) ABP por debajo del umbral mínimo de 3.5:
+      </p>
+      <ul class="mt-2 space-y-1">
+        {metrics.map(m => (
+          <li class="flex items-center gap-2 text-sm">
+            <span class="h-1.5 w-1.5 rounded-full bg-brand-danger shrink-0"></span>
+            <span class="text-gray-700 dark:text-gray-300">{m.label}</span>
+            <span class="font-semibold text-brand-danger">{m.value.toFixed(1)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <button id="dismiss-alert" class="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-brand-danger/10 hover:text-brand-danger transition-colors" aria-label="Cerrar alerta">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+</div>
+<script>
+  document.getElementById('dismiss-alert')?.addEventListener('click', () => {
+    const el = document.getElementById('danger-alert')
+    if (el) {
+      el.style.transition = 'all 0.3s ease-out'
+      el.style.opacity = '0'
+      el.style.transform = 'translateY(-10px)'
+      setTimeout(() => el.remove(), 300)
+    }
+  })
+</script>

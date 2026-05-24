@@ -1,0 +1,37 @@
+---
+---
+<div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Galería Institucional</h2>
+    <span class="text-xs text-gray-400">Activos >2KB</span>
+  </div>
+  <div class="grid grid-cols-2 gap-2" id="gallery-grid">
+    <p id="gallery-loading" class="col-span-2 text-sm text-gray-400 py-8 text-center">Cargando galería...</p>
+  </div>
+  <p class="mt-3 text-xs text-gray-400">Imágenes institucionales filtradas y optimizadas</p>
+</div>
+<script>
+  ;(async () => {
+    try {
+      const res = await fetch('/api/assets')
+      const files = await res.json()
+      const grid = document.getElementById('gallery-grid')
+      if (!grid) return
+      const loading = document.getElementById('gallery-loading')
+      if (loading) loading.remove()
+      const items = files.filter(f => f.size > 2048).slice(0, 8)
+      if (items.length === 0) {
+        grid.innerHTML = '<p class="col-span-2 text-sm text-gray-400 py-8 text-center">No hay activos disponibles</p>'
+        return
+      }
+      grid.innerHTML = items.map(f => `
+        <div class="relative aspect-[4/3] overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+          <img class="h-full w-full object-cover transition-transform duration-500 hover:scale-110" src="/api/assets?file=${encodeURIComponent(f.name)}" alt="Activo institucional C sol" loading="lazy" />
+        </div>
+      `).join('')
+    } catch {
+      const grid = document.getElementById('gallery-grid')
+      if (grid) grid.innerHTML = '<p class="col-span-2 text-sm text-gray-400 py-8 text-center">Error al cargar galería</p>'
+    }
+  })()
+</script>

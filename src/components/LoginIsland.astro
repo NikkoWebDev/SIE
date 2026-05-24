@@ -1,0 +1,224 @@
+---
+export interface Props {
+  redirectUrl?: string
+}
+const { redirectUrl = '/dashboard' } = Astro.props
+---
+
+<div
+  id="login-island"
+  class="w-full max-w-md mx-auto rounded-[2rem] border border-white/10 dark:border-white/5 bg-white/20 dark:bg-gray-900/30 backdrop-blur-3xl p-8 sm:p-10 shadow-2xl transition-all duration-500"
+  data-login-island
+>
+  <div class="mb-8 text-center">
+    <div class="mx-auto mb-4 h-14 w-14 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-bold text-xl shadow-lg">C</div>
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Iniciar Sesión</h2>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Portal Soleísta · Control Académico</p>
+  </div>
+
+  <div class="relative flex h-12 rounded-full bg-black/10 dark:bg-white/5 p-1 mb-8" data-tab-container>
+    <div id="tab-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-brand-maroon transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-0" style="left: 4px;"></div>
+    <button id="tab-estudiante" class="relative z-10 flex-1 rounded-full text-sm font-semibold text-white transition-colors duration-300" data-login-tab="estudiante">
+      Estudiante
+    </button>
+    <button id="tab-docente" class="relative z-10 flex-1 rounded-full text-sm font-semibold text-gray-400 dark:text-gray-500 transition-colors duration-300" data-login-tab="docente">
+      Docente / Rector
+    </button>
+  </div>
+
+  <form id="login-form" class="space-y-5" novalidate data-redirect={redirectUrl}>
+    <div class="space-y-2">
+      <label for="doc-id" class="ml-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        Número de Identificación
+      </label>
+      <div class="relative">
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+        </svg>
+        <input
+          id="doc-id"
+          type="text"
+          inputmode="numeric"
+          autocomplete="username"
+          placeholder="Documento de identidad"
+          required
+          class="w-full h-14 pl-12 pr-4 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 bg-black/20 dark:bg-black/40 border border-white/10 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/30 outline-none transition-all duration-300"
+          data-login-input
+        />
+      </div>
+    </div>
+
+    <div id="password-group" class="space-y-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" style="max-height: 0; opacity: 0; pointer-events: none;">
+      <label for="password" class="ml-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        Contraseña
+      </label>
+      <div class="relative">
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <input
+          id="password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Contraseña"
+          class="w-full h-14 pl-12 pr-4 rounded-xl text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 bg-black/20 dark:bg-black/40 border border-white/10 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/30 outline-none transition-all duration-300"
+          data-login-input
+        />
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <a href="#" class="text-xs font-semibold tracking-wide text-brand-gold hover:underline opacity-80 transition-opacity">
+        ¿Olvidaste tus credenciales?
+      </a>
+    </div>
+
+    <button
+      id="login-submit"
+      type="submit"
+      class="relative w-full h-14 rounded-xl bg-brand-maroon text-white font-bold text-sm uppercase tracking-wider hover:bg-brand-maroon/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 overflow-hidden group"
+    >
+      <span id="submit-text">Ingresar al Portal</span>
+      <svg id="submit-spinner" class="hidden h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+      <svg class="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      </svg>
+    </button>
+
+    <div id="login-error" class="hidden rounded-xl bg-brand-danger/10 border border-brand-danger/30 px-4 py-3 text-sm text-brand-danger font-medium text-center" role="alert"></div>
+  </form>
+
+  <div class="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-3">
+    <p class="text-[11px] text-gray-400 dark:text-gray-500">Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</p>
+    <div class="flex items-center gap-2">
+      <span class="h-2 w-2 rounded-full bg-brand-green animate-pulse"></span>
+      <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Sistema en línea</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const container = document.getElementById('login-island')
+    if (!container) return
+
+    const tabEst = document.getElementById('tab-estudiante')
+    const tabDoc = document.getElementById('tab-docente')
+    const slider = document.getElementById('tab-slider')
+    const passwordGroup = document.getElementById('password-group')
+    const passwordInput = document.getElementById('password')
+    const form = document.getElementById('login-form')
+    const redirectTarget = form?.getAttribute('data-redirect') || '/dashboard'
+    const docInput = document.getElementById('doc-id')
+    const submitBtn = document.getElementById('login-submit')
+    const submitText = document.getElementById('submit-text')
+    const submitSpinner = document.getElementById('submit-spinner')
+    const errorDiv = document.getElementById('login-error')
+
+    let currentTab = 'estudiante'
+
+    function setTab(tab) {
+      currentTab = tab
+      if (tab === 'estudiante') {
+        slider.style.left = '4px'
+        passwordGroup.style.maxHeight = '0'
+        passwordGroup.style.opacity = '0'
+        passwordGroup.style.pointerEvents = 'none'
+        passwordInput.required = false
+        tabEst.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-white transition-colors duration-300'
+        tabDoc.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-gray-400 dark:text-gray-500 transition-colors duration-300'
+      } else {
+        slider.style.left = 'calc(50% + 4px)'
+        passwordGroup.style.maxHeight = '120px'
+        passwordGroup.style.opacity = '1'
+        passwordGroup.style.pointerEvents = 'auto'
+        passwordInput.required = true
+        tabDoc.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-white transition-colors duration-300'
+        tabEst.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-gray-400 dark:text-gray-500 transition-colors duration-300'
+      }
+    }
+
+    tabEst.addEventListener('click', () => setTab('estudiante'))
+    tabDoc.addEventListener('click', () => setTab('docente'))
+
+    docInput.addEventListener('focus', () => {
+      docInput.parentElement.querySelector('svg')?.classList.add('text-brand-gold')
+    })
+    docInput.addEventListener('blur', () => {
+      docInput.parentElement.querySelector('svg')?.classList.remove('text-brand-gold')
+    })
+    passwordInput.addEventListener('focus', () => {
+      passwordInput.parentElement.querySelector('svg')?.classList.add('text-brand-gold')
+    })
+    passwordInput.addEventListener('blur', () => {
+      passwordInput.parentElement.querySelector('svg')?.classList.remove('text-brand-gold')
+    })
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      errorDiv.classList.add('hidden')
+      submitText.textContent = 'Validando...'
+      submitSpinner.classList.remove('hidden')
+      submitBtn.disabled = true
+
+      const docId = docInput.value.trim()
+      const password = passwordInput.value
+
+      if (!docId) {
+        errorDiv.textContent = 'Ingresa tu número de identificación.'
+        errorDiv.classList.remove('hidden')
+        submitText.textContent = 'Ingresar al Portal'
+        submitSpinner.classList.add('hidden')
+        submitBtn.disabled = false
+        return
+      }
+
+      const payload = { tipo: currentTab === 'estudiante' ? 'estudiante' : 'docente', documento: docId }
+      if (currentTab === 'docente') {
+        if (!password) {
+          errorDiv.textContent = 'Ingresa tu contraseña.'
+          errorDiv.classList.remove('hidden')
+          submitText.textContent = 'Ingresar al Portal'
+          submitSpinner.classList.add('hidden')
+          submitBtn.disabled = false
+          return
+        }
+        payload.contraseña = password
+      }
+
+      try {
+        const res = await fetch('https://backend-colegio-hdx7.onrender.com/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}))
+          throw new Error(errData.mensaje || errData.error || 'Credenciales inválidas. Verifica tus datos e intenta de nuevo.')
+        }
+
+        const data = await res.json()
+        const claims = data.usuario || data.claims || data
+
+        localStorage.setItem('userRole', claims.rol || claims.tipo || currentTab.toUpperCase())
+        localStorage.setItem('userName', claims.nombre || claims.name || '')
+        localStorage.setItem('userId', claims.documento || claims.id || docId)
+        localStorage.setItem('is_paid', String(claims.is_paid !== false))
+        if (claims.token) localStorage.setItem('auth_token', claims.token)
+
+        submitText.textContent = '¡Bienvenido!'
+        window.location.href = redirectTarget
+      } catch (err) {
+        errorDiv.textContent = err.message || 'Error de conexión. Intenta de nuevo.'
+        errorDiv.classList.remove('hidden')
+        submitText.textContent = 'Ingresar al Portal'
+        submitSpinner.classList.add('hidden')
+        submitBtn.disabled = false
+      }
+    })
+  })()
+</script>

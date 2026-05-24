@@ -1,0 +1,43 @@
+---
+const titulo = Astro.props.titulo || 'C sol · SIE Comunidad Soleísta'
+const descripcion = 'Sistema de Información Estudiantil del Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá, Colombia'
+---
+<title>{titulo}</title>
+<meta name="description" content={descripcion} />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8" />
+<meta name="theme-color" content="#800000" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet" />
+<meta property="og:title" content={titulo} />
+<meta property="og:description" content={descripcion} />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="es_CO" />
+<meta name="twitter:card" content="summary_large_image" />
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "School",
+  "name": "Colegio Técnico Ciudad del Sol",
+  "alternateName": "C sol",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Sogamoso",
+    "addressRegion": "Boyacá",
+    "addressCountry": "CO"
+  },
+  "telephone": "+57-8-7700000",
+  "email": "contacto@colegiociudaddelsol.edu.co",
+  "url": "https://colegiociudaddelsol.edu.co",
+  "areaServed": "Sogamoso",
+  "description": "Institución educativa técnica en Sogamoso, Boyacá, Colombia. Metodología ABP y formación integral.",
+  "foundingDate": "2000",
+  "numberOfStudents": "1200",
+  "academicSession": "2026",
+  "teaches": [
+    "Educación Básica Secundaria",
+    "Educación Media Técnica",
+    "Formación en Proyectos Transversales ABP"
+  ]
+})} />

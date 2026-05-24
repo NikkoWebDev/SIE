@@ -1,0 +1,112 @@
+---
+export interface Props {
+  userRole?: string
+  isPaid?: boolean
+}
+const { userRole, isPaid } = Astro.props
+const navItems: Record<string, { label: string; icon: string; href: string; premium?: boolean }[]> = {
+  ESTUDIANTE: [
+    { label: 'Mis Notas', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', href: '/dashboard' },
+    { label: 'Aula Virtual', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', href: '/aula-virtual', premium: true },
+    { label: 'Exámenes', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', href: '/examenes', premium: true },
+  ],
+  PROFESOR: [
+    { label: 'Control de Notas', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01', href: '/control-notas' },
+    { label: 'Monitor Anti-Fraude', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z', href: '/monitoreo', premium: true },
+  ],
+}
+const menu = navItems[userRole || ''] || []
+const hasDebt = userRole === 'ESTUDIANTE' && isPaid === false
+---
+
+<nav
+  id="floating-pill-nav"
+  class="
+    fixed bottom-4 left-1/2 -translate-x-1/2 z-50
+    lg:left-0 lg:bottom-auto lg:top-0 lg:translate-x-0 lg:fixed lg:z-40 lg:h-screen lg:w-64
+    flex lg:flex-col items-center gap-1
+    rounded-2xl lg:rounded-none
+    bg-white/70 dark:bg-gray-900/70 backdrop-blur-3xl
+    border border-white/20 dark:border-white/10
+    shadow-2xl
+    px-2 py-2 lg:px-3 lg:py-6
+    transition-all duration-300
+  "
+  data-pill-nav
+>
+  <div class="hidden lg:flex items-center gap-3 px-6 py-5 border-b border-white/10 w-full mb-4">
+    <div class="h-9 w-9 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-bold text-lg">C</div>
+    <span class="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">C sol · SIE</span>
+  </div>
+  {
+    menu.map(item => {
+      const locked = hasDebt && item.premium
+      return (
+        <a
+          href={locked ? '#' : item.href}
+          class={`
+            relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
+            transition-all duration-200
+            ${locked
+              ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-60'
+              : 'text-gray-600 dark:text-gray-300 hover:bg-brand-maroon/10 dark:hover:bg-brand-maroon/20 hover:text-brand-maroon dark:hover:text-white'
+            }
+            ${hasDebt && item.premium ? 'ring-1 ring-brand-danger/30' : ''}
+          `}
+          data-nav-item
+          data-locked={locked ? 'true' : 'false'}
+        >
+          <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon} />
+          </svg>
+          <span class="hidden lg:inline">{item.label}</span>
+          {locked && (
+            <span class="hidden lg:inline ml-auto text-[10px] font-bold uppercase tracking-wider text-brand-danger animate-pulse">
+              ⚠️ EN MORA
+            </span>
+          )}
+        </a>
+      )
+    })
+  }
+  {hasDebt && (
+    <div class="hidden lg:flex mt-auto border-t border-white/10 w-full pt-4 px-3">
+      <div class="flex items-center gap-2 rounded-lg bg-brand-danger/10 px-3 py-2 w-full">
+        <span class="h-2 w-2 rounded-full bg-brand-danger animate-pulse"></span>
+        <span class="text-xs font-bold text-brand-danger uppercase tracking-wider">⚠️ EN MORA</span>
+      </div>
+    </div>
+  )}
+  <div class="lg:border-t lg:border-white/10 lg:w-full lg:pt-4 lg:px-3 lg:mt-2">
+    <button id="pill-theme-toggle" class="hidden lg:flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-brand-maroon/10 dark:hover:bg-brand-maroon/20 transition-colors">
+      <svg class="h-5 w-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+      <svg class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      <span id="pill-theme-label">Modo oscuro</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+  (function () {
+    const nav = document.getElementById('floating-pill-nav')
+    if (!nav) return
+
+    const updateFromStorage = () => {
+      const role = localStorage.getItem('userRole') || 'ESTUDIANTE'
+      const paid = localStorage.getItem('is_paid') !== 'false'
+      const items = nav.querySelectorAll('[data-nav-item]')
+      const debtLabels = nav.querySelectorAll('[data-debt-label]')
+
+      items.forEach(el => {
+        const locked = role === 'ESTUDIANTE' && !paid && el.dataset.locked === 'true'
+        if (locked) {
+          el.classList.add('opacity-60', 'cursor-not-allowed', 'ring-1', 'ring-brand-danger/30')
+          el.classList.remove('text-gray-600', 'dark:text-gray-300', 'hover:bg-brand-maroon/10', 'dark:hover:bg-brand-maroon/20', 'hover:text-brand-maroon', 'dark:hover:text-white')
+        }
+      })
+    }
+
+    updateFromStorage()
+    window.addEventListener('storage', updateFromStorage)
+  })()
+</script>

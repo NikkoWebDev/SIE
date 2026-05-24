@@ -1,0 +1,114 @@
+---
+import SEOHead from '@components/SEOHead.astro'
+export interface Props {
+  titulo?: string
+  sinMenu?: boolean
+}
+const { titulo, sinMenu } = Astro.props
+---
+<!doctype html>
+<html lang="es-CO" class="scroll-smooth">
+  <head>
+    <SEOHead titulo={titulo} />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body class="font-sans antialiased bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300">
+    {
+      !sinMenu && (
+        <div id="sidebar-shell" class="flex min-h-screen">
+          <aside id="sidebar" class="fixed left-0 top-0 z-40 h-screen w-64 bg-brand-maroon text-white transform -translate-x-full lg:translate-x-0 transition-transform duration-300" data-sidebar>
+            <div class="flex h-full flex-col">
+              <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10">
+                <div class="h-9 w-9 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-bold text-lg">C</div>
+                <span class="text-lg font-semibold tracking-tight">C sol · SIE</span>
+              </div>
+              <nav class="flex-1 space-y-1 px-3 py-4">
+                <a href="/dashboard" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors" data-nav>
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                  Tablero
+                </a>
+                <a href="/dashboard" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors" data-nav>
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                  Rendimiento
+                </a>
+                <a href="/dashboard" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors" data-nav>
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  Estudiantes
+                </a>
+                <a href="/dashboard" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors" data-nav>
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                  ABP
+                </a>
+                <a href="/" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors" data-nav>
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                  Institución
+                </a>
+              </nav>
+              <div class="border-t border-white/10 px-3 py-4">
+                <button id="theme-toggle" class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors">
+                  <svg class="h-5 w-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                  <svg class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                  <span id="theme-label">Modo oscuro</span>
+                </button>
+              </div>
+            </div>
+          </aside>
+          <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/50 hidden lg:hidden" data-sidebar-overlay></div>
+          <div class="flex flex-1 flex-col lg:ml-64">
+            <header class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-gray-200 bg-white/80 backdrop-blur-md px-4 dark:border-gray-800 dark:bg-gray-900/80">
+              <button id="menu-toggle" class="lg:hidden rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" aria-label="Abrir menú">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+              <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</span>
+              </div>
+              <div class="ml-auto flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 text-sm">
+                  <span class="h-2 w-2 rounded-full bg-brand-green"></span>
+                  <span class="text-gray-600 dark:text-gray-400">Jornada activa</span>
+                </div>
+                <div class="h-8 w-8 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-bold text-sm">AD</div>
+              </div>
+            </header>
+            <main class="flex-1 p-4 md:p-6 lg:p-8">
+              <slot />
+            </main>
+          </div>
+        </div>
+      )
+    }
+    {
+      sinMenu && <slot />
+    }
+  </body>
+</html>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('theme-toggle')
+    const label = document.getElementById('theme-label')
+    const menuBtn = document.getElementById('menu-toggle')
+    const sidebar = document.querySelector('[data-sidebar]')
+    const overlay = document.querySelector('[data-sidebar-overlay]')
+
+    if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark')
+    }
+
+    toggle?.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark')
+      localStorage.setItem('theme', isDark ? 'dark' : 'light')
+      if (label) label.textContent = isDark ? 'Modo claro' : 'Modo oscuro'
+    })
+
+    menuBtn?.addEventListener('click', () => {
+      sidebar?.classList.toggle('-translate-x-full')
+      overlay?.classList.toggle('hidden')
+    })
+
+    overlay?.addEventListener('click', () => {
+      sidebar?.classList.add('-translate-x-full')
+      overlay?.classList.add('hidden')
+    })
+  })
+</script>

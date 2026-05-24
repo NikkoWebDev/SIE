@@ -1,0 +1,209 @@
+---
+import Layout from '@layouts/Layout.astro'
+---
+
+<Layout titulo="C sol · Colegio Técnico Ciudad del Sol — Sogamoso, Boyacá" sinMenu>
+  <article class="min-h-screen bg-white dark:bg-black transition-colors duration-300">
+    <!-- Sol / Eclipse Toggle -->
+    <div class="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-black/80 backdrop-blur-md px-3 py-1.5 shadow-sm">
+      <span class="text-xs font-medium text-gray-500 dark:text-gray-400 select-none">Sol</span>
+      <button
+        id="theme-toggle-landing"
+        class="relative inline-flex h-5 w-9 cursor-pointer items-center rounded-full bg-gray-300 dark:bg-brand-maroon transition-colors duration-300"
+        aria-label="Cambiar modo Sol / Eclipse"
+      >
+        <span
+          id="theme-toggle-thumb"
+          class="inline-block h-4 w-4 translate-x-0.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 dark:translate-x-[18px] dark:bg-brand-gold"
+        ></span>
+      </button>
+      <span class="text-xs font-medium text-gray-500 dark:text-gray-400 select-none">Eclipse</span>
+    </div>
+
+    <!-- HERO -->
+    <section class="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white dark:bg-black px-6">
+      <div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none" style="background-image: radial-gradient(circle at 25% 50%, #800000 1px, transparent 1px); background-size: 40px 40px;"></div>
+      <div class="relative z-10 mx-auto max-w-5xl text-center">
+        <div class="mb-8 inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-gold shadow-lg shadow-brand-gold/30 dark:shadow-brand-gold/20">
+          <span class="text-4xl font-extrabold tracking-tighter text-brand-maroon">C</span>
+        </div>
+        <h1 class="font-extrabold tracking-tighter text-4xl md:text-7xl text-gray-900 dark:text-white">
+          <span class="text-brand-maroon dark:text-brand-gold">C sol</span>
+          <span class="mt-2 block text-2xl md:text-3xl font-normal tracking-normal text-gray-600 dark:text-gray-400">Sistema de Información Estudiantil</span>
+        </h1>
+        <p class="mt-6 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed text-gray-600 dark:text-gray-400">
+          Plataforma integral de gestión académica del Colegio Técnico Ciudad del Sol.<br class="hidden sm:block" />
+          Metodología ABP · Seguimiento transversal · Comunidad Soleísta
+        </p>
+        <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a
+            href="/dashboard"
+            class="inline-flex items-center gap-2 rounded-xl bg-brand-maroon dark:bg-brand-gold px-8 py-3.5 text-base font-semibold text-white dark:text-brand-maroon shadow-lg shadow-brand-maroon/25 dark:shadow-brand-gold/25 transition-all hover:shadow-xl hover:shadow-brand-maroon/40 dark:hover:shadow-brand-gold/40 hover:-translate-y-0.5"
+          >
+            Acceder al tablero
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </a>
+          <a
+            href="#noticias"
+            class="inline-flex items-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-8 py-3.5 text-base font-medium text-gray-700 dark:text-gray-300 transition-all hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600"
+          >
+            Ver comunicados
+          </a>
+        </div>
+      </div>
+      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+        <svg class="h-6 w-6 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+      </div>
+    </section>
+
+    <!-- LIVE NOTICE FEED -->
+    <section id="noticias" class="py-20 md:py-28 px-6 bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-900">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-12 text-center">
+          <span class="inline-block rounded-full bg-brand-gold/20 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-brand-maroon dark:text-brand-gold">En vivo</span>
+          <h2 class="mt-4 text-3xl md:text-5xl font-extrabold tracking-tighter text-gray-900 dark:text-white">Comunicados institucionales</h2>
+          <p class="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Información oficial y avisos para la Comunidad Soleísta</p>
+        </div>
+
+        <!-- Skeleton Loading (visible while JS fetches data) -->
+        <div id="notice-skeleton" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" aria-label="Cargando comunicados">
+          {[1,2,3].map((i) => (
+            <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-6 animate-pulse">
+              <div class="mb-3 h-4 w-24 rounded-full bg-gray-200 dark:bg-gray-800"></div>
+              <div class="mb-2 h-6 w-full rounded-lg bg-gray-200 dark:bg-gray-800"></div>
+              <div class="mb-1 h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-800"></div>
+              <div class="mb-4 h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-800"></div>
+              <div class="h-3 w-20 rounded bg-gray-200 dark:bg-gray-800"></div>
+            </div>
+          ))}
+        </div>
+
+        <!-- Live Notice Grid (hidden until populated) -->
+        <div id="notice-grid" class="hidden grid md:grid-cols-2 lg:grid-cols-3 gap-6" aria-label="Comunicados recientes"></div>
+
+        <!-- Error state (hidden by default) -->
+        <div id="notice-error" class="hidden mt-8 rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-6 text-center">
+          <p class="text-red-700 dark:text-red-400">No se pudieron cargar los comunicados. Intente más tarde.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTITUTIONAL -->
+    <section class="py-20 md:py-28 px-6 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-900">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-12 text-center">
+          <h2 class="text-3xl md:text-5xl font-extrabold tracking-tighter text-gray-900 dark:text-white">Comunidad Soleísta</h2>
+          <p class="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-8 transition-all hover:shadow-lg hover:-translate-y-1">
+            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-maroon/10 dark:bg-brand-maroon/20">
+              <svg class="h-6 w-6 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Rendimiento ABP</h3>
+            <p class="text-gray-600 dark:text-gray-400 leading-relaxed">Seguimiento transversal de proyectos integradores con metodología de Aprendizaje Basado en Proyectos.</p>
+          </div>
+          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-8 transition-all hover:shadow-lg hover:-translate-y-1">
+            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-maroon/10 dark:bg-brand-maroon/20">
+              <svg class="h-6 w-6 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Analítica en Vivo</h3>
+            <p class="text-gray-600 dark:text-gray-400 leading-relaxed">Monitoreo en tiempo real de métricas académicas con umbrales de alerta temprana y reportes inteligentes.</p>
+          </div>
+          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-8 transition-all hover:shadow-lg hover:-translate-y-1">
+            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gold/20">
+              <svg class="h-6 w-6 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Asistente IA</h3>
+            <p class="text-gray-600 dark:text-gray-400 leading-relaxed">Chat inteligente con streaming de tokens para resumir reportes, generar alertas y analizar tendencias.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-gray-200 dark:border-gray-900 bg-gray-50 dark:bg-black py-8 px-6">
+      <div class="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-500">
+        <span>© 2026 Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá, Colombia</span>
+        <span>Comunidad Soleísta · <span class="text-brand-gold">C sol</span> SIE v3.0</span>
+      </div>
+    </footer>
+  </article>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('theme-toggle-landing')
+    const thumb = document.getElementById('theme-toggle-thumb')
+
+    function applyTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    }
+
+    const stored = localStorage.getItem('theme')
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const currentTheme = stored || (prefersDark ? 'dark' : 'light')
+    applyTheme(currentTheme)
+
+    toggle?.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark')
+      localStorage.setItem('theme', isDark ? 'dark' : 'light')
+    })
+  })
+</script>
+
+<script>
+  async function loadNotices() {
+    const skeleton = document.getElementById('notice-skeleton')
+    const grid = document.getElementById('notice-grid')
+    const error = document.getElementById('notice-error')
+
+    try {
+      const res = await fetch('/api/notices')
+      if (!res.ok) throw new Error('Network error')
+      const notices = await res.json()
+
+      skeleton?.classList.add('hidden')
+
+      if (!notices || notices.length === 0) {
+        grid?.classList.add('hidden')
+        if (error) {
+          error.querySelector('p').textContent = 'No hay comunicados publicados actualmente.'
+          error.classList.remove('hidden')
+        }
+        return
+      }
+
+      if (grid) {
+        grid.innerHTML = notices.map((n, i) => {
+          const date = new Date(n.fecha || n.date).toLocaleDateString('es-CO', {
+            day: 'numeric', month: 'long', year: 'numeric'
+          })
+          const cat = n.categoria || n.category || 'General'
+          return `
+            <article class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-6 transition-all hover:shadow-lg hover:-translate-y-0.5 animate-fade-in" style="animation-delay:${i * 80}ms">
+              <span class="inline-block rounded-full bg-brand-gold/20 px-3 py-0.5 text-xs font-semibold text-brand-maroon dark:text-brand-gold mb-3">${cat}</span>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">${n.titulo || n.title}</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">${n.resumen || n.excerpt || ''}</p>
+              <time class="text-xs text-gray-400 dark:text-gray-500" datetime="${n.fecha || n.date}">${date}</time>
+            </article>
+          `
+        }).join('')
+        grid.classList.remove('hidden')
+      }
+    } catch {
+      skeleton?.classList.add('hidden')
+      error?.classList.remove('hidden')
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadNotices)
+  } else {
+    loadNotices()
+  }
+</script>

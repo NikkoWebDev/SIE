@@ -1,0 +1,125 @@
+---
+---
+<div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col overflow-hidden" style="height: 420px;">
+  <div class="flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 px-5 py-3">
+    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-gold/20">
+      <svg class="h-4 w-4 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+    </div>
+    <div class="flex-1 min-w-0">
+      <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Asistente SIE</h2>
+      <p class="text-xs text-gray-400">Resumen inteligente de rendimiento</p>
+    </div>
+    <span class="flex items-center gap-1.5 text-xs text-brand-green">
+      <span class="h-1.5 w-1.5 rounded-full bg-brand-green animate-pulse"></span>
+      Streaming
+    </span>
+  </div>
+  <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
+    <div class="flex items-start gap-3">
+      <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-gold/20 text-xs font-bold text-brand-gold">C</div>
+      <div class="rounded-xl rounded-tl-sm bg-gray-100 dark:bg-gray-800 px-3.5 py-2.5 text-gray-700 dark:text-gray-300 leading-relaxed">
+        ¡Hola! Soy el asistente del Sistema de Información Estudiantil. Puedo resumir reportes académicos, analizar tendencias de rendimiento ABP y generar alertas personalizadas. ¿En qué puedo ayudarte?
+      </div>
+    </div>
+  </div>
+  <div class="border-t border-gray-200 dark:border-gray-800 p-3">
+    <form id="chat-form" class="flex gap-2">
+      <input
+        id="chat-input"
+        type="text"
+        placeholder="Ej: Resumen del rendimiento de Samantha Rojas..."
+        class="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-maroon/30 focus:border-brand-maroon transition-all"
+      />
+      <button
+        type="submit"
+        class="flex items-center justify-center rounded-lg bg-brand-maroon px-4 py-2 text-white text-sm font-medium transition-all hover:bg-brand-maroon/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        id="chat-send"
+      >
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      </button>
+    </form>
+  </div>
+</div>
+<script>
+  const form = document.getElementById('chat-form')
+  const input = document.getElementById('chat-input')
+  const messages = document.getElementById('chat-messages')
+  const sendBtn = document.getElementById('chat-send')
+
+  function addMessage(content, role) {
+    const div = document.createElement('div')
+    div.className = `flex items-start gap-3 ${role === 'user' ? 'flex-row-reverse' : ''} animate-slide-up`
+    const avatar = document.createElement('div')
+    avatar.className = `flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${role === 'user' ? 'bg-brand-maroon text-white' : 'bg-brand-gold/20 text-brand-gold'}`
+    avatar.textContent = role === 'user' ? 'U' : 'C'
+    const bubble = document.createElement('div')
+    bubble.className = `rounded-xl px-3.5 py-2.5 leading-relaxed max-w-[85%] ${role === 'user' ? 'rounded-tr-sm bg-brand-maroon text-white' : 'rounded-tl-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`
+    bubble.textContent = content
+    div.appendChild(avatar)
+    div.appendChild(bubble)
+    messages.appendChild(div)
+    messages.scrollTop = messages.scrollHeight
+    return bubble
+  }
+
+  function addStreamingMessage() {
+    const div = document.createElement('div')
+    div.className = 'flex items-start gap-3 animate-slide-up'
+    const avatar = document.createElement('div')
+    avatar.className = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-gold/20 text-xs font-bold text-brand-gold'
+    avatar.textContent = 'C'
+    const bubble = document.createElement('div')
+    bubble.className = 'rounded-xl rounded-tl-sm bg-gray-100 dark:bg-gray-800 px-3.5 py-2.5 text-gray-700 dark:text-gray-300 leading-relaxed'
+    bubble.id = 'streaming-bubble'
+    div.appendChild(avatar)
+    div.appendChild(bubble)
+    messages.appendChild(div)
+    messages.scrollTop = messages.scrollHeight
+    return bubble
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const text = input.value.trim()
+    if (!text) return
+    input.value = ''
+    sendBtn.disabled = true
+    addMessage(text, 'user')
+    const bubble = addStreamingMessage()
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      })
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') continue
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed.token) {
+                const span = document.createElement('span')
+                span.textContent = parsed.token
+                bubble.appendChild(span)
+                messages.scrollTop = messages.scrollHeight
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch {
+      bubble.textContent = 'Error al conectar con el asistente. Intenta de nuevo.'
+    }
+    sendBtn.disabled = false
+  })
+</script>
