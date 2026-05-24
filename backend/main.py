@@ -3,9 +3,7 @@ import json
 import logging
 import os
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -32,18 +30,13 @@ MONGO_URI: str = os.getenv("MONGO_URL") or os.getenv(
     "mongodb+srv://admin:password@cluster0.example.mongodb.net/?retryWrites=true&w=majority",
 )
 MONGO_DB: str = os.getenv("MONGO_DB", "sie_core")
-GRADE_COLLECTION: str = "grades"
-STUDENT_COLLECTION: str = "students"
+GRADES_COLL: str = "grades"
+STUDENTS_COLL: str = "students"
 RISK_THRESHOLD: float = 3.5
 MAX_GRADE: float = 5.0
-QUEUE_BACKLOG: int = int(os.getenv("QUEUE_BACKLOG", "1024"))
+QUEUE_SIZE: int = int(os.getenv("QUEUE_SIZE", "1024"))
 JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
 JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
-
-ROLE_ESTUDIANTE: str = "ESTUDIANTE"
-ROLE_PROFESOR: str = "PROFESOR"
-ROLE_RECTOR: str = "RECTOR"
-VALID_ROLES: frozenset[str] = frozenset({ROLE_ESTUDIANTE, ROLE_PROFESOR, ROLE_RECTOR})
 
 logging.basicConfig(
     level=logging.WARNING if os.getenv("ENV") == "production" else logging.DEBUG,
@@ -72,30 +65,13 @@ class GradeSubmission(BaseModel):
         return self
 
 
-class RiskStatus(StrEnum):
-    SAFE = "safe"
-    WARNING = "warning"
-    AT_RISK = "at_risk"
-
-
-class WebSocketPayload(BaseModel):
-    kind: str
+class RiskEvent(BaseModel):
+    type: str
+    msg: str
+    student_id: str = ""
+    score: float = 0.0
+    threshold: float = RISK_THRESHOLD
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    data: dict[str, Any]
-
-
-class TokenPayload(BaseModel):
-    sub: str
-    role: str = ROLE_ESTUDIANTE
-
-# ---------------------------------------------------------------------------
-# Internal event
-# ---------------------------------------------------------------------------
-@dataclass(slots=True)
-class InternalEvent:
-    event_type: str
-    payload: dict[str, Any]
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 # ---------------------------------------------------------------------------
 # EcosystemSocketManager
@@ -103,98 +79,72 @@ class InternalEvent:
 class EcosystemSocketManager:
 
     def __init__(self) -> None:
-        self._store: dict[str, dict[str, WebSocket]] = {}
+        self.active_connections: dict[str, WebSocket] = {}
         self._lock = asyncio.Lock()
 
-    async def register(self, role: str, user_id: str, ws: WebSocket) -> None:
+    async def register(self, user_id: str, ws: WebSocket) -> None:
         async with self._lock:
-            self._store.setdefault(role, {})[user_id] = ws
-        logger.debug("ws+ %s:%s (total=%d)", role, user_id, await self._total())
+            self.active_connections[user_id] = ws
+        logger.debug("ws+ %s (total=%d)", user_id, len(self.active_connections))
 
-    async def unregister(self, role: str, user_id: str) -> None:
+    async def unregister(self, user_id: str) -> None:
         async with self._lock:
-            bucket = self._store.get(role)
-            if bucket is None:
-                return
-            gone = bucket.pop(user_id, None)
-            if gone is not None:
-                try:
-                    await gone.close()
-                except Exception:
-                    pass
-            if not bucket:
-                del self._store[role]
-        logger.debug("ws- %s:%s (total=%d)", role, user_id, await self._total())
+            ws = self.active_connections.pop(user_id, None)
+        if ws is not None:
+            try:
+                await ws.close()
+            except Exception:
+                pass
+        logger.debug("ws- %s (total=%d)", user_id, len(self.active_connections))
 
-    async def send(self, role: str, user_id: str, payload: dict[str, Any]) -> bool:
-        ws: WebSocket | None
+    async def send(self, user_id: str, payload: dict[str, Any]) -> bool:
         async with self._lock:
-            ws = self._store.get(role, {}).get(user_id)
+            ws = self.active_connections.get(user_id)
         if ws is None:
             return False
         try:
             await ws.send_json(payload)
             return True
         except Exception:
-            await self.unregister(role, user_id)
+            await self.unregister(user_id)
             return False
 
-    async def broadcast(self, role: str, payload: dict[str, Any]) -> int:
+    async def broadcast(self, payload: dict[str, Any]) -> int:
         async with self._lock:
-            snapshot = list(self._store.get(role, {}).items())
-        count = 0
+            snapshot = list(self.active_connections.items())
+        sent = 0
         for uid, ws in snapshot:
             try:
                 await ws.send_json(payload)
-                count += 1
+                sent += 1
             except Exception:
-                await self.unregister(role, uid)
-        return count
-
-    async def broadcast_all(self, payload: dict[str, Any]) -> int:
-        async with self._lock:
-            snapshot: list[tuple[str, str, WebSocket]] = [
-                (role, uid, ws)
-                for role, bucket in self._store.items()
-                for uid, ws in bucket.items()
-            ]
-        count = 0
-        for role, uid, ws in snapshot:
-            try:
-                await ws.send_json(payload)
-                count += 1
-            except Exception:
-                await self.unregister(role, uid)
-        return count
-
-    async def _total(self) -> int:
-        return sum(len(b) for b in self._store.values())
+                await self.unregister(uid)
+        return sent
 
     @property
-    def stats(self) -> dict[str, int]:
-        return {r: len(b) for r, b in self._store.items()}
+    def count(self) -> int:
+        return len(self.active_connections)
+
+# ---------------------------------------------------------------------------
+# Module-level state (populated during lifespan)
+# ---------------------------------------------------------------------------
+ws_manager: EcosystemSocketManager = EcosystemSocketManager()
+mongo_db: Any = None
+risk_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=QUEUE_SIZE)
+_worker_task: asyncio.Task[None] | None = None
 
 # ---------------------------------------------------------------------------
 # DB helpers
 # ---------------------------------------------------------------------------
-def _resolve_risk(score: float) -> RiskStatus:
-    if score >= 4.0:
-        return RiskStatus.SAFE
-    if score >= RISK_THRESHOLD:
-        return RiskStatus.WARNING
-    return RiskStatus.AT_RISK
-
-
 async def _persist_grade(db: Any, sub: GradeSubmission) -> str:
     doc = sub.model_dump()
     doc["created_at"] = datetime.now(timezone.utc)
-    doc["risk_status"] = _resolve_risk(sub.score)
-    result = await db[GRADE_COLLECTION].insert_one(doc)
+    result = await db[GRADES_COLL].insert_one(doc)
     return str(result.inserted_id)
 
 
-async def _flag_student_risk(db: Any, student_id: str, at_risk: bool) -> None:
-    await db[STUDENT_COLLECTION].update_one(
+async def _mutate_risk(db: Any, student_id: str, at_risk: bool) -> None:
+    await db[STUDENTS_COLL].update_one(
         {"_id": student_id},
         {"$set": {
             "is_at_risk": at_risk,
@@ -205,134 +155,54 @@ async def _flag_student_risk(db: Any, student_id: str, at_risk: bool) -> None:
 
 
 async def _fetch_student(db: Any, student_id: str) -> dict[str, Any] | None:
-    return await db[STUDENT_COLLECTION].find_one({"_id": student_id})
+    return await db[STUDENTS_COLL].find_one({"_id": student_id})
 
 # ---------------------------------------------------------------------------
-# SIEERiskAgent
+# Background risk worker
 # ---------------------------------------------------------------------------
-class SIEERiskAgent:
-
-    def __init__(
-        self,
-        db: Any,
-        queue: asyncio.Queue[InternalEvent],
-        ws_manager: EcosystemSocketManager,
-    ) -> None:
-        self._db = db
-        self._queue = queue
-        self._ws = ws_manager
-        self._task: asyncio.Task[None] | None = None
-
-    async def _process(self, event: InternalEvent) -> None:
-        payload = event.payload
-        student_id = payload["student_id"]
-        teacher_id = payload["teacher_id"]
-        score = payload["score"]
-        grade_id = payload["grade_id"]
-
-        at_risk = score < RISK_THRESHOLD
-        await _flag_student_risk(self._db, student_id, at_risk)
-
-        now_iso = datetime.now(timezone.utc).isoformat()
-
-        if at_risk:
-            student_alert: dict[str, Any] = {
-                "kind": "academic_alert",
-                "priority": "high",
-                "message": "Plan de Apoyo Requerido: Agenda cita académica",
-                "student_id": student_id,
-                "course_id": payload["course_id"],
-                "subject_id": payload["subject_id"],
-                "score": score,
-                "threshold": RISK_THRESHOLD,
-                "timestamp": now_iso,
-            }
-            await self._ws.send(ROLE_ESTUDIANTE, student_id, student_alert)
-
-            log_entry: dict[str, Any] = {
-                "kind": "risk_event_log",
-                "teacher_id": teacher_id,
-                "student_id": student_id,
-                "grade_id": grade_id,
-                "score": score,
-                "threshold": RISK_THRESHOLD,
-                "message": "Estudiante marcado en riesgo — Plan de Apoyo Requerido: Agenda cita académica",
-                "timestamp": now_iso,
-            }
-            await self._ws.broadcast(f"dashboard_{teacher_id}", log_entry)
-            await self._ws.send(ROLE_PROFESOR, teacher_id, log_entry)
-
-        else:
-            log_entry: dict[str, Any] = {
-                "kind": "risk_event_log",
-                "teacher_id": teacher_id,
-                "student_id": student_id,
-                "grade_id": grade_id,
-                "score": score,
-                "threshold": RISK_THRESHOLD,
-                "message": "Estudiante dentro del umbral seguro",
-                "timestamp": now_iso,
-            }
-            await self._ws.send(ROLE_PROFESOR, teacher_id, log_entry)
-
-        logger.info(
-            "risk-agent processed grade=%s student=%s score=%.1f at_risk=%s",
-            grade_id, student_id, score, at_risk,
-        )
-
-    async def _consume(self) -> None:
-        logger.info("risk-agent started")
-        while True:
-            event = await self._queue.get()
-            if event is None:
-                self._queue.task_done()
-                break
-            try:
-                await self._process(event)
-            except Exception:
-                logger.exception("risk-agent failed event=%s", event.event_type)
-            finally:
-                self._queue.task_done()
-        logger.info("risk-agent stopped")
-
-    async def start(self) -> None:
-        self._task = asyncio.create_task(self._consume())
-
-    async def stop(self) -> None:
-        if self._task is None:
-            return
-        await self._queue.put(None)  # type: ignore[arg-type]
+async def siee_risk_agent_worker() -> None:
+    logger.info("risk-agent started")
+    while True:
+        event: dict[str, Any] | None = await risk_queue.get()
+        if event is None:
+            risk_queue.task_done()
+            break
         try:
-            await asyncio.wait_for(self._task, timeout=10.0)
-        except asyncio.TimeoutError:
-            logger.warning("risk-agent stop timed out — cancelling")
-            self._task.cancel()
+            student_id: str = event["student_id"]
+            teacher_id: str = event["teacher_id"]
+            score: float = event["score"]
+
+            at_risk = score < RISK_THRESHOLD
+            await _mutate_risk(mongo_db, student_id, at_risk)
+
+            if at_risk:
+                alert = RiskEvent(
+                    type="RISK_ALERT",
+                    msg="Plan de Apoyo Requerido: Agenda cita académica",
+                    student_id=student_id,
+                    score=score,
+                ).model_dump()
+                await ws_manager.send(student_id, alert)
+                await ws_manager.send(teacher_id, alert)
+
+            logger.info(
+                "risk-agent student=%s score=%.1f at_risk=%s q=%d",
+                student_id, score, at_risk, risk_queue.qsize(),
+            )
+        except Exception:
+            logger.exception("risk-agent failed event=%s", event)
+        finally:
+            risk_queue.task_done()
+    logger.info("risk-agent stopped")
 
 # ---------------------------------------------------------------------------
 # App lifecycle
 # ---------------------------------------------------------------------------
-mongo_client: AsyncIOMotorClient | None = None
-db: Any = None
-event_queue: asyncio.Queue[InternalEvent] = asyncio.Queue(maxsize=QUEUE_BACKLOG)
-ws_manager = EcosystemSocketManager()
-risk_agent = SIEERiskAgent(db=None, queue=event_queue, ws_manager=ws_manager)  # type: ignore[arg-type]
-
-SKIP_AUTH_PATHS: frozenset[str] = frozenset({
-    "/api/health",
-    "/docs",
-    "/openapi.json",
-})
-
-
-def _decode_jwt(token: str) -> dict[str, Any]:
-    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], options={"require": ["sub"]})
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global mongo_client, db, risk_agent
-    logger.info("siee core booting")
+    global mongo_db, ws_manager, _worker_task
 
+    logger.info("siee core booting")
     mongo_client = AsyncIOMotorClient(
         MONGO_URI,
         maxPoolSize=20,
@@ -340,37 +210,39 @@ async def lifespan(app: FastAPI):
         serverSelectionTimeoutMS=5000,
         connectTimeoutMS=5000,
     )
-    db = mongo_client[MONGO_DB]
+    mongo_db = mongo_client[MONGO_DB]
     try:
         await mongo_client.admin.command("ping")
-        logger.info("mongodb connected — %s", MONGO_DB)
+        logger.info("mongodb connected")
     except Exception as exc:
         logger.error("mongodb unreachable: %s", exc)
         raise
 
-    risk_agent._db = db
-    await risk_agent.start()
+    _worker_task = asyncio.create_task(siee_risk_agent_worker())
 
-    await db[STUDENT_COLLECTION].create_index(
-        [("is_at_risk", 1), ("risk_updated_at", -1)],
-        name="idx_student_risk",
-        background=True,
-    )
-    await db[GRADE_COLLECTION].create_index(
-        [("student_id", 1), ("subject_id", 1), ("created_at", -1)],
-        name="idx_grade_student_subject",
-        background=True,
-    )
-    await db[STUDENT_COLLECTION].create_index(
-        [("is_paid", 1)],
-        name="idx_student_paid",
-        background=True,
-    )
+    try:
+        await mongo_db[STUDENTS_COLL].create_index(
+            [("is_at_risk", 1), ("risk_updated_at", -1)],
+            name="idx_student_risk",
+            background=True,
+        )
+        await mongo_db[GRADES_COLL].create_index(
+            [("student_id", 1), ("subject_id", 1), ("created_at", -1)],
+            name="idx_grade_student_subject",
+            background=True,
+        )
+    except Exception:
+        pass
 
     yield
 
     logger.info("siee core shutting down")
-    await risk_agent.stop()
+    await risk_queue.put(None)
+    if _worker_task is not None:
+        try:
+            await asyncio.wait_for(_worker_task, timeout=10.0)
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            _worker_task.cancel()
     if mongo_client:
         mongo_client.close()
     logger.info("siee core stopped")
@@ -387,36 +259,35 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
+# JWT helpers
+# ---------------------------------------------------------------------------
+SKIP_AUTH: frozenset[str] = frozenset({"/api/health", "/docs", "/openapi.json"})
+
+def _decode_jwt(token: str) -> dict[str, Any]:
+    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], options={"require": ["sub"]})
+
+# ---------------------------------------------------------------------------
 # Auth middleware
 # ---------------------------------------------------------------------------
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next: Any) -> Response:
     path = request.url.path
-    if request.method == "OPTIONS" or path.startswith("/ws") or path in SKIP_AUTH_PATHS:
+    if request.method == "OPTIONS" or path.startswith("/ws") or path in SKIP_AUTH:
         return await call_next(request)
 
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
-        logger.warning("auth-missing %s %s", request.method, path)
-        return JSONResponse(status_code=401, content={"detail": "Authorization header missing or malformed"})
+        return JSONResponse(status_code=401, content={"detail": "Authorization required"})
 
-    token = auth_header[7:]
     try:
-        claims = _decode_jwt(token)
+        claims = _decode_jwt(auth_header[7:])
     except jwt.ExpiredSignatureError:
         return JSONResponse(status_code=401, content={"detail": "Token expired"})
     except jwt.PyJWTError:
-        logger.warning("auth-invalid %s %s", request.method, path)
         return JSONResponse(status_code=401, content={"detail": "Invalid token"})
 
-    role = claims.get("role", ROLE_ESTUDIANTE)
-    if role not in VALID_ROLES:
-        return JSONResponse(status_code=403, content={"detail": f"Unknown role: {role}"})
-
     request.state.user_id = claims["sub"]
-    request.state.role = role
-    response: Response = await call_next(request)
-    return response
+    return await call_next(request)
 
 # ---------------------------------------------------------------------------
 # Financial guard middleware
@@ -428,65 +299,54 @@ async def financial_guard_middleware(request: Request, call_next: Any) -> Respon
 
     student_id = request.query_params.get("student_id")
     if not student_id:
-        return JSONResponse(status_code=422, content={"detail": "Query param 'student_id' is required"})
+        return JSONResponse(status_code=422, content={"detail": "Query param student_id required"})
 
-    student = await _fetch_student(db, student_id)
+    student = await _fetch_student(mongo_db, student_id)
     if student is None:
         return JSONResponse(status_code=404, content={"detail": "Student not found"})
 
     if student.get("is_paid") is False:
-        logger.warning("financial-guard blocked student=%s", student_id)
+        logger.warning("financial-block student=%s", student_id)
         return JSONResponse(status_code=403, content={"detail": "Estatus financiero irregular - Descarga restringida"})
 
-    response: Response = await call_next(request)
-    return response
+    return await call_next(request)
 
 # ---------------------------------------------------------------------------
 # HTTP endpoints
 # ---------------------------------------------------------------------------
 @app.post("/api/teacher/submit-grade", status_code=201)
-async def submit_grade(request: Request, submission: GradeSubmission) -> JSONResponse:
-    if db is None:
+async def submit_grade(submission: GradeSubmission) -> JSONResponse:
+    if mongo_db is None:
         raise HTTPException(status_code=503, detail="Database not available")
 
-    grade_id = await _persist_grade(db, submission)
+    grade_id = await _persist_grade(mongo_db, submission)
 
-    event = InternalEvent(
-        event_type="grade_submitted",
-        payload={
-            "student_id": submission.student_id,
-            "teacher_id": submission.teacher_id,
-            "course_id": submission.course_id,
-            "project_id": submission.project_id,
-            "subject_id": submission.subject_id,
-            "score": submission.score,
-            "grade_id": grade_id,
-        },
-    )
-    await event_queue.put(event)
+    await risk_queue.put({
+        "student_id": submission.student_id,
+        "teacher_id": submission.teacher_id,
+        "course_id": submission.course_id,
+        "project_id": submission.project_id,
+        "subject_id": submission.subject_id,
+        "score": submission.score,
+        "grade_id": grade_id,
+    })
 
-    logger.info(
-        "grade persisted id=%s student=%s score=%.1f",
-        grade_id, submission.student_id, submission.score,
-    )
-    return JSONResponse(
-        status_code=201,
-        content={"grade_id": grade_id, "status": "accepted", "queued": True},
-    )
+    logger.info("grade=%s student=%s score=%.1f", grade_id, submission.student_id, submission.score)
+    return JSONResponse(status_code=201, content={"grade_id": grade_id, "status": "accepted"})
 
 
 @app.get("/api/grades/download-pdf")
-async def download_grade_pdf(request: Request, student_id: str = Query(..., min_length=1)) -> Response:
-    if db is None:
+async def download_grade_pdf(student_id: str = Query(..., min_length=1)) -> Response:
+    if mongo_db is None:
         raise HTTPException(status_code=503, detail="Database not available")
 
-    grades_cursor = db[GRADE_COLLECTION].find({"student_id": student_id}).sort("created_at", -1)
+    grades_cursor = mongo_db[GRADES_COLL].find({"student_id": student_id}).sort("created_at", -1)
     grades = await grades_cursor.to_list(length=100)
 
-    student = await _fetch_student(db, student_id)
-    student_name = student.get("nombre", student_id) if student else student_id
+    student = await _fetch_student(mongo_db, student_id)
+    name = student.get("nombre", student_id) if student else student_id
 
-    buf = _build_grade_pdf(student_id, student_name, grades)
+    buf = _build_pdf(student_id, name, grades)
     return Response(
         content=buf.getvalue(),
         media_type="application/pdf",
@@ -498,8 +358,8 @@ async def download_grade_pdf(request: Request, student_id: str = Query(..., min_
 async def health() -> dict[str, Any]:
     return {
         "status": "alive",
-        "worker_queue_depth": event_queue.qsize(),
-        "ws_connections": ws_manager.stats,
+        "queue_depth": risk_queue.qsize(),
+        "ws_connected": ws_manager.count,
     }
 
 # ---------------------------------------------------------------------------
@@ -512,15 +372,10 @@ async def ws_endpoint(websocket: WebSocket, token: str = Query(..., min_length=1
     except jwt.PyJWTError:
         await websocket.close(code=4001, reason="invalid_token")
         return
-
-    role = claims.get("role", ROLE_ESTUDIANTE)
-    if role not in VALID_ROLES:
-        await websocket.close(code=4003, reason="invalid_role")
-        return
-
     user_id = claims["sub"]
+
     await websocket.accept()
-    await ws_manager.register(role, user_id, websocket)
+    await ws_manager.register(user_id, websocket)
 
     try:
         while True:
@@ -530,52 +385,55 @@ async def ws_endpoint(websocket: WebSocket, token: str = Query(..., min_length=1
             except json.JSONDecodeError:
                 await websocket.send_json({"error": "invalid_json"})
                 continue
-            logger.debug("ws in %s:%s -> %s", role, user_id, msg.get("kind"))
+            logger.debug("ws-in %s -> %s", user_id, msg.get("type"))
     except (WebSocketDisconnect, RuntimeError):
         pass
     finally:
-        await ws_manager.unregister(role, user_id)
+        await ws_manager.unregister(user_id)
 
 # ---------------------------------------------------------------------------
 # PDF builder
 # ---------------------------------------------------------------------------
-def _build_grade_pdf(student_id: str, student_name: str, grades: list[dict[str, Any]]) -> Any:
+def _build_pdf(student_id: str, student_name: str, grades: list[dict[str, Any]]) -> Any:
     from io import BytesIO
     buf = BytesIO()
     c = pdf_canvas.Canvas(buf, pagesize=A4)
-    width, height = A4
+    w, h = A4
 
     c.setFont("Helvetica-Bold", 18)
-    c.drawString(50, height - 60, "Colegio Técnico Ciudad del Sol")
+    c.drawString(50, h - 60, "Colegio Técnico Ciudad del Sol")
     c.setFont("Helvetica", 12)
-    c.drawString(50, height - 80, "Sistema de Información Estudiantil — Boletín Académico")
-    c.drawString(50, height - 100, f"Estudiante: {student_name}  |  ID: {student_id}")
-    c.drawString(50, height - 115, f"Fecha: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
+    c.drawString(50, h - 80, "Sistema de Información Estudiantil — Boletín Académico")
+    c.drawString(50, h - 100, f"Estudiante: {student_name}  |  ID: {student_id}")
+    c.drawString(50, h - 115, f"Fecha: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
 
     c.setStrokeColorRGB(0.5, 0, 0)
-    c.setLineWidth(1)
-    c.line(50, height - 130, width - 50, height - 130)
+    c.line(50, h - 125, w - 50, h - 125)
 
-    y = height - 160
+    y = h - 150
     c.setFont("Helvetica-Bold", 11)
     c.drawString(50, y, "Asignatura")
     c.drawString(200, y, "Proyecto ABP")
     c.drawString(350, y, "Nota")
-    c.drawString(420, y, "Estado")
-    y -= 20
+    c.drawString(430, y, "Estado")
 
     c.setFont("Helvetica", 10)
     for g in grades:
+        y -= 18
         if y < 60:
             c.showPage()
-            y = height - 60
+            y = h - 60
         score = g.get("score", 0)
-        risk = "En Riesgo" if score < RISK_THRESHOLD else ("Sobresaliente" if score >= 4.0 else "Aceptable")
+        if score < 3.5:
+            estado = "En Riesgo"
+        elif score >= 4.0:
+            estado = "Sobresaliente"
+        else:
+            estado = "Aceptable"
         c.drawString(50, y, str(g.get("subject_id", "-"))[:28])
         c.drawString(200, y, str(g.get("project_id", "-"))[:22])
         c.drawString(350, y, f"{score:.1f}")
-        c.drawString(420, y, risk)
-        y -= 18
+        c.drawString(430, y, estado)
 
     c.save()
     buf.seek(0)
