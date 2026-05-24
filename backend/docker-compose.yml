@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    ports:
+      - "10000:10000"
+    environment:
+      - MONGO_URL=${MONGO_URL}
+      - CLOUDINARY_URL=${CLOUDINARY_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENV=production
+    restart: unless-stopped
