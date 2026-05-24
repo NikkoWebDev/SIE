@@ -3,6 +3,8 @@ export interface Props {
   redirectUrl?: string
 }
 const { redirectUrl = '/dashboard' } = Astro.props
+const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com').replace(/\/+$/, '')
+const endpoint = baseUrl + '/api/login'
 ---
 
 <div
@@ -26,7 +28,7 @@ const { redirectUrl = '/dashboard' } = Astro.props
     </button>
   </div>
 
-  <form id="login-form" class="space-y-5" novalidate data-redirect={redirectUrl}>
+  <form id="login-form" class="space-y-5" novalidate data-redirect={redirectUrl} data-endpoint={endpoint}>
     <div class="space-y-2">
       <label for="doc-id" class="ml-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
         Número de Identificación
@@ -88,7 +90,7 @@ const { redirectUrl = '/dashboard' } = Astro.props
       </svg>
     </button>
 
-    <div id="login-error" class="hidden rounded-xl bg-brand-danger/10 border border-brand-danger/30 px-4 py-3 text-sm text-brand-danger font-medium text-center" role="alert"></div>
+    <div id="login-error" class="rounded-xl bg-brand-danger/10 border border-brand-danger/30 px-4 py-3 text-sm text-brand-danger font-medium text-center min-h-[2.75rem] flex items-center justify-center empty:hidden" role="alert" aria-live="polite"></div>
   </form>
 
   <div class="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-3">
@@ -102,23 +104,24 @@ const { redirectUrl = '/dashboard' } = Astro.props
 
 <script>
   (function () {
-    const container = document.getElementById('login-island')
+    var container = document.getElementById('login-island')
     if (!container) return
 
-    const tabEst = document.getElementById('tab-estudiante')
-    const tabDoc = document.getElementById('tab-docente')
-    const slider = document.getElementById('tab-slider')
-    const passwordGroup = document.getElementById('password-group')
-    const passwordInput = document.getElementById('password')
-    const form = document.getElementById('login-form')
-    const redirectTarget = form?.getAttribute('data-redirect') || '/dashboard'
-    const docInput = document.getElementById('doc-id')
-    const submitBtn = document.getElementById('login-submit')
-    const submitText = document.getElementById('submit-text')
-    const submitSpinner = document.getElementById('submit-spinner')
-    const errorDiv = document.getElementById('login-error')
+    var tabEst = document.getElementById('tab-estudiante')
+    var tabDoc = document.getElementById('tab-docente')
+    var slider = document.getElementById('tab-slider')
+    var passwordGroup = document.getElementById('password-group')
+    var passwordInput = document.getElementById('password')
+    var form = document.getElementById('login-form')
+    var endpoint = form.getAttribute('data-endpoint')
+    var redirectTarget = form.getAttribute('data-redirect') || '/dashboard'
+    var docInput = document.getElementById('doc-id')
+    var submitBtn = document.getElementById('login-submit')
+    var submitText = document.getElementById('submit-text')
+    var submitSpinner = document.getElementById('submit-spinner')
+    var errorDiv = document.getElementById('login-error')
 
-    let currentTab = 'estudiante'
+    var currentTab = 'estudiante'
 
     function setTab(tab) {
       currentTab = tab
@@ -141,46 +144,49 @@ const { redirectUrl = '/dashboard' } = Astro.props
       }
     }
 
-    tabEst.addEventListener('click', () => setTab('estudiante'))
-    tabDoc.addEventListener('click', () => setTab('docente'))
+    tabEst.addEventListener('click', function () { setTab('estudiante') })
+    tabDoc.addEventListener('click', function () { setTab('docente') })
 
-    docInput.addEventListener('focus', () => {
-      docInput.parentElement.querySelector('svg')?.classList.add('text-brand-gold')
+    docInput.addEventListener('focus', function () {
+      var icon = docInput.parentElement.querySelector('svg')
+      if (icon) icon.classList.add('text-brand-gold')
     })
-    docInput.addEventListener('blur', () => {
-      docInput.parentElement.querySelector('svg')?.classList.remove('text-brand-gold')
+    docInput.addEventListener('blur', function () {
+      var icon = docInput.parentElement.querySelector('svg')
+      if (icon) icon.classList.remove('text-brand-gold')
     })
-    passwordInput.addEventListener('focus', () => {
-      passwordInput.parentElement.querySelector('svg')?.classList.add('text-brand-gold')
+    passwordInput.addEventListener('focus', function () {
+      var icon = passwordInput.parentElement.querySelector('svg')
+      if (icon) icon.classList.add('text-brand-gold')
     })
-    passwordInput.addEventListener('blur', () => {
-      passwordInput.parentElement.querySelector('svg')?.classList.remove('text-brand-gold')
+    passwordInput.addEventListener('blur', function () {
+      var icon = passwordInput.parentElement.querySelector('svg')
+      if (icon) icon.classList.remove('text-brand-gold')
     })
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async function (e) {
       e.preventDefault()
-      errorDiv.classList.add('hidden')
+      errorDiv.textContent = ''
+      errorDiv.classList.remove('hidden')
       submitText.textContent = 'Validando...'
       submitSpinner.classList.remove('hidden')
       submitBtn.disabled = true
 
-      const docId = docInput.value.trim()
-      const password = passwordInput.value
+      var docId = docInput.value.trim()
+      var password = passwordInput.value
 
       if (!docId) {
         errorDiv.textContent = 'Ingresa tu número de identificación.'
-        errorDiv.classList.remove('hidden')
         submitText.textContent = 'Ingresar al Portal'
         submitSpinner.classList.add('hidden')
         submitBtn.disabled = false
         return
       }
 
-      const payload = { tipo: currentTab === 'estudiante' ? 'estudiante' : 'docente', documento: docId }
+      var payload = { tipo: currentTab === 'estudiante' ? 'estudiante' : 'docente', documento: docId }
       if (currentTab === 'docente') {
         if (!password) {
           errorDiv.textContent = 'Ingresa tu contraseña.'
-          errorDiv.classList.remove('hidden')
           submitText.textContent = 'Ingresar al Portal'
           submitSpinner.classList.add('hidden')
           submitBtn.disabled = false
@@ -190,19 +196,19 @@ const { redirectUrl = '/dashboard' } = Astro.props
       }
 
       try {
-        const res = await fetch('https://backend-colegio-hdx7.onrender.com/api/login', {
+        var res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
 
         if (!res.ok) {
-          const errData = await res.json().catch(() => ({}))
+          var errData = await res.json().catch(function () { return {} })
           throw new Error(errData.mensaje || errData.error || 'Credenciales inválidas. Verifica tus datos e intenta de nuevo.')
         }
 
-        const data = await res.json()
-        const claims = data.usuario || data.claims || data
+        var data = await res.json()
+        var claims = data.usuario || data.claims || data
 
         localStorage.setItem('userRole', claims.rol || claims.tipo || currentTab.toUpperCase())
         localStorage.setItem('userName', claims.nombre || claims.name || '')
@@ -214,7 +220,6 @@ const { redirectUrl = '/dashboard' } = Astro.props
         window.location.href = redirectTarget
       } catch (err) {
         errorDiv.textContent = err.message || 'Error de conexión. Intenta de nuevo.'
-        errorDiv.classList.remove('hidden')
         submitText.textContent = 'Ingresar al Portal'
         submitSpinner.classList.add('hidden')
         submitBtn.disabled = false

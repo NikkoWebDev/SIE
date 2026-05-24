@@ -17,25 +17,20 @@ const navItems: Record<string, { label: string; icon: string; href: string; prem
 }
 const menu = navItems[userRole || ''] || []
 const hasDebt = userRole === 'ESTUDIANTE' && isPaid === false
+const skeletonHeight = 'h-16 lg:h-screen'
 ---
+
+<script is:inline>
+  (function(){var r=localStorage.getItem('userRole')||'ESTUDIANTE',p=localStorage.getItem('is_paid')!=='false',d=r==='ESTUDIANTE'&&!p;if(d){var n=document.querySelector('[data-pill-nav]');if(n){n.querySelectorAll('[data-premium]').forEach(function(e){e.setAttribute('tabindex','-1');e.setAttribute('aria-disabled','true');e.classList.add('pointer-events-none','opacity-60');var b=document.createElement('span');b.className='ml-auto text-[10px] font-bold uppercase tracking-wider text-brand-danger animate-pulse';b.textContent='\u26A0\uFE0F EN MORA';e.appendChild(b)})}}})();
+</script>
 
 <nav
   id="floating-pill-nav"
-  class="
-    fixed bottom-4 left-1/2 -translate-x-1/2 z-50
-    lg:left-0 lg:bottom-auto lg:top-0 lg:translate-x-0 lg:fixed lg:z-40 lg:h-screen lg:w-64
-    flex lg:flex-col items-center gap-1
-    rounded-2xl lg:rounded-none
-    bg-white/70 dark:bg-gray-900/70 backdrop-blur-3xl
-    border border-white/20 dark:border-white/10
-    shadow-2xl
-    px-2 py-2 lg:px-3 lg:py-6
-    transition-all duration-300
-  "
+  class={skeletonHeight + " fixed bottom-4 left-1/2 -translate-x-1/2 z-50 lg:left-0 lg:bottom-auto lg:top-0 lg:translate-x-0 lg:z-40 lg:w-64 flex lg:flex-col items-center gap-1 rounded-2xl lg:rounded-none bg-white/70 dark:bg-gray-900/70 backdrop-blur-3xl border border-white/20 dark:border-white/10 shadow-2xl px-2 py-2 lg:px-3 lg:py-6 transition-all duration-300"}
   data-pill-nav
 >
   <div class="hidden lg:flex items-center gap-3 px-6 py-5 border-b border-white/10 w-full mb-4">
-    <div class="h-9 w-9 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-bold text-lg">C</div>
+    <div class="h-9 w-9 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-bold text-lg shrink-0">C</div>
     <span class="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">C sol · SIE</span>
   </div>
   {
@@ -44,24 +39,22 @@ const hasDebt = userRole === 'ESTUDIANTE' && isPaid === false
       return (
         <a
           href={locked ? '#' : item.href}
-          class={`
-            relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
-            transition-all duration-200
-            ${locked
-              ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-60'
-              : 'text-gray-600 dark:text-gray-300 hover:bg-brand-maroon/10 dark:hover:bg-brand-maroon/20 hover:text-brand-maroon dark:hover:text-white'
-            }
-            ${hasDebt && item.premium ? 'ring-1 ring-brand-danger/30' : ''}
-          `}
+          tabindex={locked ? '-1' : '0'}
+          aria-disabled={locked ? 'true' : 'false'}
+          data-premium={item.premium ? 'true' : undefined}
+          class={[
+            'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+            locked ? 'text-gray-400 dark:text-gray-600 opacity-60 pointer-events-none ring-1 ring-brand-danger/30' : 'text-gray-600 dark:text-gray-300 hover:bg-brand-maroon/10 dark:hover:bg-brand-maroon/20 hover:text-brand-maroon dark:hover:text-white',
+          ].join(' ')}
           data-nav-item
           data-locked={locked ? 'true' : 'false'}
         >
           <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon} />
           </svg>
-          <span class="hidden lg:inline">{item.label}</span>
+          <span class="hidden lg:inline truncate">{item.label}</span>
           {locked && (
-            <span class="hidden lg:inline ml-auto text-[10px] font-bold uppercase tracking-wider text-brand-danger animate-pulse">
+            <span class="hidden lg:inline ml-auto text-[10px] font-bold uppercase tracking-wider text-brand-danger animate-pulse shrink-0">
               ⚠️ EN MORA
             </span>
           )}
@@ -72,7 +65,7 @@ const hasDebt = userRole === 'ESTUDIANTE' && isPaid === false
   {hasDebt && (
     <div class="hidden lg:flex mt-auto border-t border-white/10 w-full pt-4 px-3">
       <div class="flex items-center gap-2 rounded-lg bg-brand-danger/10 px-3 py-2 w-full">
-        <span class="h-2 w-2 rounded-full bg-brand-danger animate-pulse"></span>
+        <span class="h-2 w-2 rounded-full bg-brand-danger animate-pulse shrink-0"></span>
         <span class="text-xs font-bold text-brand-danger uppercase tracking-wider">⚠️ EN MORA</span>
       </div>
     </div>
@@ -88,25 +81,28 @@ const hasDebt = userRole === 'ESTUDIANTE' && isPaid === false
 
 <script>
   (function () {
-    const nav = document.getElementById('floating-pill-nav')
+    var nav = document.getElementById('floating-pill-nav')
     if (!nav) return
-
-    const updateFromStorage = () => {
-      const role = localStorage.getItem('userRole') || 'ESTUDIANTE'
-      const paid = localStorage.getItem('is_paid') !== 'false'
-      const items = nav.querySelectorAll('[data-nav-item]')
-      const debtLabels = nav.querySelectorAll('[data-debt-label]')
-
-      items.forEach(el => {
-        const locked = role === 'ESTUDIANTE' && !paid && el.dataset.locked === 'true'
+    function sync() {
+      var role = localStorage.getItem('userRole') || 'ESTUDIANTE'
+      var paid = localStorage.getItem('is_paid') !== 'false'
+      var items = nav.querySelectorAll('[data-nav-item]')
+      items.forEach(function (el) {
+        var locked = role === 'ESTUDIANTE' && !paid && el.getAttribute('data-locked') === 'true'
+        el.setAttribute('tabindex', locked ? '-1' : '0')
+        el.setAttribute('aria-disabled', locked ? 'true' : 'false')
+        el.classList.toggle('pointer-events-none', locked)
+        el.classList.toggle('opacity-60', locked)
+        el.classList.toggle('ring-1', locked)
+        el.classList.toggle('ring-brand-danger/30', locked)
         if (locked) {
-          el.classList.add('opacity-60', 'cursor-not-allowed', 'ring-1', 'ring-brand-danger/30')
           el.classList.remove('text-gray-600', 'dark:text-gray-300', 'hover:bg-brand-maroon/10', 'dark:hover:bg-brand-maroon/20', 'hover:text-brand-maroon', 'dark:hover:text-white')
+        } else {
+          el.classList.add('text-gray-600', 'dark:text-gray-300', 'hover:bg-brand-maroon/10', 'dark:hover:bg-brand-maroon/20', 'hover:text-brand-maroon', 'dark:hover:text-white')
         }
       })
     }
-
-    updateFromStorage()
-    window.addEventListener('storage', updateFromStorage)
+    sync()
+    window.addEventListener('storage', sync)
   })()
 </script>
