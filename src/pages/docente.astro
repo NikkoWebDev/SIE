@@ -9,17 +9,17 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.o
   <FloatingPillNav userRole="PROFESOR" />
   <div class="relative z-10 px-4 md:px-6 lg:px-8 pt-4 lg:pt-6 max-w-7xl mx-auto">
     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 auto-rows-min">
-      <div class="col-span-2 sm:col-span-6 lg:col-span-6 xl:col-span-8 mb-2">
+      <div class="col-span-2 sm:col-span-6 lg:col-span-6 xl:col-span-8 mb-2 animate-slide-down">
         <h1 class="text-xl md:text-3xl font-bold text-gray-900 dark:text-white">Control de Notas</h1>
         <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Registro de calificaciones · Metodología ABP</p>
       </div>
 
-      <div class="col-span-2 sm:col-span-3 lg:col-span-3 xl:col-span-4">
+      <div class="col-span-2 sm:col-span-3 lg:col-span-3 xl:col-span-4 animate-slide-right">
         <GradeInputForm />
       </div>
 
-      <div class="col-span-2 sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
-        <div class="flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 pb-3 mb-4">
+      <div class="col-span-2 sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl p-5 transition-all hover:shadow-lg animate-slide-up" style="animation-delay:100ms">
+        <div class="flex items-center gap-3 border-b border-gray-200/50 dark:border-gray-800/50 pb-3 mb-4">
           <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gold/20">
             <svg class="h-5 w-5 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
           </div>
@@ -29,13 +29,21 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.o
           </div>
         </div>
         <div id="recent-grades" class="space-y-2 text-sm">
-          <p class="text-gray-400">Cargando...</p>
+          <div class="h-5 rounded shimmer-skeleton"></div>
+          <div class="h-5 rounded shimmer-skeleton w-5/6"></div>
+          <div class="h-5 rounded shimmer-skeleton w-2/3"></div>
         </div>
       </div>
 
-      <div class="col-span-2 sm:col-span-6 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
-          <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Alertas de Riesgo Activas</h2>
+      <div class="col-span-2 sm:col-span-6 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl overflow-hidden transition-all hover:shadow-lg animate-slide-up" style="animation-delay:200ms">
+        <div class="px-5 py-4 border-b border-gray-200/50 dark:border-gray-800/50 flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-danger/10">
+            <svg class="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+          </div>
+          <div>
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Alertas de Riesgo Activas</h2>
+            <p class="text-xs text-gray-400">Estudiantes por debajo del umbral 3.5</p>
+          </div>
         </div>
         <div class="p-5" id="teacher-risk-feed">
           <p class="text-sm text-gray-400">Conectando con el sistema de alertas...</p>

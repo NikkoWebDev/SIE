@@ -9,12 +9,12 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.o
   <FloatingPillNav userRole="RECTOR" />
   <div class="relative z-10 px-4 md:px-6 lg:px-8 pt-4 lg:pt-6 max-w-7xl mx-auto">
     <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 auto-rows-min">
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 mb-2">
+      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 mb-2 animate-slide-down">
         <h1 class="text-xl md:text-3xl font-bold text-gray-900 dark:text-white">Panel Administrativo</h1>
         <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Gestión financiera · Estado de pagos estudiantiles</p>
       </div>
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl overflow-hidden transition-all hover:shadow-lg animate-slide-up">
+        <div class="px-5 py-4 border-b border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-maroon/10">
               <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -33,10 +33,12 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.o
           </div>
         </div>
         <div class="p-5 space-y-2 max-h-[600px] overflow-y-auto" id="student-financial-list">
-          <p class="text-sm text-gray-400">Cargando estudiantes...</p>
+          <div class="h-12 rounded-xl shimmer-skeleton"></div>
+          <div class="h-12 rounded-xl shimmer-skeleton"></div>
+          <div class="h-12 rounded-xl shimmer-skeleton"></div>
         </div>
       </div>
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
+      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl p-5 transition-all hover:shadow-lg animate-slide-up" style="animation-delay:100ms">
         <div class="flex items-center gap-3 mb-4">
           <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gold/20">
             <svg class="h-5 w-5 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

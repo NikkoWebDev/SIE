@@ -109,10 +109,10 @@ class AdminResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    document_id: str = Field(..., min_length=5)
-    password: Optional[str] = None
+    document_id: str = Field(..., min_length=5, alias="documento")
+    password: Optional[str] = Field(default=None, alias="contraseña")
 
-    model_config = {"extra": "forbid"}
+    model_config = {"populate_by_name": True, "extra": "forbid"}
 
 
 class LoginResponse(BaseModel):

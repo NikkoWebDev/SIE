@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 from typing import Any
 
+from datetime import datetime, timedelta, timezone
+
 import jwt
 from dotenv import load_dotenv
 from fastapi import HTTPException, Query, Request, WebSocket, WebSocketDisconnect
@@ -35,7 +37,7 @@ MONGO_URI: str = os.getenv("MONGO_URL") or os.getenv(
 MONGO_DB: str = os.getenv("MONGO_DB", "sie_core")
 
 SKIP_AUTH_PATHS: frozenset[str] = frozenset({
-    "/", "/api/health", "/api/login", "/docs", "/openapi.json", "/redoc",
+    "/", "/api/health", "/api/login", "/api/auth/login", "/docs", "/openapi.json", "/redoc",
 })
 FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
     "/api/grades/download-pdf",
@@ -75,7 +77,13 @@ async def close_db() -> None:
         logger.info("mongodb disconnected")
 
 
-def encode_jwt(payload: dict[str, Any]) -> str:
+TOKEN_EXPIRY_HOURS: int = int(os.getenv("TOKEN_EXPIRY_HOURS", "8"))
+
+
+def encode_jwt(payload: dict[str, Any], expires_hours: int = TOKEN_EXPIRY_HOURS) -> str:
+    payload = dict(payload)
+    payload.setdefault("iat", datetime.now(timezone.utc))
+    payload.setdefault("exp", datetime.now(timezone.utc) + timedelta(hours=expires_hours))
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 

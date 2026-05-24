@@ -1,0 +1,260 @@
+---
+import SEOHead from '@components/SEOHead.astro'
+const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.com').replace(/\/+$/, '')
+---
+
+<!doctype html>
+<html lang="es-CO" class="dark scroll-smooth">
+  <head>
+    <SEOHead titulo="Portal de Acceso Soleísta · C sol SIE" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      (function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
+    </script>
+  </head>
+  <body class="font-sans antialiased bg-black text-white overflow-hidden">
+    <div id="login-error-toast" class="fixed top-6 right-6 z-[100] hidden" role="alert" aria-live="assertive">
+      <div class="flex items-center gap-4 rounded-xl border border-brand-danger/50 bg-white/5 dark:bg-gray-900/80 backdrop-blur-xl px-5 py-4 shadow-2xl toast-entrance">
+        <div>
+          <p class="text-sm font-semibold text-brand-danger">Error de Autenticación</p>
+          <p id="toast-msg" class="text-xs text-gray-400">Verifique sus credenciales soleístas</p>
+        </div>
+        <button id="toast-close" class="ml-2 text-gray-500 hover:text-white transition-colors" aria-label="Cerrar">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <main class="flex h-screen w-full">
+      <section class="hidden lg:flex lg:w-[45%] bg-black relative overflow-hidden flex-col justify-center px-16">
+        <div class="absolute inset-0 opacity-40" style="background-image:radial-gradient(circle at 2px 2px,rgba(255,255,255,0.05) 1px,transparent 0);background-size:32px 32px"></div>
+        <div class="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-brand-maroon/20 blur-[120px] rounded-full"></div>
+        <div class="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-brand-gold/10 blur-[100px] rounded-full"></div>
+        <div class="relative z-10">
+          <div class="mb-12">
+            <div class="w-24 h-24 mb-8 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-extrabold text-4xl shadow-2xl">C</div>
+          </div>
+          <h1 class="text-5xl md:text-6xl font-extrabold tracking-tighter text-white mb-6 leading-tight">
+            Comunidad <span class="text-brand-maroon">Soleísta</span>
+          </h1>
+          <p class="text-2xl md:text-3xl font-semibold text-gray-400 max-w-md">
+            Ciencia, Técnica y Sol
+          </p>
+          <div class="mt-16 flex items-center gap-4">
+            <div class="h-[2px] w-12 bg-brand-maroon"></div>
+            <span class="text-xs font-bold uppercase tracking-[0.15em] text-brand-gold">Excelencia Académica</span>
+          </div>
+        </div>
+        <div class="absolute bottom-12 left-16 text-xs font-bold uppercase tracking-[0.15em] text-gray-600">
+          v3.0.4 // CORE_ENGINE_ACTIVE // INSTITUCIONAL_PORTAL
+        </div>
+      </section>
+      <section class="w-full lg:w-[55%] bg-[#040405] flex items-center justify-center p-6 sm:p-12 relative">
+        <div class="absolute top-[20%] -right-[10%] w-[300px] h-[300px] bg-brand-maroon/10 blur-[100px] rounded-full pointer-events-none"></div>
+        <div class="absolute bottom-[10%] -left-[5%] w-[200px] h-[200px] bg-brand-gold/5 blur-[80px] rounded-full pointer-events-none"></div>
+        <div class="w-full max-w-md">
+          <div class="lg:hidden text-center mb-10">
+            <div class="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-brand-gold shadow-lg mb-3">
+              <span class="text-2xl font-extrabold text-brand-maroon">C</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Solara Academic</h1>
+          </div>
+          <div class="rounded-[2rem] border border-white/[0.08] bg-[rgba(23,23,23,0.2)] backdrop-blur-[40px] p-8 sm:p-10 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)]">
+            <div class="mb-8 text-center">
+              <h2 class="text-3xl font-bold text-white mb-2">Iniciar Sesión</h2>
+              <p class="text-sm text-gray-400">Bienvenido al ecosistema académico</p>
+            </div>
+            <div class="relative flex h-12 rounded-full bg-white/[0.05] p-1 mb-8">
+              <div id="tab-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-brand-maroon transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-0" style="left:4px"></div>
+              <button id="tab-estudiante" class="relative z-10 flex-1 rounded-full text-sm font-semibold text-white transition-colors duration-300" data-login-tab="estudiante">Estudiante</button>
+              <button id="tab-personal" class="relative z-10 flex-1 rounded-full text-sm font-semibold text-gray-500 transition-colors duration-300" data-login-tab="personal">Personal</button>
+            </div>
+            <form id="login-form" class="space-y-6" novalidate data-endpoint={baseUrl + "/api/auth/login"}>
+              <div class="space-y-2">
+                <label for="doc-id" class="ml-1 text-xs font-bold uppercase tracking-wider text-gray-400">Identificación Institucional</label>
+                <div class="relative">
+                  <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                  <input id="doc-id" type="text" inputmode="numeric" autocomplete="username" placeholder="ID-000000" required class="w-full h-14 pl-12 pr-4 rounded-xl text-white placeholder:text-gray-600 bg-black/30 border border-white/10 focus:border-brand-gold focus:shadow-[0_0_15px_rgba(253,192,3,0.2)] outline-none transition-all duration-300" data-login-input />
+                </div>
+              </div>
+              <div id="password-group" class="space-y-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" style="max-height:0;opacity:0;pointer-events:none">
+                <label for="password" class="ml-1 text-xs font-bold uppercase tracking-wider text-gray-400">Contraseña</label>
+                <div class="relative">
+                  <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" class="w-full h-14 pl-12 pr-4 rounded-xl text-white placeholder:text-gray-600 bg-black/30 border border-white/10 focus:border-brand-gold focus:shadow-[0_0_15px_rgba(253,192,3,0.2)] outline-none transition-all duration-300" data-login-input />
+                </div>
+              </div>
+              <div class="flex justify-end">
+                <a href="#" class="text-xs font-semibold tracking-wide text-brand-gold hover:underline opacity-80 transition-opacity">¿Problemas de acceso?</a>
+              </div>
+              <button id="login-submit" type="submit" class="relative w-full h-14 rounded-xl bg-brand-maroon text-white font-bold text-sm uppercase tracking-wider hover:bg-brand-maroon/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 overflow-hidden group">
+                <span id="submit-text">Ingresar al Portal</span>
+                <svg id="submit-spinner" class="hidden h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <svg class="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+              </button>
+              <div id="login-error" class="rounded-xl bg-brand-danger/10 border border-brand-danger/30 px-4 py-3 text-sm text-brand-danger font-medium text-center min-h-[2.75rem] flex items-center justify-center empty:hidden" role="alert" aria-live="polite"></div>
+            </form>
+            <div class="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-3">
+              <p class="text-[11px] text-gray-500">Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</p>
+              <div class="flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-brand-green animate-pulse"></span>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-gray-500">Servidores en línea</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+
+<script>
+  (function () {
+    var tabEst = document.getElementById('tab-estudiante')
+    var tabPer = document.getElementById('tab-personal')
+    var slider = document.getElementById('tab-slider')
+    var passwordGroup = document.getElementById('password-group')
+    var passwordInput = document.getElementById('password')
+    var form = document.getElementById('login-form')
+    var endpoint = form.getAttribute('data-endpoint')
+    var docInput = document.getElementById('doc-id')
+    var submitBtn = document.getElementById('login-submit')
+    var submitText = document.getElementById('submit-text')
+    var submitSpinner = document.getElementById('submit-spinner')
+    var errorDiv = document.getElementById('login-error')
+    var toast = document.getElementById('login-error-toast')
+    var toastMsg = document.getElementById('toast-msg')
+    var toastClose = document.getElementById('toast-close')
+    var currentTab = 'estudiante'
+
+    function setTab(tab) {
+      currentTab = tab
+      if (tab === 'estudiante') {
+        slider.style.left = '4px'
+        passwordGroup.style.maxHeight = '0'
+        passwordGroup.style.opacity = '0'
+        passwordGroup.style.pointerEvents = 'none'
+        passwordInput.required = false
+        tabEst.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-white transition-colors duration-300'
+        tabPer.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-gray-500 transition-colors duration-300'
+      } else {
+        slider.style.left = 'calc(50% + 4px)'
+        passwordGroup.style.maxHeight = '120px'
+        passwordGroup.style.opacity = '1'
+        passwordGroup.style.pointerEvents = 'auto'
+        passwordInput.required = true
+        tabPer.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-white transition-colors duration-300'
+        tabEst.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-gray-500 transition-colors duration-300'
+      }
+    }
+
+    tabEst.addEventListener('click', function () { setTab('estudiante') })
+    tabPer.addEventListener('click', function () { setTab('personal') })
+
+    function showError(msg) {
+      toastMsg.textContent = msg || 'Verifique sus credenciales soleístas'
+      toast.classList.remove('hidden')
+      setTimeout(function () { toast.classList.add('hidden') }, 5000)
+    }
+    toastClose.addEventListener('click', function () { toast.classList.add('hidden') })
+
+    docInput.addEventListener('focus', function () {
+      var icon = docInput.parentElement.querySelector('svg')
+      if (icon) icon.classList.add('text-brand-gold')
+    })
+    docInput.addEventListener('blur', function () {
+      var icon = docInput.parentElement.querySelector('svg')
+      if (icon) icon.classList.remove('text-brand-gold')
+    })
+    passwordInput.addEventListener('focus', function () {
+      var icon = passwordInput.parentElement.querySelector('svg')
+      if (icon) icon.classList.add('text-brand-gold')
+    })
+    passwordInput.addEventListener('blur', function () {
+      var icon = passwordInput.parentElement.querySelector('svg')
+      if (icon) icon.classList.remove('text-brand-gold')
+    })
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault()
+      errorDiv.textContent = ''
+      submitText.textContent = 'Validando...'
+      submitSpinner.classList.remove('hidden')
+      submitBtn.disabled = true
+
+      var docId = docInput.value.trim()
+      var password = passwordInput.value
+
+      if (!docId) {
+        errorDiv.textContent = 'Ingresa tu identificación institucional.'
+        submitText.textContent = 'Ingresar al Portal'
+        submitSpinner.classList.add('hidden')
+        submitBtn.disabled = false
+        return
+      }
+
+      var payload = { tipo: currentTab === 'estudiante' ? 'estudiante' : 'personal', documento: docId }
+      if (currentTab === 'personal') {
+        if (!password) {
+          errorDiv.textContent = 'Ingresa tu contraseña.'
+          submitText.textContent = 'Ingresar al Portal'
+          submitSpinner.classList.add('hidden')
+          submitBtn.disabled = false
+          return
+        }
+        payload.contraseña = password
+      }
+
+      try {
+        var res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+
+        if (res.status === 401) {
+          showError('Credenciales inválidas. Verifica tus datos soleístas.')
+          submitText.textContent = 'Ingresar al Portal'
+          submitSpinner.classList.add('hidden')
+          submitBtn.disabled = false
+          return
+        }
+
+        if (!res.ok) {
+          var errData = await res.json().catch(function () { return {} })
+          throw new Error(errData.mensaje || errData.error || 'Error de autenticación.')
+        }
+
+        var data = await res.json()
+        var token = data.access_token || data.token || ''
+
+        localStorage.setItem('access_token', token)
+        localStorage.setItem('userRole', (data.rol || data.tipo || currentTab).toUpperCase())
+        localStorage.setItem('userName', data.nombre || data.name || data.fullname || '')
+        localStorage.setItem('userId', data.documento || data.id || data.document_id || docId)
+        localStorage.setItem('is_paid', String(data.is_paid !== false))
+        if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
+
+        submitText.textContent = '¡Bienvenido!'
+        window.location.href = '/dashboard'
+      } catch (err) {
+        errorDiv.textContent = err.message || 'Error de conexión. Intenta de nuevo.'
+        submitText.textContent = 'Ingresar al Portal'
+        submitSpinner.classList.add('hidden')
+        submitBtn.disabled = false
+      }
+    })
+  })()
+</script>
+
+<style>
+  .toast-entrance {
+    animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  @keyframes slideInRight {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+</style>

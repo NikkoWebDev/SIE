@@ -15,7 +15,18 @@ const { titulo, sinMenu } = Astro.props
       (function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
     </script>
   </head>
-  <body class="font-sans antialiased bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300">
+  <body class="font-sans antialiased bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300 animate-fade-in">
+    <style>
+      ::selection { background: #800000; color: #fff; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(128,0,0,0.3); border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(128,0,0,0.5); }
+      .shimmer-skeleton { background: linear-gradient(90deg, transparent 0%, rgba(128,0,0,0.04) 50%, transparent 100%); background-size: 200% 100%; animation: shimmer 2s infinite linear; }
+      .dark .shimmer-skeleton { background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%); background-size: 200% 100%; animation: shimmer 2s infinite linear; }
+      .glass-panel { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); }
+      .dark .glass-panel { background: rgba(0,0,0,0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.06); }
+    </style>
     {
       !sinMenu && (
         <div id="sidebar-shell" class="flex min-h-screen">
@@ -58,20 +69,21 @@ const { titulo, sinMenu } = Astro.props
           </aside>
           <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/50 hidden lg:hidden" data-sidebar-overlay></div>
           <div class="flex flex-1 flex-col lg:ml-64">
-            <header class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-gray-200 bg-white/80 backdrop-blur-md px-4 dark:border-gray-800 dark:bg-gray-900/80">
-              <button id="menu-toggle" class="lg:hidden rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" aria-label="Abrir menú">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            <header class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-gray-200/50 dark:border-gray-800/50 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl px-4 md:px-6">
+              <button id="menu-toggle" class="lg:hidden rounded-xl p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors" aria-label="Abrir menú">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
               </button>
               <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <span>Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</span>
+                <span class="hidden sm:inline">Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</span>
+                <span class="sm:hidden">C sol · SIE</span>
               </div>
               <div class="ml-auto flex items-center gap-3">
-                <div class="hidden sm:flex items-center gap-2 text-sm">
-                  <span class="h-2 w-2 rounded-full bg-brand-green"></span>
-                  <span class="text-gray-600 dark:text-gray-400">Jornada activa</span>
+                <div class="hidden sm:flex items-center gap-2 text-xs">
+                  <span class="h-2 w-2 rounded-full bg-brand-green animate-pulse-slow"></span>
+                  <span class="text-gray-500 dark:text-gray-400 font-medium">En línea</span>
                 </div>
-                <div class="h-8 w-8 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-bold text-sm">AD</div>
+                <div class="h-8 w-8 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-bold text-sm shadow-sm">AD</div>
               </div>
             </header>
             <main class="flex-1 p-4 md:p-6 lg:p-8">

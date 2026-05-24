@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -14,29 +15,22 @@ if _dotenv_path.exists():
     load_dotenv(_dotenv_path)
 
 import jwt
-from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
-from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel, Field, model_validator
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas as pdf_canvas
 
-# ---------------------------------------------------------------------------
-# Config
-# ---------------------------------------------------------------------------
-MONGO_URI: str = os.getenv("MONGO_URL") or os.getenv(
-    "MONGODB_URI",
-    "mongodb+srv://admin:password@cluster0.example.mongodb.net/?retryWrites=true&w=majority",
+from dependencies import (
+    JWT_ALGORITHM, JWT_SECRET, MONGO_DB, MONGO_URI, SKIP_AUTH_PATHS,
+    decode_jwt, get_db, init_db, is_financial_locked_path,
 )
-MONGO_DB: str = os.getenv("MONGO_DB", "sie_core")
-GRADES_COLL: str = "grades"
-STUDENTS_COLL: str = "students"
-RISK_THRESHOLD: float = 3.5
-MAX_GRADE: float = 5.0
-QUEUE_SIZE: int = int(os.getenv("QUEUE_SIZE", "1024"))
-JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
-JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+from routers.grades import get_risk_queue, risk_agent_worker, set_ws_manager
+from routers.auth import router as auth_router, _hydrate_fallback
+from routers.students import router as students_router
+from routers.grades import router as grades_router
+from routers.notices import router as notices_router
+from routers.subjects import router as subjects_router
+from routers.exams import router as exams_router
+from routers.admin import router as admin_router
 
 logging.basicConfig(
     level=logging.WARNING if os.getenv("ENV") == "production" else logging.DEBUG,
@@ -44,40 +38,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger("siee.core")
 
-# ---------------------------------------------------------------------------
-# Pydantic schemas
-# ---------------------------------------------------------------------------
-class GradeSubmission(BaseModel):
-    student_id: str = Field(..., min_length=1, pattern=r"^\S+$")
-    teacher_id: str = Field(..., min_length=1, pattern=r"^\S+$")
-    course_id: str = Field(..., min_length=1, pattern=r"^\S+$")
-    project_id: str = Field(..., min_length=1, pattern=r"^\S+$")
-    subject_id: str = Field(..., min_length=1, pattern=r"^\S+$")
-    score: float = Field(..., ge=0.0, le=MAX_GRADE)
+COLLECTIONS: tuple[str, ...] = (
+    "students", "admins", "grades", "notices", "subjects", "guides",
+    "deliveries", "assignments", "exams", "exam_results", "exam_incidents",
+    "candidates", "votes",
+)
 
-    @model_validator(mode="after")
-    def _sanitize_ids(self) -> "GradeSubmission":
-        self.student_id = self.student_id.strip()
-        self.teacher_id = self.teacher_id.strip()
-        self.course_id = self.course_id.strip()
-        self.project_id = self.project_id.strip()
-        self.subject_id = self.subject_id.strip()
-        return self
+FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
+    "/api/grades/download-pdf",
+    "/api/grades/report-card",
+    "/api/grades/bulletin",
+    "/api/students/report",
+    "/api/reports/",
+)
 
+_worker_task: asyncio.Task[None] | None = None
 
-class RiskEvent(BaseModel):
-    type: str
-    msg: str
-    student_id: str = ""
-    score: float = 0.0
-    threshold: float = RISK_THRESHOLD
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 # ---------------------------------------------------------------------------
-# EcosystemSocketManager
+# EcosystemSocketManager (WebSocket live alerts)
 # ---------------------------------------------------------------------------
 class EcosystemSocketManager:
-
     def __init__(self) -> None:
         self.active_connections: dict[str, WebSocket] = {}
         self._lock = asyncio.Lock()
@@ -90,7 +71,7 @@ class EcosystemSocketManager:
     async def unregister(self, user_id: str) -> None:
         async with self._lock:
             ws = self.active_connections.pop(user_id, None)
-        if ws is not None:
+        if ws:
             try:
                 await ws.close()
             except Exception:
@@ -125,130 +106,52 @@ class EcosystemSocketManager:
     def count(self) -> int:
         return len(self.active_connections)
 
-# ---------------------------------------------------------------------------
-# Module-level state (populated during lifespan)
-# ---------------------------------------------------------------------------
-ws_manager: EcosystemSocketManager = EcosystemSocketManager()
-mongo_db: Any = None
-risk_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=QUEUE_SIZE)
-_worker_task: asyncio.Task[None] | None = None
 
-# ---------------------------------------------------------------------------
-# DB helpers
-# ---------------------------------------------------------------------------
-async def _persist_grade(db: Any, sub: GradeSubmission) -> str:
-    doc = sub.model_dump()
-    doc["created_at"] = datetime.now(timezone.utc)
-    result = await db[GRADES_COLL].insert_one(doc)
-    return str(result.inserted_id)
+ws_manager = EcosystemSocketManager()
 
-
-async def _mutate_risk(db: Any, student_id: str, at_risk: bool) -> None:
-    await db[STUDENTS_COLL].update_one(
-        {"_id": student_id},
-        {"$set": {
-            "is_at_risk": at_risk,
-            "risk_updated_at": datetime.now(timezone.utc),
-        }},
-        upsert=True,
-    )
-
-
-async def _fetch_student(db: Any, student_id: str) -> dict[str, Any] | None:
-    return await db[STUDENTS_COLL].find_one({"_id": student_id})
-
-# ---------------------------------------------------------------------------
-# Background risk worker
-# ---------------------------------------------------------------------------
-async def siee_risk_agent_worker() -> None:
-    logger.info("risk-agent started")
-    while True:
-        event: dict[str, Any] | None = await risk_queue.get()
-        if event is None:
-            risk_queue.task_done()
-            break
-        try:
-            student_id: str = event["student_id"]
-            teacher_id: str = event["teacher_id"]
-            score: float = event["score"]
-
-            at_risk = score < RISK_THRESHOLD
-            await _mutate_risk(mongo_db, student_id, at_risk)
-
-            if at_risk:
-                alert = RiskEvent(
-                    type="RISK_ALERT",
-                    msg="Plan de Apoyo Requerido: Agenda cita académica",
-                    student_id=student_id,
-                    score=score,
-                ).model_dump()
-                await ws_manager.send(student_id, alert)
-                await ws_manager.send(teacher_id, alert)
-
-            logger.info(
-                "risk-agent student=%s score=%.1f at_risk=%s q=%d",
-                student_id, score, at_risk, risk_queue.qsize(),
-            )
-        except Exception:
-            logger.exception("risk-agent failed event=%s", event)
-        finally:
-            risk_queue.task_done()
-    logger.info("risk-agent stopped")
 
 # ---------------------------------------------------------------------------
 # App lifecycle
 # ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global mongo_db, ws_manager, _worker_task
-
+    global _worker_task
     logger.info("siee core booting")
-    mongo_client = AsyncIOMotorClient(
-        MONGO_URI,
-        maxPoolSize=20,
-        minPoolSize=2,
-        serverSelectionTimeoutMS=5000,
-        connectTimeoutMS=5000,
-    )
-    mongo_db = mongo_client[MONGO_DB]
+    await init_db()
+    db = get_db()
+    await _hydrate_fallback(db)
     try:
-        await mongo_client.admin.command("ping")
-        logger.info("mongodb connected")
-    except Exception as exc:
-        logger.error("mongodb unreachable: %s", exc)
-        raise
-
-    _worker_task = asyncio.create_task(siee_risk_agent_worker())
-
-    try:
-        await mongo_db[STUDENTS_COLL].create_index(
-            [("is_at_risk", 1), ("risk_updated_at", -1)],
-            name="idx_student_risk",
-            background=True,
-        )
-        await mongo_db[GRADES_COLL].create_index(
-            [("student_id", 1), ("subject_id", 1), ("created_at", -1)],
-            name="idx_grade_student_subject",
-            background=True,
-        )
+        for coll in COLLECTIONS:
+            await db.create_collection(coll)
     except Exception:
         pass
-
+    try:
+        await db["grades"].create_index(
+            [("student_id", 1), ("subject_id", 1), ("created_at", -1)],
+            name="idx_grade_student_subject", background=True,
+        )
+        await db["students"].create_index(
+            [("is_at_risk", 1), ("is_paid", 1)], name="idx_student_flags", background=True,
+        )
+        await db["students"].create_index("document_id", unique=True, background=True, name="idx_student_doc")
+    except Exception:
+        pass
+    set_ws_manager(ws_manager)
+    _worker_task = asyncio.create_task(risk_agent_worker())
     yield
-
     logger.info("siee core shutting down")
-    await risk_queue.put(None)
-    if _worker_task is not None:
+    await get_risk_queue().put(None)
+    if _worker_task:
         try:
             await asyncio.wait_for(_worker_task, timeout=10.0)
         except (asyncio.TimeoutError, asyncio.CancelledError):
             _worker_task.cancel()
-    if mongo_client:
-        mongo_client.close()
+    from dependencies import close_db
+    await close_db()
     logger.info("siee core stopped")
 
 
-app = FastAPI(title="SIEE Core", version="4.0.0", lifespan=lifespan)
+app = FastAPI(title="SIEE Core — Solara Academic", version="4.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -258,13 +161,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------------------------
-# JWT helpers
-# ---------------------------------------------------------------------------
-SKIP_AUTH: frozenset[str] = frozenset({"/api/health", "/docs", "/openapi.json"})
-
-def _decode_jwt(token: str) -> dict[str, Any]:
-    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], options={"require": ["sub"]})
 
 # ---------------------------------------------------------------------------
 # Auth middleware
@@ -272,111 +168,88 @@ def _decode_jwt(token: str) -> dict[str, Any]:
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next: Any) -> Response:
     path = request.url.path
-    if request.method == "OPTIONS" or path.startswith("/ws") or path in SKIP_AUTH:
+    if request.method == "OPTIONS" or path.startswith("/ws") or path in SKIP_AUTH_PATHS:
         return await call_next(request)
-
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         return JSONResponse(status_code=401, content={"detail": "Authorization required"})
-
     try:
-        claims = _decode_jwt(auth_header[7:])
+        claims = decode_jwt(auth_header[7:])
     except jwt.ExpiredSignatureError:
         return JSONResponse(status_code=401, content={"detail": "Token expired"})
     except jwt.PyJWTError:
         return JSONResponse(status_code=401, content={"detail": "Invalid token"})
-
     request.state.user_id = claims["sub"]
+    request.state.user_role = claims.get("role", "ESTUDIANTE")
     return await call_next(request)
+
 
 # ---------------------------------------------------------------------------
 # Financial guard middleware
 # ---------------------------------------------------------------------------
 @app.middleware("http")
 async def financial_guard_middleware(request: Request, call_next: Any) -> Response:
-    if not request.url.path.startswith("/api/grades/download-pdf"):
+    if not is_financial_locked_path(request.url.path):
         return await call_next(request)
-
     student_id = request.query_params.get("student_id")
+    if not student_id and request.method == "POST":
+        try:
+            body = await request.body()
+            parsed = json.loads(body)
+            student_id = parsed.get("student_id")
+        except Exception:
+            pass
     if not student_id:
         return JSONResponse(status_code=422, content={"detail": "Query param student_id required"})
-
-    student = await _fetch_student(mongo_db, student_id)
+    db = get_db()
+    student = await db["students"].find_one({"document_id": student_id})
     if student is None:
         return JSONResponse(status_code=404, content={"detail": "Student not found"})
-
     if student.get("is_paid") is False:
-        logger.warning("financial-block student=%s", student_id)
-        return JSONResponse(status_code=403, content={"detail": "Estatus financiero irregular - Descarga restringida"})
-
+        logger.warning("financial-block student=%s path=%s", student_id, request.url.path)
+        return JSONResponse(status_code=403, content={"detail": "⚠️ Estatus financiero irregular — Descarga restringida por mora"})
     return await call_next(request)
 
+
 # ---------------------------------------------------------------------------
-# HTTP endpoints
+# Router mounts
 # ---------------------------------------------------------------------------
-@app.post("/api/teacher/submit-grade", status_code=201)
-async def submit_grade(submission: GradeSubmission) -> JSONResponse:
-    if mongo_db is None:
-        raise HTTPException(status_code=503, detail="Database not available")
-
-    grade_id = await _persist_grade(mongo_db, submission)
-
-    await risk_queue.put({
-        "student_id": submission.student_id,
-        "teacher_id": submission.teacher_id,
-        "course_id": submission.course_id,
-        "project_id": submission.project_id,
-        "subject_id": submission.subject_id,
-        "score": submission.score,
-        "grade_id": grade_id,
-    })
-
-    logger.info("grade=%s student=%s score=%.1f", grade_id, submission.student_id, submission.score)
-    return JSONResponse(status_code=201, content={"grade_id": grade_id, "status": "accepted"})
+app.include_router(auth_router)
+app.include_router(students_router)
+app.include_router(grades_router)
+app.include_router(notices_router)
+app.include_router(subjects_router)
+app.include_router(exams_router)
+app.include_router(admin_router)
 
 
-@app.get("/api/grades/download-pdf")
-async def download_grade_pdf(student_id: str = Query(..., min_length=1)) -> Response:
-    if mongo_db is None:
-        raise HTTPException(status_code=503, detail="Database not available")
-
-    grades_cursor = mongo_db[GRADES_COLL].find({"student_id": student_id}).sort("created_at", -1)
-    grades = await grades_cursor.to_list(length=100)
-
-    student = await _fetch_student(mongo_db, student_id)
-    name = student.get("nombre", student_id) if student else student_id
-
-    buf = _build_pdf(student_id, name, grades)
-    return Response(
-        content=buf.getvalue(),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="boletin_{student_id}.pdf"'},
-    )
+@app.get("/")
+async def root() -> dict[str, Any]:
+    return {"status": "online", "message": "SIEE Core — Solara Academic Backend v4.0.0", "colegio": "Ciudad del Sol"}
 
 
 @app.get("/api/health")
 async def health() -> dict[str, Any]:
     return {
         "status": "alive",
-        "queue_depth": risk_queue.qsize(),
+        "queue_depth": get_risk_queue().qsize(),
         "ws_connected": ws_manager.count,
     }
 
+
 # ---------------------------------------------------------------------------
-# WebSocket endpoint
+# WebSocket (live risk alerts + ABP notifications)
 # ---------------------------------------------------------------------------
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket, token: str = Query(..., min_length=1)) -> None:
     try:
-        claims = _decode_jwt(token)
+        claims = decode_jwt(token)
     except jwt.PyJWTError:
         await websocket.close(code=4001, reason="invalid_token")
         return
     user_id = claims["sub"]
-
     await websocket.accept()
     await ws_manager.register(user_id, websocket)
-
     try:
         while True:
             raw = await websocket.receive_text()
@@ -391,57 +264,7 @@ async def ws_endpoint(websocket: WebSocket, token: str = Query(..., min_length=1
     finally:
         await ws_manager.unregister(user_id)
 
-# ---------------------------------------------------------------------------
-# PDF builder
-# ---------------------------------------------------------------------------
-def _build_pdf(student_id: str, student_name: str, grades: list[dict[str, Any]]) -> Any:
-    from io import BytesIO
-    buf = BytesIO()
-    c = pdf_canvas.Canvas(buf, pagesize=A4)
-    w, h = A4
 
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(50, h - 60, "Colegio Técnico Ciudad del Sol")
-    c.setFont("Helvetica", 12)
-    c.drawString(50, h - 80, "Sistema de Información Estudiantil — Boletín Académico")
-    c.drawString(50, h - 100, f"Estudiante: {student_name}  |  ID: {student_id}")
-    c.drawString(50, h - 115, f"Fecha: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
-
-    c.setStrokeColorRGB(0.5, 0, 0)
-    c.line(50, h - 125, w - 50, h - 125)
-
-    y = h - 150
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, y, "Asignatura")
-    c.drawString(200, y, "Proyecto ABP")
-    c.drawString(350, y, "Nota")
-    c.drawString(430, y, "Estado")
-
-    c.setFont("Helvetica", 10)
-    for g in grades:
-        y -= 18
-        if y < 60:
-            c.showPage()
-            y = h - 60
-        score = g.get("score", 0)
-        if score < 3.5:
-            estado = "En Riesgo"
-        elif score >= 4.0:
-            estado = "Sobresaliente"
-        else:
-            estado = "Aceptable"
-        c.drawString(50, y, str(g.get("subject_id", "-"))[:28])
-        c.drawString(200, y, str(g.get("project_id", "-"))[:22])
-        c.drawString(350, y, f"{score:.1f}")
-        c.drawString(430, y, estado)
-
-    c.save()
-    buf.seek(0)
-    return buf
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
