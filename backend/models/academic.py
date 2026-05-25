@@ -89,3 +89,27 @@ class GuideDB(BaseModel):
     resource_type: str = "guide"
 
     model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+
+
+class RiskEvent(BaseModel):
+    type: str
+    msg: str
+    student_id: str = ""
+    materia: str = ""
+    score: float = 0.0
+    nota: float = 0.0
+    threshold: float = 3.5
+    is_at_risk: bool = True
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+def grade_color(score: float) -> str:
+    if score < 3.5:
+        return "#FF0000"
+    return "#00FF00"
+
+
+def grade_status(score: float) -> str:
+    if score < 3.5:
+        return "En Riesgo"
+    return "Aceptable"

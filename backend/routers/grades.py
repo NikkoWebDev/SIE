@@ -96,7 +96,10 @@ async def risk_agent_worker() -> None:
                     type="RISK_ALERT",
                     msg="Plan de Apoyo Requerido — Agenda cita académica",
                     student_id=student_id,
+                    materia=str(event.get("subject_id", "")),
                     score=score,
+                    nota=score,
+                    is_at_risk=True,
                 ).model_dump()
                 if ws_manager:
                     await ws_manager.send(student_id, alert)
