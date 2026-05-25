@@ -73,3 +73,12 @@ class ExamIncidentDB(BaseModel):
     strikes_before: int = 0
 
     model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+
+
+class IncidentReport(BaseModel):
+    student_id: str = Field(..., min_length=1)
+    exam_id: str = Field(..., min_length=1)
+    description: str = Field(..., min_length=1, max_length=2000)
+    severity: str = Field(default="medium", pattern=r"^(low|medium|high|critical)$")
+
+    model_config = {"extra": "forbid"}

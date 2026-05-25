@@ -47,6 +47,7 @@ from models.exam import (
     ExamSubmit,
     ExamResultDB,
     ExamIncidentDB,
+    IncidentReport,
 )
 
 from models.notice import (
@@ -97,6 +98,7 @@ __all__ = [
     "ExamCreate",
     "ExamDB",
     "ExamSubmit",
+    "IncidentReport",
     "ExamResultDB",
     "ExamIncidentDB",
     "NoticeCreate",
