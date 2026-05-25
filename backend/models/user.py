@@ -33,6 +33,15 @@ class StudentDB(StudentCreate):
     model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
 
 
+class StudentUpdate(BaseModel):
+    fullname: str | None = Field(default=None, max_length=120)
+    grade: str | None = Field(default=None, max_length=10)
+    is_paid: bool | None = None
+    is_at_risk: bool | None = None
+
+    model_config = {"extra": "forbid"}
+
+
 class StudentResponse(BaseModel):
     document_id: str
     fullname: str

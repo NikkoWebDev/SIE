@@ -2,6 +2,7 @@ from models.user import (
     StudentCreate,
     StudentDB,
     StudentResponse,
+    StudentUpdate,
     TeacherCreate,
     TeacherDB,
     TeacherResponse,
@@ -35,6 +36,7 @@ from models.attendance import (
 from models.financial import (
     PaymentStatus,
     FinancialStatus,
+    PaymentToggle,
     PaymentToggleRequest,
 )
 
@@ -64,6 +66,7 @@ __all__ = [
     "StudentCreate",
     "StudentDB",
     "StudentResponse",
+    "StudentUpdate",
     "TeacherCreate",
     "TeacherDB",
     "TeacherResponse",
@@ -88,6 +91,7 @@ __all__ = [
     "AttendanceStats",
     "PaymentStatus",
     "FinancialStatus",
+    "PaymentToggle",
     "PaymentToggleRequest",
     "ExamQuestion",
     "ExamCreate",

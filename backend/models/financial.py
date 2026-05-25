@@ -29,6 +29,13 @@ class PaymentToggleRequest(BaseModel):
     model_config = {"extra": "forbid"}
 
 
+class PaymentToggle(BaseModel):
+    student_id: str = Field(..., min_length=1)
+    is_paid: bool
+
+    model_config = {"extra": "forbid"}
+
+
 class PaymentRecordDB(BaseModel):
     id: ObjectId = Field(default_factory=ObjectId, alias="_id")
     student_id: str
