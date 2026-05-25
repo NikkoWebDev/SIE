@@ -21,6 +21,9 @@ from models.academic import (
     SubjectDB,
     DeliveryDB,
     GuideDB,
+    RiskEvent,
+    grade_color,
+    grade_status,
 )
 
 from models.attendance import (
@@ -77,6 +80,9 @@ __all__ = [
     "SubjectDB",
     "DeliveryDB",
     "GuideDB",
+    "RiskEvent",
+    "grade_color",
+    "grade_status",
     "AttendanceRecord",
     "AttendanceDB",
     "AttendanceStats",
