@@ -130,3 +130,40 @@ class LoginResponse(BaseModel):
     role: str
     grade: Optional[str] = None
     token: str
+
+
+class UserCreate(BaseModel):
+    document_id: str = Field(..., min_length=5, pattern=r"^\d+$")
+    fullname: str = Field(..., min_length=3, max_length=120)
+    password: str = Field(..., min_length=4, max_length=128)
+    role: UserRole = Field(default=UserRole.STUDENT)
+    grade: str = Field(default="", max_length=10)
+    is_paid: bool = True
+
+    model_config = {"extra": "forbid"}
+
+
+class UserLogin(BaseModel):
+    document_id: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
+
+    model_config = {"extra": "forbid"}
+
+
+class UserResponse(BaseModel):
+    document_id: str
+    fullname: str
+    role: str
+    grade: str = ""
+    is_paid: bool = True
+    is_at_risk: bool = False
+
+    model_config = {"extra": "ignore"}
+
+
+class TokenSchema(BaseModel):
+    access_token: str
+    refresh_token: str = ""
+    token_type: str = "bearer"
+
+    model_config = {"extra": "ignore"}

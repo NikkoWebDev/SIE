@@ -12,6 +12,10 @@ from models.user import (
     UserRole,
     LoginRequest,
     LoginResponse,
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    TokenSchema,
 )
 
 from models.academic import (
@@ -77,6 +81,10 @@ __all__ = [
     "UserRole",
     "LoginRequest",
     "LoginResponse",
+    "UserCreate",
+    "UserLogin",
+    "UserResponse",
+    "TokenSchema",
     "GradeEntry",
     "GradeDB",
     "GradeSubmission",
