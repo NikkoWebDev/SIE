@@ -1,206 +1,363 @@
 ---
-import Layout from '@layouts/Layout.astro'
 const API_BASE = import.meta.env.PUBLIC_API_URL || "https://backend-colegio-hdx7.onrender.com"
 ---
 
-<script is:inline>
-  (function(){
-    var t = localStorage.getItem('theme');
-    if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-    }
-  })();
-</script>
-
-<Layout titulo="C sol · Colegio Técnico Ciudad del Sol — Sogamoso, Boyacá" sinMenu>
-  <article class="min-h-screen bg-white dark:bg-black transition-colors duration-300">
-    <!-- Sol / Eclipse Toggle -->
-    <div class="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-black/80 backdrop-blur-md px-3 py-1.5 shadow-sm">
-      <span class="text-xs font-medium text-gray-500 dark:text-gray-400 select-none">Sol</span>
-      <button
-        id="theme-toggle-landing"
-        class="relative inline-flex h-5 w-9 cursor-pointer items-center rounded-full bg-gray-300 dark:bg-brand-maroon transition-colors duration-300"
-        aria-label="Cambiar modo Sol / Eclipse"
-      >
-        <span
-          id="theme-toggle-thumb"
-          class="inline-block h-4 w-4 translate-x-0.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 dark:translate-x-[18px] dark:bg-brand-gold"
-        ></span>
-      </button>
-      <span class="text-xs font-medium text-gray-500 dark:text-gray-400 select-none">Eclipse</span>
-    </div>
+<!doctype html>
+<html lang="es-CO" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SOLAR HORIZON · C sol · Colegio Técnico Ciudad del Sol</title>
+    <meta name="description" content="Sistema de Información Estudiantil del Colegio Técnico Ciudad del Sol, Sogamoso, Boyacá. Metodología ABP · Comunidad Soleísta" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&family=Sora:wght@300..700&display=swap" rel="stylesheet" />
+    <script is:inline>
+      (function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
+    </script>
+    <style>
+      :root {
+        --black: #040405; --near-black: #0A0A0E;
+        --maroon: #800000; --maroon-glow: rgba(128,0,0,0.3);
+        --gold: #FDC003; --gold-light: #FFE082; --gold-glow: rgba(253,192,3,0.15);
+        --white: #FFFFFF; --gray: #8B8B92; --gray-light: #B0B0B8;
+        --surface: #141416; --surface-raised: #1C1C22;
+        --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+        --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+      html{scroll-behavior:smooth}
+      body{
+        font-family:'Sora',sans-serif;background:var(--black);color:var(--white);
+        overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+      }
+      ::selection{background:var(--gold);color:var(--black)}
+      a{text-decoration:none;color:inherit}
+      ::-webkit-scrollbar{width:6px}
+      ::-webkit-scrollbar-track{background:var(--black)}
+      ::-webkit-scrollbar-thumb{background:var(--maroon);border-radius:3px}
+      .noise{
+        position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:0.025;
+        background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+        background-repeat:repeat;background-size:256px 256px;
+      }
+      .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--black);padding:2rem}
+      .hero-grid-bg{
+        position:absolute;inset:0;
+        background-image:linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);
+        background-size:60px 60px;
+        mask-image:radial-gradient(ellipse 80% 60% at 50% 45%,black 20%,transparent 70%);
+        -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 45%,black 20%,transparent 70%);
+      }
+      .hero-glow{
+        position:absolute;width:120vmax;height:120vmax;left:50%;top:50%;
+        transform:translate(-50%,-55%);
+        background:radial-gradient(ellipse 40% 35% at 50% 50%,rgba(253,192,3,0.06) 0%,rgba(128,0,0,0.04) 30%,transparent 60%);
+        animation:pulseSlow 8s ease-in-out infinite;
+      }
+      @keyframes pulseSlow{0%,100%{transform:translate(-50%,-55%) scale(1);opacity:0.8}50%{transform:translate(-50%,-55%) scale(1.08);opacity:1}}
+      .solar-ring{
+        position:absolute;width:90vmin;height:90vmin;left:50%;top:45%;
+        transform:translate(-50%,-50%);border-radius:50%;
+        background:radial-gradient(circle at 50% 50%,rgba(253,192,3,0.08) 0%,rgba(253,192,3,0.02) 35%,transparent 55%);
+        animation:coronaPulse 6s ease-in-out infinite;
+      }
+      .solar-ring::before{content:'';position:absolute;inset:-2px;border-radius:50%;border:1px solid rgba(253,192,3,0.08);animation:ringRotate 20s linear infinite}
+      .solar-ring::after{content:'';position:absolute;inset:-20px;border-radius:50%;border:1px dashed rgba(253,192,3,0.04);animation:ringRotate 30s linear infinite reverse}
+      @keyframes coronaPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.6}50%{transform:translate(-50%,-50%) scale(1.12);opacity:1}}
+      @keyframes ringRotate{to{transform:rotate(360deg)}}
+      .orbit-container{position:absolute;left:50%;top:45%;width:70vmin;height:70vmin;transform:translate(-50%,-50%);animation:ringRotate 40s linear infinite}
+      .orbit-dot{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--gold);opacity:0.3}
+      .orbit-dot:nth-child(1){top:0;left:50%;transform:translate(-50%,-50%)}
+      .orbit-dot:nth-child(2){top:50%;right:0;transform:translate(50%,-50%)}
+      .orbit-dot:nth-child(3){bottom:0;left:50%;transform:translate(-50%,50%)}
+      .orbit-dot:nth-child(4){top:50%;left:0;transform:translate(-50%,-50%)}
+      .orbit-container-2{position:absolute;left:50%;top:45%;width:55vmin;height:55vmin;transform:translate(-50%,-50%);animation:ringRotate 25s linear infinite reverse}
+      .orbit-dot-2{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--maroon);opacity:0.5}
+      .orbit-dot-2:nth-child(1){top:0;left:50%;transform:translate(-50%,-50%)}
+      .orbit-dot-2:nth-child(2){bottom:15%;right:0;transform:translate(50%,50%)}
+      .orbit-dot-2:nth-child(3){bottom:0;left:25%;transform:translate(0,50%)}
+      .hero-content{position:relative;z-index:2;text-align:center;max-width:900px}
+      .hero-badge{
+        display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:100px;
+        border:1px solid rgba(253,192,3,0.2);background:rgba(253,192,3,0.04);
+        font-size:0.75rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;
+        color:var(--gold);margin-bottom:2rem;animation:fadeSlideUp 1s var(--ease-out-expo) both;
+      }
+      .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:dotPulse 2s ease-in-out infinite}
+      @keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.6)}}
+      .hero-title{
+        font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(3.5rem,12vw,8rem);
+        line-height:0.9;letter-spacing:-0.04em;text-transform:uppercase;
+        color:var(--white);margin-bottom:0.5rem;animation:fadeSlideUp 1.2s var(--ease-out-expo) both;animation-delay:0.15s;
+      }
+      .hero-title .gold{color:var(--gold)}
+      .hero-title .maroon{color:var(--maroon)}
+      .hero-sub{
+        font-family:'Syne',sans-serif;font-weight:500;font-size:clamp(1rem,2.5vw,1.6rem);
+        color:var(--gray-light);letter-spacing:0.3em;text-transform:uppercase;
+        margin-bottom:2rem;animation:fadeSlideUp 1.2s var(--ease-out-expo) both;animation-delay:0.3s;
+      }
+      .hero-desc{
+        font-size:clamp(1rem,2vw,1.25rem);color:var(--gray);line-height:1.7;
+        max-width:620px;margin:0 auto 3rem;animation:fadeSlideUp 1.2s var(--ease-out-expo) both;animation-delay:0.45s;
+      }
+      .hero-actions{
+        display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
+        animation:fadeSlideUp 1.2s var(--ease-out-expo) both;animation-delay:0.6s;
+      }
+      .btn-primary{
+        display:inline-flex;align-items:center;gap:12px;
+        padding:16px 36px;border-radius:60px;border:none;
+        background:var(--gold);color:var(--black);
+        font-size:0.95rem;font-weight:700;cursor:pointer;
+        transition:all 0.4s var(--ease-spring);text-transform:uppercase;letter-spacing:0.05em;
+      }
+      .btn-primary:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(253,192,3,0.3)}
+      .btn-secondary{
+        display:inline-flex;align-items:center;gap:12px;
+        padding:16px 36px;border-radius:60px;
+        border:1px solid rgba(255,255,255,0.12);background:transparent;
+        color:var(--white);font-size:0.95rem;font-weight:600;cursor:pointer;
+        transition:all 0.4s var(--ease-spring);text-transform:uppercase;letter-spacing:0.05em;
+      }
+      .btn-secondary:hover{border-color:var(--gold);color:var(--gold);background:rgba(253,192,3,0.06);transform:scale(1.02)}
+      .btn-arrow{transition:transform 0.3s ease;display:inline-block}
+      .btn-primary:hover .btn-arrow,.btn-secondary:hover .btn-arrow{transform:translateX(4px)}
+      @keyframes fadeSlideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+      .hero-scroll{
+        position:absolute;bottom:3rem;left:50%;transform:translateX(-50%);
+        display:flex;flex-direction:column;align-items:center;gap:8px;
+        color:var(--gray);font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;
+        animation:fadeSlideUp 1.2s var(--ease-out-expo) both;animation-delay:1s;
+      }
+      .scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--gold),transparent);animation:scrollPulse 2s ease-in-out infinite}
+      @keyframes scrollPulse{0%,100%{opacity:0.4;transform:scaleY(1)}50%{opacity:1;transform:scaleY(0.6)}}
+      .section{padding:8rem 2rem;position:relative}
+      .section-label{
+        display:inline-block;font-size:0.7rem;font-weight:700;letter-spacing:0.2em;
+        text-transform:uppercase;color:var(--gold);margin-bottom:1rem;
+      }
+      .section-title{
+        font-family:'Syne',sans-serif;font-weight:700;font-size:clamp(2rem,5vw,3.5rem);
+        line-height:1.1;letter-spacing:-0.03em;color:var(--white);margin-bottom:1.5rem;
+      }
+      .section-desc{font-size:1.05rem;color:var(--gray);line-height:1.7;max-width:560px}
+      .container{max-width:1200px;margin:0 auto}
+      .stats{background:linear-gradient(180deg,var(--black) 0%,var(--surface) 100%);padding:5rem 2rem;border-top:1px solid rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.03)}
+      .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px;max-width:1000px;margin:0 auto;background:rgba(255,255,255,0.03);border-radius:32px;overflow:hidden}
+      .stat-card{background:var(--surface);padding:2.5rem 1.5rem;text-align:center;transition:background 0.4s ease}
+      .stat-card:hover{background:var(--surface-raised)}
+      .stat-number{
+        font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.2rem,5vw,3.5rem);
+        background:linear-gradient(135deg,var(--gold),var(--gold-light));
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;
+      }
+      .stat-suffix{
+        font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1rem,2vw,1.4rem);
+        background:linear-gradient(135deg,var(--gold),var(--gold-light));
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      }
+      .stat-label{font-size:0.75rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.15em;margin-top:0.5rem}
+      .glass-card{
+        background:rgba(20,20,22,0.5);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+        border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:2rem;
+        transition:all 0.4s var(--ease-spring);
+      }
+      .glass-card:hover{background:rgba(28,28,34,0.6);border-color:rgba(253,192,3,0.15);transform:translateY(-4px)}
+    </style>
+  </head>
+  <body>
+    <div class="noise"></div>
 
     <!-- HERO -->
-    <section class="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white dark:bg-black px-6">
-      <div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none" style="background-image: radial-gradient(circle at 25% 50%, #800000 1px, transparent 1px); background-size: 40px 40px;"></div>
-      <div class="relative z-10 mx-auto max-w-5xl text-center">
-        <div class="mb-8 inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-gold shadow-lg shadow-brand-gold/30 dark:shadow-brand-gold/20">
-          <span class="text-4xl font-extrabold tracking-tighter text-brand-maroon">C</span>
+    <section class="hero" id="inicio">
+      <div class="hero-grid-bg"></div>
+      <div class="hero-glow"></div>
+      <div class="solar-ring"></div>
+      <div class="orbit-container">
+        <div class="orbit-dot"></div><div class="orbit-dot"></div>
+        <div class="orbit-dot"></div><div class="orbit-dot"></div>
+      </div>
+      <div class="orbit-container-2">
+        <div class="orbit-dot-2"></div><div class="orbit-dot-2"></div>
+        <div class="orbit-dot-2"></div>
+      </div>
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          Sistema de Información Estudiantil v3.0
         </div>
-        <h1 class="font-extrabold tracking-tighter text-4xl md:text-7xl text-gray-900 dark:text-white">
-          <span class="text-brand-maroon dark:text-brand-gold">C sol</span>
-          <span class="mt-2 block text-2xl md:text-3xl font-normal tracking-normal text-gray-600 dark:text-gray-400">Sistema de Información Estudiantil</span>
+        <h1 class="hero-title">
+          <span class="gold">C</span> <span class="maroon">sol</span>
         </h1>
-        <p class="mt-6 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed text-gray-600 dark:text-gray-400">
-          Plataforma integral de gestión académica del Colegio Técnico Ciudad del Sol.<br class="hidden sm:block" />
-          Metodología ABP · Seguimiento transversal · Comunidad Soleísta
+        <p class="hero-sub">Colegio Técnico Ciudad del Sol</p>
+        <p class="hero-desc">
+          Plataforma integral de gestión académica con metodología ABP,
+          analítica en tiempo real y alertas inteligentes para la Comunidad Soleísta.
         </p>
-        <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a
-            href="/dashboard"
-            class="inline-flex items-center gap-2 rounded-xl bg-brand-maroon dark:bg-brand-gold px-8 py-3.5 text-base font-semibold text-white dark:text-brand-maroon shadow-lg shadow-brand-maroon/25 dark:shadow-brand-gold/25 transition-all hover:shadow-xl hover:shadow-brand-maroon/40 dark:hover:shadow-brand-gold/40 hover:-translate-y-0.5"
-          >
-            Acceder al tablero
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        <div class="hero-actions">
+          <a href="/login" class="btn-primary">
+            Acceder al Portal
+            <span class="btn-arrow">→</span>
           </a>
-          <a
-            href="#noticias"
-            class="inline-flex items-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-8 py-3.5 text-base font-medium text-gray-700 dark:text-gray-300 transition-all hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-600"
-          >
-            Ver comunicados
+          <a href="#comunicados" class="btn-secondary">
+            Ver Comunicados
+            <span class="btn-arrow">→</span>
           </a>
         </div>
       </div>
-      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-        <svg class="h-6 w-6 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+      <div class="hero-scroll">
+        <span>Descubrir</span>
+        <div class="scroll-line"></div>
       </div>
     </section>
 
-    <!-- LIVE NOTICE FEED -->
-    <section id="noticias" class="py-20 md:py-28 px-6 bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-900">
-      <div class="mx-auto max-w-6xl">
-        <div class="mb-12 text-center">
-          <span class="inline-block rounded-full bg-brand-gold/20 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-brand-maroon dark:text-brand-gold">En vivo</span>
-          <h2 class="mt-4 text-3xl md:text-5xl font-extrabold tracking-tighter text-gray-900 dark:text-white">Comunicados institucionales</h2>
-          <p class="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Información oficial y avisos para la Comunidad Soleísta</p>
+    <!-- STATS -->
+    <section class="stats" id="estadisticas">
+      <div class="container">
+        <div style="text-align:center;margin-bottom:3rem">
+          <span class="section-label">En Vivo</span>
+          <h2 class="section-title" style="max-width:800px;margin:0 auto">Ecosistema Académico</h2>
         </div>
-
-        <!-- Skeleton Loading (visible while JS fetches data) -->
-        <div id="notice-skeleton" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" aria-label="Cargando comunicados">
-          {[1,2,3].map((i) => (
-            <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-6 animate-pulse">
-              <div class="mb-3 h-4 w-24 rounded-full bg-gray-200 dark:bg-gray-800"></div>
-              <div class="mb-2 h-6 w-full rounded-lg bg-gray-200 dark:bg-gray-800"></div>
-              <div class="mb-1 h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-800"></div>
-              <div class="mb-4 h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-800"></div>
-              <div class="h-3 w-20 rounded bg-gray-200 dark:bg-gray-800"></div>
-            </div>
-          ))}
-        </div>
-
-        <!-- Live Notice Grid (hidden until populated) -->
-        <div id="notice-grid" class="hidden grid md:grid-cols-2 lg:grid-cols-3 gap-6" aria-label="Comunicados recientes"></div>
-
-        <!-- Error state (hidden by default) -->
-        <div id="notice-error" class="hidden mt-8 rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-6 text-center">
-          <p class="text-red-700 dark:text-red-400">No se pudieron cargar los comunicados. Intente más tarde.</p>
+        <div class="stats-grid">
+          <div class="stat-card"><div><span class="stat-number" id="stat-estudiantes">--</span></div><div class="stat-label">Estudiantes</div></div>
+          <div class="stat-card"><div><span class="stat-number" id="stat-docentes">--</span></div><div class="stat-label">Docentes</div></div>
+          <div class="stat-card"><div><span class="stat-number" id="stat-mora">--</span></div><div class="stat-label">En Mora</div></div>
+          <div class="stat-card"><div><span class="stat-number" id="stat-avisos">--</span></div><div class="stat-label">Comunicados</div></div>
         </div>
       </div>
     </section>
 
     <!-- INSTITUTIONAL -->
-    <section class="py-20 md:py-28 px-6 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-900">
-      <div class="mx-auto max-w-6xl">
-        <div class="mb-12 text-center">
-          <h2 class="text-3xl md:text-5xl font-extrabold tracking-tighter text-gray-900 dark:text-white">Comunidad Soleísta</h2>
-          <p class="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</p>
-        </div>
-        <div class="grid md:grid-cols-3 gap-8">
-          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-8 transition-all hover:shadow-lg hover:-translate-y-1">
-            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-maroon/10 dark:bg-brand-maroon/20">
-              <svg class="h-6 w-6 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+    <section class="section" id="institucional">
+      <div class="container" style="text-align:center">
+        <span class="section-label">Comunidad Soleísta</span>
+        <h2 class="section-title" style="max-width:800px;margin:0 auto 1rem">Sogamoso, Boyacá</h2>
+        <p class="section-desc" style="margin:0 auto 4rem">Formación integral con énfasis en ciencia, técnica y valores humanos.</p>
+        <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;text-align:left">
+          <div class="glass-card">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem">
+              <div style="width:40px;height:40px;border-radius:12px;background:rgba(128,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem">📚</div>
+              <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem">Rendimiento ABP</h3>
             </div>
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Rendimiento ABP</h3>
-            <p class="text-gray-600 dark:text-gray-400 leading-relaxed">Seguimiento transversal de proyectos integradores con metodología de Aprendizaje Basado en Proyectos.</p>
+            <p style="color:var(--gray);line-height:1.7;font-size:0.95rem">Seguimiento transversal de proyectos integradores con metodología de Aprendizaje Basado en Proyectos.</p>
           </div>
-          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-8 transition-all hover:shadow-lg hover:-translate-y-1">
-            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-maroon/10 dark:bg-brand-maroon/20">
-              <svg class="h-6 w-6 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <div class="glass-card">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem">
+              <div style="width:40px;height:40px;border-radius:12px;background:rgba(253,192,3,0.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem">📊</div>
+              <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem">Analítica en Vivo</h3>
             </div>
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Analítica en Vivo</h3>
-            <p class="text-gray-600 dark:text-gray-400 leading-relaxed">Monitoreo en tiempo real de métricas académicas con umbrales de alerta temprana y reportes inteligentes.</p>
+            <p style="color:var(--gray);line-height:1.7;font-size:0.95rem">Monitoreo en tiempo real de métricas académicas con umbrales de alerta temprana y reportes inteligentes.</p>
           </div>
-          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-8 transition-all hover:shadow-lg hover:-translate-y-1">
-            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gold/20">
-              <svg class="h-6 w-6 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+          <div class="glass-card">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem">
+              <div style="width:40px;height:40px;border-radius:12px;background:rgba(128,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem">🤖</div>
+              <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem">Asistente IA</h3>
             </div>
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Asistente IA</h3>
-            <p class="text-gray-600 dark:text-gray-400 leading-relaxed">Chat inteligente con streaming de tokens para resumir reportes, generar alertas y analizar tendencias.</p>
+            <p style="color:var(--gray);line-height:1.7;font-size:0.95rem">Chat inteligente para resumir reportes, generar alertas y analizar tendencias académicas.</p>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- NOTICES -->
+    <section class="section" id="comunicados" style="background:var(--surface)">
+      <div class="container" style="text-align:center">
+        <span class="section-label">En Vivo</span>
+        <h2 class="section-title" style="max-width:800px;margin:0 auto 1rem">Comunicados Institucionales</h2>
+        <p class="section-desc" style="margin:0 auto 3rem">Información oficial para la Comunidad Soleísta</p>
+
+        <div id="notice-skeleton" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;text-align:left">
+          {[1,2,3].map(() => (
+            <div class="glass-card" style="padding:1.5rem">
+              <div style="height:14px;width:100px;border-radius:9999px;background:rgba(255,255,255,0.05);margin-bottom:12px"></div>
+              <div style="height:20px;width:80%;border-radius:8px;background:rgba(255,255,255,0.04);margin-bottom:8px"></div>
+              <div style="height:14px;width:60%;border-radius:8px;background:rgba(255,255,255,0.04);margin-bottom:16px"></div>
+              <div style="height:10px;width:80px;border-radius:8px;background:rgba(255,255,255,0.03)"></div>
+            </div>
+          ))}
+        </div>
+        <div id="notice-grid" style="display:none;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;text-align:left"></div>
+        <div id="notice-error" style="display:none;margin-top:2rem;padding:1.5rem;border-radius:16px;border:1px solid rgba(186,26,26,0.3);background:rgba(186,26,26,0.06)">
+          <p style="color:#BA1A1A">No se pudieron cargar los comunicados.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- FOOTER -->
-    <footer class="border-t border-gray-200 dark:border-gray-900 bg-gray-50 dark:bg-black py-8 px-6">
-      <div class="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-500">
-        <span>© 2026 Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá, Colombia</span>
-        <span>Comunidad Soleísta · <span class="text-brand-gold">C sol</span> SIE v3.0</span>
+    <footer style="border-top:1px solid rgba(255,255,255,0.03);padding:2rem;text-align:center">
+      <div class="container" style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--gold)">C sol</span>
+        <span style="font-size:0.85rem;color:var(--gray)">
+          © 2026 Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá, Colombia
+        </span>
+        <span style="font-size:0.75rem;color:rgba(255,255,255,0.2)">
+          Comunidad Soleísta · SIE v3.0
+        </span>
       </div>
     </footer>
-  </article>
-</Layout>
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const toggle = document.getElementById('theme-toggle-landing')
-    toggle?.addEventListener('click', () => {
-      const isDark = document.documentElement.classList.toggle('dark')
-      localStorage.setItem('theme', isDark ? 'dark' : 'light')
-    })
-  })
-</script>
+    <script>
+      (function() {
+        var API = '{{API_BASE}}'
 
-<script>
-  const API_NOTICES = (import.meta.env.PUBLIC_API_URL || "https://backend-colegio-hdx7.onrender.com") + "/api/notices"
-
-  async function loadNotices() {
-    const skeleton = document.getElementById('notice-skeleton')
-    const grid = document.getElementById('notice-grid')
-    const error = document.getElementById('notice-error')
-
-    try {
-      const res = await fetch(API_NOTICES)
-      if (!res.ok) throw new Error('Network error')
-      const notices = await res.json()
-
-      skeleton?.classList.add('hidden')
-
-      if (!notices || notices.length === 0) {
-        grid?.classList.add('hidden')
-        if (error) {
-          error.querySelector('p').textContent = 'No hay comunicados publicados actualmente.'
-          error.classList.remove('hidden')
+        // --- Stats ---
+        async function loadStats() {
+          try {
+            var res = await fetch(API + '/api/admin/stats')
+            if (!res.ok) return
+            var d = await res.json()
+            var map = {
+              'stat-estudiantes': d.total_students,
+              'stat-docentes': d.total_teachers,
+              'stat-mora': d.mora,
+              'stat-avisos': d.total_notices,
+            }
+            for (var id in map) {
+              var el = document.getElementById(id)
+              if (el) el.textContent = map[id] ?? '--'
+            }
+          } catch(e) {}
         }
-        return
-      }
 
-      if (grid) {
-        grid.innerHTML = notices.map((n, i) => {
-          const date = new Date(n.fecha || n.date).toLocaleDateString('es-CO', {
-            day: 'numeric', month: 'long', year: 'numeric'
-          })
-          const cat = n.categoria || n.category || 'General'
-          return `
-            <article class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-6 transition-all hover:shadow-lg hover:-translate-y-0.5 animate-fade-in" style="animation-delay:${i * 80}ms">
-              <span class="inline-block rounded-full bg-brand-gold/20 px-3 py-0.5 text-xs font-semibold text-brand-maroon dark:text-brand-gold mb-3">${cat}</span>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">${n.titulo || n.title}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3 line-clamp-2">${n.resumen || n.excerpt || ''}</p>
-              <time class="text-xs text-gray-400 dark:text-gray-500" datetime="${n.fecha || n.date}">${date}</time>
-            </article>
-          `
-        }).join('')
-        grid.classList.remove('hidden')
-      }
-    } catch {
-      skeleton?.classList.add('hidden')
-      error?.classList.remove('hidden')
-    }
-  }
+        // --- Notices ---
+        async function loadNotices() {
+          var skeleton = document.getElementById('notice-skeleton')
+          var grid = document.getElementById('notice-grid')
+          var error = document.getElementById('notice-error')
+          try {
+            var res = await fetch(API + '/api/notices')
+            if (!res.ok) throw new Error()
+            var notices = await res.json()
+            skeleton.style.display = 'none'
+            if (!notices || notices.length === 0) {
+              error.querySelector('p').textContent = 'No hay comunicados publicados actualmente.'
+              error.style.display = 'block'
+              return
+            }
+            grid.innerHTML = notices.map(function(n, i) {
+              var date = new Date(n.fecha || n.date).toLocaleDateString('es-CO', {day:'numeric',month:'long',year:'numeric'})
+              var cat = n.categoria || n.category || 'General'
+              return '<div class="glass-card" style="padding:1.5rem;opacity:0;animation:fadeSlideUp 0.6s var(--ease-out-expo) '+(i*0.1)+'s forwards">' +
+                '<span style="display:inline-block;padding:4px 12px;border-radius:9999px;background:rgba(253,192,3,0.1);color:var(--gold);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">' + cat + '</span>' +
+                '<h3 style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:1.1rem;color:var(--white);margin-bottom:8px">' + (n.titulo || n.title) + '</h3>' +
+                '<p style="color:var(--gray);font-size:0.9rem;line-height:1.6;margin-bottom:12px">' + (n.resumen || n.excerpt || n.contenido || n.content || '') + '</p>' +
+                '<time style="font-size:0.75rem;color:rgba(255,255,255,0.3)">' + date + '</time>' +
+                '</div>'
+            }).join('')
+            grid.style.display = 'grid'
+          } catch(e) {
+            skeleton.style.display = 'none'
+            error.style.display = 'block'
+          }
+        }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadNotices)
-  } else {
-    loadNotices()
-  }
-</script>
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() { loadStats(); loadNotices() })
+        } else { loadStats(); loadNotices() }
+      })()
+    </script>
+  </body>
+</html>

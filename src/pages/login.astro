@@ -11,10 +11,11 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
     <script is:inline>
       (function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
     </script>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&family=Sora:wght@300..700&display=swap" rel="stylesheet">
   </head>
-  <body class="font-sans antialiased bg-black text-white overflow-hidden">
+  <body class="font-sans antialiased bg-[#040405] text-white overflow-hidden" style="font-family:'Sora',sans-serif">
     <div id="login-error-toast" class="fixed top-6 right-6 z-[100] hidden" role="alert" aria-live="assertive">
-      <div class="flex items-center gap-4 rounded-xl border border-brand-danger/50 bg-white/5 dark:bg-gray-900/80 backdrop-blur-xl px-5 py-4 shadow-2xl toast-entrance">
+      <div class="flex items-center gap-4 rounded-xl border border-brand-danger/50 bg-black/80 backdrop-blur-xl px-5 py-4 shadow-2xl toast-entrance">
         <div>
           <p class="text-sm font-semibold text-brand-danger">Error de Autenticación</p>
           <p id="toast-msg" class="text-xs text-gray-400">Verifique sus credenciales soleístas</p>
@@ -24,83 +25,120 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
         </button>
       </div>
     </div>
+
     <main class="flex h-screen w-full">
+      <!-- LEFT: Solar / Brand Panel (45%) -->
       <section class="hidden lg:flex lg:w-[45%] bg-black relative overflow-hidden flex-col justify-center px-16">
-        <div class="absolute inset-0 opacity-40" style="background-image:radial-gradient(circle at 2px 2px,rgba(255,255,255,0.05) 1px,transparent 0);background-size:32px 32px"></div>
-        <div class="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-brand-maroon/20 blur-[120px] rounded-full"></div>
-        <div class="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-brand-gold/10 blur-[100px] rounded-full"></div>
+        <div class="noise-overlay"></div>
+        <!-- solar corona -->
+        <div class="solar-ring"></div>
+        <div class="solar-ring-2"></div>
+        <!-- orbiting particles -->
+        <div class="orbit-container">
+          <div class="orbit-dot"></div>
+          <div class="orbit-dot"></div>
+          <div class="orbit-dot"></div>
+          <div class="orbit-dot"></div>
+        </div>
+        <div class="orbit-container-2">
+          <div class="orbit-dot-2"></div>
+          <div class="orbit-dot-2"></div>
+          <div class="orbit-dot-2"></div>
+        </div>
+        <!-- hero glow -->
+        <div class="hero-glow"></div>
+        <!-- grid bg -->
+        <div class="absolute inset-0" style="background-image:linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 60% at 50% 45%,black 20%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 45%,black 20%,transparent 70%)"></div>
         <div class="relative z-10">
-          <div class="mb-12">
-            <div class="w-24 h-24 mb-8 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-extrabold text-4xl shadow-2xl">C</div>
+          <div class="mb-14">
+            <div class="w-20 h-20 mb-6 rounded-full bg-brand-gold/10 border border-brand-gold/20 flex items-center justify-center text-3xl font-extrabold text-brand-gold shadow-2xl" style="font-family:'Syne',sans-serif">C</div>
           </div>
-          <h1 class="text-5xl md:text-6xl font-extrabold tracking-tighter text-white mb-6 leading-tight">
-            Comunidad <span class="text-brand-maroon">Soleísta</span>
+          <div class="space-y-2 fade-slide-up" style="animation-delay:0.15s">
+            <span class="inline-flex items-center gap-2 rounded-full border border-brand-gold/20 bg-brand-gold/[0.04] px-4 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-brand-gold mb-4">
+              <span class="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse"></span>
+              Portal Soleísta v3.0
+            </span>
+          </div>
+          <h1 class="text-5xl md:text-7xl font-extrabold tracking-tighter text-white mb-4 leading-[0.9] mt-4 fade-slide-up" style="animation-delay:0.3s;font-family:'Syne',sans-serif">
+            Comunidad<br/>
+            <span class="text-brand-maroon">Soleísta</span>
           </h1>
-          <p class="text-2xl md:text-3xl font-semibold text-gray-400 max-w-md">
-            Ciencia, Técnica y Sol
+          <p class="text-xl md:text-2xl font-medium text-gray-500 tracking-[0.15em] uppercase fade-slide-up" style="animation-delay:0.45s;font-family:'Syne',sans-serif">
+            Ciencia · Técnica · Sol
           </p>
-          <div class="mt-16 flex items-center gap-4">
+          <p class="mt-6 text-base text-gray-600 max-w-md leading-relaxed fade-slide-up" style="animation-delay:0.6s">
+            Sistema de Información Estudiantil del Colegio Técnico Ciudad del Sol, Sogamoso, Boyacá.
+          </p>
+          <div class="mt-12 flex items-center gap-4 fade-slide-up" style="animation-delay:0.75s">
             <div class="h-[2px] w-12 bg-brand-maroon"></div>
-            <span class="text-xs font-bold uppercase tracking-[0.15em] text-brand-gold">Excelencia Académica</span>
+            <span class="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">Excelencia Académica</span>
           </div>
         </div>
-        <div class="absolute bottom-12 left-16 text-xs font-bold uppercase tracking-[0.15em] text-gray-600">
-          v3.0.4 // CORE_ENGINE_ACTIVE // INSTITUCIONAL_PORTAL
+        <div class="absolute bottom-12 left-16 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-gray-700 fade-slide-up" style="animation-delay:0.9s;font-family:'Syne',sans-serif">
+          v3.0.4 // core_engine_active // institucional_portal
         </div>
       </section>
+
+      <!-- RIGHT: Login Panel (55%) -->
       <section class="w-full lg:w-[55%] bg-[#040405] flex items-center justify-center p-6 sm:p-12 relative">
+        <div class="noise-overlay"></div>
         <div class="absolute top-[20%] -right-[10%] w-[300px] h-[300px] bg-brand-maroon/10 blur-[100px] rounded-full pointer-events-none"></div>
         <div class="absolute bottom-[10%] -left-[5%] w-[200px] h-[200px] bg-brand-gold/5 blur-[80px] rounded-full pointer-events-none"></div>
-        <div class="w-full max-w-md">
-          <div class="lg:hidden text-center mb-10">
-            <div class="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-brand-gold shadow-lg mb-3">
-              <span class="text-2xl font-extrabold text-brand-maroon">C</span>
+        <div class="w-full max-w-md relative z-10">
+          <!-- Mobile brand -->
+          <div class="lg:hidden text-center mb-10 fade-slide-up" style="animation-delay:0.1s">
+            <div class="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-brand-gold/10 border border-brand-gold/20 mb-3">
+              <span class="text-2xl font-extrabold text-brand-gold" style="font-family:'Syne',sans-serif">C</span>
             </div>
-            <h1 class="text-2xl font-bold text-white">Solara Academic</h1>
+            <h1 class="text-2xl font-bold text-white" style="font-family:'Syne',sans-serif">Solara Academic</h1>
           </div>
-          <div class="rounded-[2rem] border border-white/[0.08] bg-[rgba(23,23,23,0.2)] backdrop-blur-[40px] p-8 sm:p-10 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)]">
-            <div class="mb-8 text-center">
-              <h2 class="text-3xl font-bold text-white mb-2">Iniciar Sesión</h2>
-              <p class="text-sm text-gray-400">Bienvenido al ecosistema académico</p>
+          <!-- Glass card -->
+          <div class="glass-panel fade-slide-up" style="animation-delay:0.2s">
+            <div class="mb-6 text-center">
+              <h2 class="text-3xl font-bold text-white mb-2" style="font-family:'Syne',sans-serif">Iniciar Sesión</h2>
+              <p class="text-sm text-gray-500">Bienvenido al ecosistema académico</p>
             </div>
-            <div class="relative flex h-12 rounded-full bg-white/[0.05] p-1 mb-8">
-              <div id="tab-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-brand-maroon transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-0" style="left:4px"></div>
-              <button id="tab-estudiante" class="relative z-10 flex-1 rounded-full text-sm font-semibold text-white transition-colors duration-300" data-login-tab="estudiante">Estudiante</button>
-              <button id="tab-personal" class="relative z-10 flex-1 rounded-full text-sm font-semibold text-gray-500 transition-colors duration-300" data-login-tab="personal">Personal</button>
+            <!-- Segmented control -->
+            <div class="segmented-control">
+              <div id="tab-slider" class="segmented-slider" style="left:4px"></div>
+              <button id="tab-estudiante" class="flex-1 relative z-10 text-sm font-semibold text-white transition-colors" data-login-tab="estudiante">Estudiante</button>
+              <button id="tab-personal" class="flex-1 relative z-10 text-sm font-semibold text-gray-500 transition-colors" data-login-tab="personal">Personal</button>
             </div>
-            <form id="login-form" class="space-y-6" novalidate data-endpoint={baseUrl + "/api/auth/login"}>
+            <!-- Form -->
+            <form id="login-form" class="space-y-5 mt-8" novalidate>
               <div class="space-y-2">
-                <label for="doc-id" class="ml-1 text-xs font-bold uppercase tracking-wider text-gray-400">Identificación Institucional</label>
+                <label for="doc-id" class="label-caps">Identificación Institucional</label>
                 <div class="relative">
-                  <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
-                  <input id="doc-id" type="text" inputmode="numeric" autocomplete="username" placeholder="ID-000000" required class="w-full h-14 pl-12 pr-4 rounded-xl text-white placeholder:text-gray-600 bg-black/30 border border-white/10 focus:border-brand-gold focus:shadow-[0_0_15px_rgba(253,192,3,0.2)] outline-none transition-all duration-300" data-login-input />
+                  <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                  <input id="doc-id" type="text" inputmode="numeric" autocomplete="username" placeholder="ID-000000" required class="input-glass" />
                 </div>
               </div>
-              <div id="password-group" class="space-y-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" style="max-height:0;opacity:0;pointer-events:none">
-                <label for="password" class="ml-1 text-xs font-bold uppercase tracking-wider text-gray-400">Contraseña</label>
+              <!-- Password (conditional) -->
+              <div id="password-group" class="space-y-2 transition-all duration-500 overflow-hidden" style="max-height:0;opacity:0;pointer-events:none">
+                <label for="password" class="label-caps">Contraseña</label>
                 <div class="relative">
-                  <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                  <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" class="w-full h-14 pl-12 pr-4 rounded-xl text-white placeholder:text-gray-600 bg-black/30 border border-white/10 focus:border-brand-gold focus:shadow-[0_0_15px_rgba(253,192,3,0.2)] outline-none transition-all duration-300" data-login-input />
+                  <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" class="input-glass" />
                 </div>
               </div>
               <div class="flex justify-end">
-                <a href="#" class="text-xs font-semibold tracking-wide text-brand-gold hover:underline opacity-80 transition-opacity">¿Problemas de acceso?</a>
+                <a href="#" class="text-xs font-semibold tracking-wide text-brand-gold hover:underline opacity-70 hover:opacity-100 transition-opacity">¿Problemas de acceso?</a>
               </div>
-              <button id="login-submit" type="submit" class="relative w-full h-14 rounded-xl bg-brand-maroon text-white font-bold text-sm uppercase tracking-wider hover:bg-brand-maroon/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 overflow-hidden group">
+              <button id="login-submit" type="submit" class="submit-btn group">
                 <span id="submit-text">Ingresar al Portal</span>
                 <svg id="submit-spinner" class="hidden h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <svg class="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                <svg class="btn-arrow h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
               </button>
               <div id="login-error" class="rounded-xl bg-brand-danger/10 border border-brand-danger/30 px-4 py-3 text-sm text-brand-danger font-medium text-center min-h-[2.75rem] flex items-center justify-center empty:hidden" role="alert" aria-live="polite"></div>
             </form>
-            <div class="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-3">
-              <p class="text-[11px] text-gray-500">Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</p>
+            <div class="mt-6 pt-6 border-t border-white/[0.06] flex flex-col items-center gap-3">
+              <p class="text-[11px] text-gray-600">Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</p>
               <div class="flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-brand-green animate-pulse"></span>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-gray-500">Servidores en línea</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-gray-600">Servidores en línea</span>
               </div>
             </div>
           </div>
@@ -110,6 +148,169 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
   </body>
 </html>
 
+<style is:global>
+  :root {
+    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .noise-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    pointer-events: none; opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    background-repeat: repeat; background-size: 256px 256px;
+  }
+  .glass-panel {
+    background: rgba(23,23,23,0.2);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 2rem;
+    padding: 2rem 2.5rem;
+    box-shadow: 0 8px 32px 0 rgba(0,0,0,0.8);
+  }
+  .input-glass {
+    width: 100%;
+    height: 3.5rem;
+    padding-left: 3rem;
+    padding-right: 1rem;
+    border-radius: 0.75rem;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.3s var(--ease-spring);
+  }
+  .input-glass::placeholder { color: rgba(255,255,255,0.15); }
+  .input-glass:focus {
+    border-color: #FDC003;
+    box-shadow: 0 0 15px rgba(253,192,3,0.2);
+    background: rgba(0,0,0,0.5);
+  }
+  .input-glass:focus + .input-icon,
+  .input-glass:focus ~ .input-icon { color: #FDC003; }
+  .input-icon {
+    position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+    height: 1.25rem; width: 1.25rem; color: rgba(255,255,255,0.25);
+    transition: color 0.3s ease;
+  }
+  .label-caps {
+    display: block; margin-left: 0.25rem;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: rgba(255,255,255,0.5);
+  }
+  .segmented-control {
+    position: relative;
+    display: flex;
+    height: 3rem;
+    border-radius: 9999px;
+    background: rgba(255,255,255,0.05);
+    padding: 4px;
+  }
+  .segmented-slider {
+    position: absolute; top: 4px; bottom: 4px;
+    width: calc(50% - 4px);
+    background: #800000;
+    border-radius: 9999px;
+    transition: left 0.4s var(--ease-spring);
+    z-index: 0;
+  }
+  .segmented-control button {
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 9999px; cursor: pointer; border: none;
+    background: none; font-family: inherit;
+  }
+  .submit-btn {
+    position: relative; width: 100%; height: 3.5rem;
+    border-radius: 0.75rem; background: #800000; color: white;
+    font-weight: 700; font-size: 0.9rem;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    transition: all 0.2s var(--ease-spring);
+    overflow: hidden;
+  }
+  .submit-btn:hover { background: rgba(128,0,0,0.85); }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:hover .btn-arrow { transform: translateX(4px); }
+  .btn-arrow { transition: transform 0.3s ease; }
+  .toast-entrance { animation: slideInRight 0.4s var(--ease-spring) forwards; }
+  @keyframes slideInRight {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  /* Solar corona (left panel) */
+  .solar-ring {
+    position: absolute; width: 90vmin; height: 90vmin; left: 50%; top: 45%;
+    transform: translate(-50%,-50%);
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, rgba(253,192,3,0.08) 0%, rgba(253,192,3,0.02) 35%, transparent 55%);
+    animation: coronaPulse 6s ease-in-out infinite;
+  }
+  .solar-ring::before {
+    content: ''; position: absolute; inset: -2px; border-radius: 50%;
+    border: 1px solid rgba(253,192,3,0.08);
+    animation: ringRotate 20s linear infinite;
+  }
+  .solar-ring::after {
+    content: ''; position: absolute; inset: -20px; border-radius: 50%;
+    border: 1px dashed rgba(253,192,3,0.04);
+    animation: ringRotate 30s linear infinite reverse;
+  }
+  .solar-ring-2 {
+    position: absolute; width: 60vmin; height: 60vmin; left: 50%; top: 45%;
+    transform: translate(-50%,-50%);
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, rgba(128,0,0,0.06) 0%, transparent 50%);
+  }
+  .hero-glow {
+    position: absolute; width: 120vmax; height: 120vmax; left: 50%; top: 50%;
+    transform: translate(-50%,-55%);
+    background: radial-gradient(ellipse 40% 35% at 50% 50%, rgba(253,192,3,0.06) 0%, rgba(128,0,0,0.04) 30%, transparent 60%);
+    animation: pulseSlow 8s ease-in-out infinite;
+  }
+  @keyframes pulseSlow {
+    0%,100% { transform: translate(-50%,-55%) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%,-55%) scale(1.08); opacity: 1; }
+  }
+  @keyframes coronaPulse {
+    0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+    50% { transform: translate(-50%,-50%) scale(1.12); opacity: 1; }
+  }
+  @keyframes ringRotate { to { transform: rotate(360deg); } }
+  .orbit-container {
+    position: absolute; left: 50%; top: 45%; width: 70vmin; height: 70vmin;
+    transform: translate(-50%,-50%);
+    animation: ringRotate 40s linear infinite;
+  }
+  .orbit-dot {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #FDC003; opacity: 0.3;
+  }
+  .orbit-dot:nth-child(1) { top: 0; left: 50%; transform: translate(-50%,-50%); }
+  .orbit-dot:nth-child(2) { top: 50%; right: 0; transform: translate(50%,-50%); }
+  .orbit-dot:nth-child(3) { bottom: 0; left: 50%; transform: translate(-50%,50%); }
+  .orbit-dot:nth-child(4) { top: 50%; left: 0; transform: translate(-50%,-50%); }
+  .orbit-container-2 {
+    position: absolute; left: 50%; top: 45%; width: 55vmin; height: 55vmin;
+    transform: translate(-50%,-50%);
+    animation: ringRotate 25s linear infinite reverse;
+  }
+  .orbit-dot-2 {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #800000; opacity: 0.5;
+  }
+  .orbit-dot-2:nth-child(1) { top: 0; left: 50%; transform: translate(-50%,-50%); }
+  .orbit-dot-2:nth-child(2) { bottom: 15%; right: 0; transform: translate(50%,50%); }
+  .orbit-dot-2:nth-child(3) { bottom: 0; left: 25%; transform: translate(0,50%); }
+  /* Fade slide up */
+  .fade-slide-up {
+    animation: fadeSlideUp 1s var(--ease-out-expo) both;
+  }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
 <script>
   (function () {
     var tabEst = document.getElementById('tab-estudiante')
@@ -118,7 +319,6 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
     var passwordGroup = document.getElementById('password-group')
     var passwordInput = document.getElementById('password')
     var form = document.getElementById('login-form')
-    var endpoint = form.getAttribute('data-endpoint')
     var docInput = document.getElementById('doc-id')
     var submitBtn = document.getElementById('login-submit')
     var submitText = document.getElementById('submit-text')
@@ -128,7 +328,17 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
     var toastMsg = document.getElementById('toast-msg')
     var toastClose = document.getElementById('toast-close')
     var currentTab = 'estudiante'
+    var endpoint = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.com').replace(/\/+$/, '') + '/api/auth/login'
 
+    // --- Wake-up server (legacy Render ping) ---
+    ;(function wakeUp() {
+      try {
+        var pingUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.com').replace(/\/+$/, '')
+        fetch(pingUrl + '/api/health', { method: 'GET', priority: 'low' }).catch(function(){})
+      } catch(e) {}
+    })()
+
+    // --- Tab toggle ---
     function setTab(tab) {
       currentTab = tab
       if (tab === 'estudiante') {
@@ -137,22 +347,22 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
         passwordGroup.style.opacity = '0'
         passwordGroup.style.pointerEvents = 'none'
         passwordInput.required = false
-        tabEst.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-white transition-colors duration-300'
-        tabPer.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-gray-500 transition-colors duration-300'
+        tabEst.className = 'flex-1 relative z-10 text-sm font-semibold text-white transition-colors'
+        tabPer.className = 'flex-1 relative z-10 text-sm font-semibold text-gray-500 transition-colors'
       } else {
         slider.style.left = 'calc(50% + 4px)'
         passwordGroup.style.maxHeight = '120px'
         passwordGroup.style.opacity = '1'
         passwordGroup.style.pointerEvents = 'auto'
         passwordInput.required = true
-        tabPer.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-white transition-colors duration-300'
-        tabEst.className = 'relative z-10 flex-1 rounded-full text-sm font-semibold text-gray-500 transition-colors duration-300'
+        tabPer.className = 'flex-1 relative z-10 text-sm font-semibold text-white transition-colors'
+        tabEst.className = 'flex-1 relative z-10 text-sm font-semibold text-gray-500 transition-colors'
       }
     }
-
     tabEst.addEventListener('click', function () { setTab('estudiante') })
     tabPer.addEventListener('click', function () { setTab('personal') })
 
+    // --- Toast ---
     function showError(msg) {
       toastMsg.textContent = msg || 'Verifique sus credenciales soleístas'
       toast.classList.remove('hidden')
@@ -160,23 +370,17 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
     }
     toastClose.addEventListener('click', function () { toast.classList.add('hidden') })
 
-    docInput.addEventListener('focus', function () {
-      var icon = docInput.parentElement.querySelector('svg')
-      if (icon) icon.classList.add('text-brand-gold')
-    })
-    docInput.addEventListener('blur', function () {
-      var icon = docInput.parentElement.querySelector('svg')
-      if (icon) icon.classList.remove('text-brand-gold')
-    })
-    passwordInput.addEventListener('focus', function () {
-      var icon = passwordInput.parentElement.querySelector('svg')
-      if (icon) icon.classList.add('text-brand-gold')
-    })
-    passwordInput.addEventListener('blur', function () {
-      var icon = passwordInput.parentElement.querySelector('svg')
-      if (icon) icon.classList.remove('text-brand-gold')
-    })
+    // --- Input icon glow ---
+    function setupInputGlow(input) {
+      var icon = input.parentElement.querySelector('.input-icon')
+      if (!icon) return
+      input.addEventListener('focus', function () { icon.style.color = '#FDC003' })
+      input.addEventListener('blur', function () { icon.style.color = '' })
+    }
+    setupInputGlow(docInput)
+    setupInputGlow(passwordInput)
 
+    // --- Submit ---
     form.addEventListener('submit', async function (e) {
       e.preventDefault()
       errorDiv.textContent = ''
@@ -207,40 +411,56 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
         payload.contraseña = password
       }
 
+      // 25s timeout (legacy Render wake-up)
+      var controller = new AbortController()
+      var timeoutId = setTimeout(function () { controller.abort() }, 25000)
+
       try {
         var res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
+          signal: controller.signal,
         })
-
-        if (res.status === 401) {
-          showError('Credenciales inválidas. Verifica tus datos soleístas.')
-          submitText.textContent = 'Ingresar al Portal'
-          submitSpinner.classList.add('hidden')
-          submitBtn.disabled = false
-          return
-        }
+        clearTimeout(timeoutId)
 
         if (!res.ok) {
-          var errData = await res.json().catch(function () { return {} })
-          throw new Error(errData.mensaje || errData.error || 'Error de autenticación.')
+          var errData
+          try { errData = await res.json() } catch (e) { errData = {} }
+          if (res.status === 401) throw new Error('Credenciales inválidas. Verifica tus datos.')
+          throw new Error(errData.mensaje || errData.detail || errData.error || 'Error de autenticación.')
         }
 
         var data = await res.json()
         var token = data.access_token || data.token || ''
+        var role = (data.rol || data.tipo || currentTab).toUpperCase()
 
         localStorage.setItem('access_token', token)
-        localStorage.setItem('userRole', (data.rol || data.tipo || currentTab).toUpperCase())
-        localStorage.setItem('userName', data.nombre || data.name || data.fullname || '')
-        localStorage.setItem('userId', data.documento || data.id || data.document_id || docId)
+        localStorage.setItem('userRole', role)
+        localStorage.setItem('userName', data.nombre || data.fullname || data.name || '')
+        localStorage.setItem('userId', data.documento || data.document_id || docId)
         localStorage.setItem('is_paid', String(data.is_paid !== false))
+        if (data.grado || data.grade) localStorage.setItem('userGrade', data.grado || data.grade)
         if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
 
         submitText.textContent = '¡Bienvenido!'
-        window.location.href = '/dashboard'
+
+        // Smart role redirect (legacy style)
+        var redirectMap = {
+          'RECTOR': '/admin',
+          'ADMIN': '/admin',
+          'PROFESOR': '/docente',
+          'DOCENTE': '/docente',
+          'ESTUDIANTE': '/estudiante',
+        }
+        window.location.href = redirectMap[role] || '/dashboard'
       } catch (err) {
-        errorDiv.textContent = err.message || 'Error de conexión. Intenta de nuevo.'
+        clearTimeout(timeoutId)
+        if (err.name === 'AbortError') {
+          errorDiv.textContent = '❌ El servidor está iniciando. Reintenta en unos segundos.'
+        } else {
+          errorDiv.textContent = '❌ ' + (err.message || 'Error de conexión.')
+        }
         submitText.textContent = 'Ingresar al Portal'
         submitSpinner.classList.add('hidden')
         submitBtn.disabled = false
@@ -248,13 +468,3 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
     })
   })()
 </script>
-
-<style>
-  .toast-entrance {
-    animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  }
-  @keyframes slideInRight {
-    from { transform: translateX(120%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-</style>
