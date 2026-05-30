@@ -1,136 +1,591 @@
 ---
-import Layout from '@layouts/Layout.astro'
-import FloatingPillNav from '@components/FloatingPillNav.astro'
+import SEOHead from '@components/SEOHead.astro'
 import WsRiskAlert from '@components/WsRiskAlert.astro'
-import FinancialToggle from '@components/FinancialToggle.astro'
-const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
+import AIChat from '@components/AIChat.astro'
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.com'
 ---
-<Layout titulo="Panel Administrativo · C sol SIE">
-  <FloatingPillNav userRole="RECTOR" />
-  <div class="relative z-10 px-4 md:px-6 lg:px-8 pt-4 lg:pt-6 max-w-7xl mx-auto">
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 auto-rows-min">
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 mb-2 animate-slide-down">
-        <h1 class="text-xl md:text-3xl font-bold text-gray-900 dark:text-white">Panel Administrativo</h1>
-        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Gestión financiera · Estado de pagos estudiantiles</p>
-      </div>
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl overflow-hidden transition-all hover:shadow-lg animate-slide-up">
-        <div class="px-5 py-4 border-b border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-maroon/10">
-              <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+<!doctype html>
+<html lang="es-CO">
+  <head>
+    <SEOHead titulo="Panel de Administración · C sol SIE" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&family=Sora:wght@300..700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --alabaster: #F5F0EB; --crimson: #800000; --crimson-dark: #5C0000;
+        --gold: #FDC003; --gold-light: #FEF1C0; --charcoal: #1A1A2E;
+        --slate: #6B7280; --border-light: rgba(0,0,0,0.06);
+        --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+        --shadow-hover: 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.06);
+      }
+      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+      html{font-family:'Sora',sans-serif;-webkit-font-smoothing:antialiased}
+      body{background:var(--alabaster);color:var(--charcoal);min-height:100vh;display:flex}
+      ::selection{background:var(--crimson);color:#fff}
+      ::-webkit-scrollbar{width:5px}
+      ::-webkit-scrollbar-track{background:transparent}
+      ::-webkit-scrollbar-thumb{background:rgba(128,0,0,0.15);border-radius:3px}
+      .admin-layout{display:flex;width:100%;min-height:100vh}
+      .admin-sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:#fff;border-right:1px solid var(--border-light);display:flex;flex-direction:column;z-index:40}
+      .admin-sidebar-header{padding:1.25rem 1.25rem 0.75rem;border-bottom:1px solid var(--border-light)}
+      .admin-sidebar-brand{display:flex;align-items:center;gap:0.625rem;font-family:'Syne',sans-serif}
+      .admin-sidebar-brand .logo-mark{width:2rem;height:2rem;border-radius:0.5rem;background:var(--crimson);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem}
+      .admin-sidebar-brand .brand-name{font-weight:700;font-size:0.9rem;color:var(--charcoal)}
+      .admin-sidebar-brand .brand-sub{font-size:0.65rem;color:var(--slate);text-transform:uppercase;letter-spacing:0.08em}
+      .admin-sidebar-nav{flex:1;padding:0.75rem 0.5rem;overflow-y:auto}
+      .admin-sidebar-nav .nav-section{margin-bottom:1.5rem}
+      .admin-sidebar-nav .nav-label{padding:0 0.75rem;margin-bottom:0.375rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--slate)}
+      .admin-sidebar-nav a{display:flex;align-items:center;gap:0.625rem;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.8125rem;font-weight:500;color:var(--slate);text-decoration:none;transition:all 0.15s ease}
+      .admin-sidebar-nav a:hover,.admin-sidebar-nav a.active{background:rgba(128,0,0,0.06);color:var(--crimson)}
+      .admin-sidebar-nav a.active{font-weight:600}
+      .admin-sidebar-nav a svg{width:1.125rem;height:1.125rem;flex-shrink:0}
+      .admin-sidebar-footer{padding:0.75rem;border-top:1px solid var(--border-light)}
+      .admin-sidebar-footer .user-badge{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.625rem;border-radius:0.5rem;background:rgba(128,0,0,0.04)}
+      .admin-sidebar-footer .user-badge .avatar{width:1.75rem;height:1.75rem;border-radius:50%;background:var(--crimson);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem}
+      .admin-sidebar-footer .user-badge .info{flex:1;min-width:0}
+      .admin-sidebar-footer .user-badge .name{font-size:0.75rem;font-weight:600;color:var(--charcoal)}
+      .admin-sidebar-footer .user-badge .role{font-size:0.625rem;color:var(--slate)}
+      .admin-main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+      .admin-topbar{position:sticky;top:0;z-index:30;background:rgba(245,240,235,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1.5rem}
+      .admin-topbar .page-title h1{font-family:'Syne',sans-serif;font-size:1.125rem;font-weight:700;color:var(--charcoal)}
+      .admin-topbar .page-title p{font-size:0.75rem;color:var(--slate);margin-top:0.125rem}
+      .admin-topbar .topbar-actions{display:flex;align-items:center;gap:0.75rem}
+      .admin-topbar .topbar-actions .status-pill{display:flex;align-items:center;gap:0.375rem;padding:0.25rem 0.75rem;border-radius:999px;background:rgba(76,175,80,0.1);color:#2E7D32;font-size:0.6875rem;font-weight:600}
+      .admin-topbar .topbar-actions .status-pill .dot{width:0.375rem;height:0.375rem;border-radius:50%;background:#4CAF50}
+      .admin-content{padding:1.5rem;flex:1}
+      .stat-card{background:#fff;border-radius:0.75rem;padding:1.125rem 1.25rem;box-shadow:var(--shadow-card);border:1px solid var(--border-light)}
+      .stat-card .stat-label{font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--slate);margin-bottom:0.25rem}
+      .stat-card .stat-value{font-family:'Syne',sans-serif;font-size:1.625rem;font-weight:700;color:var(--charcoal);line-height:1.2}
+      .stat-card .stat-footer{font-size:0.6875rem;color:var(--slate);margin-top:0.25rem}
+      .module-card{background:#fff;border-radius:0.75rem;box-shadow:var(--shadow-card);border:1px solid var(--border-light);overflow:hidden}
+      .module-card:hover{box-shadow:var(--shadow-hover)}
+      .module-card-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border-light)}
+      .module-card-header .module-title{display:flex;align-items:center;gap:0.625rem;font-family:'Syne',sans-serif;font-size:0.9375rem;font-weight:700;color:var(--charcoal)}
+      .module-card-header .module-title .icon-wrap{width:1.75rem;height:1.75rem;border-radius:0.375rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+      .module-card-header .module-title .icon-wrap.crimson{background:rgba(128,0,0,0.1);color:var(--crimson)}
+      .module-card-header .module-title .icon-wrap.amber{background:rgba(253,192,3,0.15);color:#B8860B}
+      .module-card-header .module-title .icon-wrap.emerald{background:rgba(76,175,80,0.1);color:#2E7D32}
+      .module-card-body{padding:1.25rem}
+      .student-row{display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0;border-bottom:1px solid var(--border-light)}
+      .student-row:last-child{border-bottom:none}
+      .student-row .student-avatar{width:2rem;height:2rem;border-radius:50%;background:rgba(128,0,0,0.08);color:var(--crimson);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0}
+      .student-row .student-info{flex:1;min-width:0}
+      .student-row .student-info .name{font-size:0.8125rem;font-weight:600;color:var(--charcoal)}
+      .student-row .student-info .meta{font-size:0.6875rem;color:var(--slate);margin-top:0.0625rem}
+      .toggle-switch{position:relative;display:inline-flex;width:2.25rem;height:1.25rem;cursor:pointer;flex-shrink:0}
+      .toggle-switch input{position:absolute;opacity:0;width:0;height:0}
+      .toggle-switch .track{position:absolute;inset:0;border-radius:999px;background:#D1D5DB;transition:background 0.2s ease}
+      .toggle-switch .thumb{position:absolute;top:0.125rem;left:0.125rem;width:1rem;height:1rem;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform 0.2s ease}
+      .toggle-switch input:checked+.track{background:var(--crimson)}
+      .toggle-switch input:checked~.thumb{transform:translateX(1rem)}
+      .incident-table{width:100%;border-collapse:collapse;font-size:0.8125rem}
+      .incident-table thead th{text-align:left;padding:0.5rem 0.75rem;font-size:0.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--slate);border-bottom:2px solid var(--border-light)}
+      .incident-table tbody td{padding:0.625rem 0.75rem;border-bottom:1px solid var(--border-light);color:var(--charcoal)}
+      .incident-table tbody tr:last-child td{border-bottom:none}
+      .incident-table tbody tr:hover{background:rgba(128,0,0,0.02)}
+      .status-badge{display:inline-flex;align-items:center;gap:0.375rem;padding:0.125rem 0.5rem;border-radius:999px;font-size:0.6875rem;font-weight:600}
+      .status-badge.safe{background:rgba(76,175,80,0.1);color:#2E7D32}
+      .abp-board{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+      .abp-card{padding:0.75rem 1rem;border-radius:0.5rem;border:1px solid var(--border-light);background:rgba(128,0,0,0.02);cursor:pointer;transition:all 0.15s ease}
+      .abp-card:hover{border-color:var(--crimson);box-shadow:0 0 0 1px rgba(128,0,0,0.1)}
+      .abp-card .abp-name{font-size:0.8125rem;font-weight:600;color:var(--charcoal)}
+      .abp-card .abp-subjects{display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.375rem}
+      .abp-card .abp-subject-tag{font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:999px;background:rgba(128,0,0,0.06);color:var(--crimson);font-weight:500}
+      .abp-card .abp-desc{font-size:0.6875rem;color:var(--slate);margin-top:0.25rem}
+      .btn{display:inline-flex;align-items:center;gap:0.375rem;padding:0.375rem 0.875rem;border-radius:0.5rem;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;transition:all 0.15s ease;text-decoration:none}
+      .btn-crimson{background:var(--crimson);color:#fff}
+      .btn-crimson:hover{background:var(--crimson-dark)}
+      .btn-ghost{background:transparent;color:var(--slate);border:1px solid var(--border-light)}
+      .btn-ghost:hover{background:rgba(128,0,0,0.04);color:var(--crimson);border-color:rgba(128,0,0,0.15)}
+      .btn-sm{padding:0.25rem 0.625rem;font-size:0.6875rem}
+      .btn-gold{background:var(--gold);color:var(--charcoal)}
+      .btn-gold:hover{background:#E5AC02}
+      .btn-danger{background:#BA1A1A;color:#fff}
+      .btn-danger:hover{background:#8B0000}
+      .input-field{width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--border-light);font-size:0.8125rem;font-family:'Sora',sans-serif;background:#fff;color:var(--charcoal);outline:none;transition:border 0.15s ease}
+      .input-field:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(253,192,3,0.15)}
+      .input-field::placeholder{color:#B0B0B0}
+      .tag-select{display:flex;flex-wrap:wrap;gap:0.375rem;margin-top:0.5rem}
+      .tag-select .tag-option{padding:0.25rem 0.625rem;border-radius:999px;font-size:0.6875rem;font-weight:500;cursor:pointer;border:1px solid var(--border-light);background:#fff;color:var(--slate);transition:all 0.15s ease}
+      .tag-select .tag-option.selected{background:var(--crimson);color:#fff;border-color:var(--crimson)}
+      .empty-state{text-align:center;padding:2rem 1rem;font-size:0.8125rem;color:var(--slate)}
+      .empty-state svg{width:2rem;height:2rem;margin:0 auto 0.5rem;opacity:0.4}
+      .modal-overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center}
+      .modal-box{background:#fff;border-radius:0.75rem;box-shadow:0 16px 48px rgba(0,0,0,0.15);width:90%;max-width:32rem;max-height:80vh;overflow-y:auto;padding:1.5rem}
+      .modal-box h2{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--charcoal)}
+      .pill-tabs{display:flex;gap:0.25rem;background:rgba(0,0,0,0.03);border-radius:0.5rem;padding:0.1875rem}
+      .pill-tabs .pill-tab{padding:0.375rem 0.875rem;border-radius:0.375rem;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--slate);transition:all 0.15s ease}
+      .pill-tabs .pill-tab.active{background:#fff;color:var(--crimson);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+
+      .identity-row{display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0;border-bottom:1px solid var(--border-light)}
+      .identity-row:last-child{border-bottom:none}
+      .identity-row .id-avatar{width:2rem;height:2rem;border-radius:50%;background:rgba(128,0,0,0.08);color:var(--crimson);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0}
+      .identity-row .id-info{flex:1;min-width:0}
+      .identity-row .id-info .id-name{font-size:0.8125rem;font-weight:600;color:var(--charcoal)}
+      .identity-row .id-info .id-meta{font-size:0.6875rem;color:var(--slate);margin-top:0.0625rem}
+
+      .thermometer-bar{display:flex;height:1.5rem;border-radius:999px;overflow:hidden;margin-top:0.5rem}
+      .thermometer-bar .seg-oro{background:rgba(253,192,3,0.5);transition:width 0.5s ease}
+      .thermometer-bar .seg-plata{background:rgba(156,163,175,0.4);transition:width 0.5s ease}
+      .thermometer-bar .seg-bronce{background:rgba(205,127,50,0.3);transition:width 0.5s ease}
+
+      .sidebar-overlay{display:none}
+      .sidebar-toggle{display:none}
+      @media(max-width:768px){
+        .admin-sidebar{transform:translateX(-100%);transition:transform 0.3s ease}
+        .admin-sidebar.open{transform:translateX(0)}
+        .admin-main{margin-left:0}
+        .sidebar-overlay{display:block;position:fixed;inset:0;z-index:35;background:rgba(0,0,0,0.3);opacity:0;pointer-events:none;transition:opacity 0.3s ease}
+        .sidebar-overlay.open{opacity:1;pointer-events:auto}
+        .sidebar-toggle{display:flex}
+        .abp-board{grid-template-columns:1fr}
+        .admin-topbar .page-title h1{font-size:0.9375rem}
+        .stat-card .stat-value{font-size:1.25rem}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-layout">
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+      <aside class="admin-sidebar" id="admin-sidebar">
+        <div class="admin-sidebar-header">
+          <div class="admin-sidebar-brand">
+            <div class="logo-mark">C</div>
+            <div><div class="brand-name">Vyntra Executive</div><div class="brand-sub">Panel de Rectoría</div></div>
+          </div>
+        </div>
+        <nav class="admin-sidebar-nav">
+          <div class="nav-section">
+            <div class="nav-label">Administración</div>
+            <a href="#" class="active" data-nav="panel">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+              Panel General
+            </a>
+            <a href="#" data-nav="financial">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Estado Financiero
+            </a>
+            <a href="#" data-nav="abp">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              Proyectos ABP
+            </a>
+            <a href="#" data-nav="incidents">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+              Incidentes
+            </a>
+            <a href="#" data-nav="identidades">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              Identidades
+            </a>
+          </div>
+          <div class="nav-section">
+            <div class="nav-label">Enlaces</div>
+            <a href="/estudiante">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+              Portal Estudiantil
+            </a>
+            <a href="/docente">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Portal Docente
+            </a>
+          </div>
+        </nav>
+        <div class="admin-sidebar-footer">
+          <div class="user-badge">
+            <div class="avatar" id="sidebar-avatar">A</div>
+            <div class="info">
+              <div class="name" id="sidebar-name">Administrador</div>
+              <div class="role">Rectoría</div>
             </div>
-            <div>
-              <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Estado Financiero</h2>
-              <p class="text-xs text-gray-400">Alternar estado de pagos por estudiante</p>
+            <button id="logout-btn" class="btn btn-sm btn-ghost" title="Cerrar sesión" onclick="localStorage.clear();window.location.href='/login'">Salir</button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="admin-main">
+        <header class="admin-topbar">
+          <div class="page-title">
+            <h1>Panel de Administración</h1>
+            <p>Gestión ejecutiva — Colegio Técnico Ciudad del Sol</p>
+          </div>
+          <div class="topbar-actions">
+            <span class="sidebar-toggle" style="display:inline-flex;padding:0.375rem;border-radius:0.375rem;background:transparent;border:1px solid var(--border-light);cursor:pointer" id="sidebar-toggle-btn">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--charcoal)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </span>
+            <div class="status-pill"><span class="dot"></span>Sistema operativo</div>
+          </div>
+        </header>
+
+        <div class="admin-content">
+          <!-- Stats -->
+          <div id="stats-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:0.75rem;margin-bottom:1.5rem">
+            <div class="stat-card"><div class="stat-label">Estudiantes</div><div class="stat-value" id="stat-total">--</div><div class="stat-footer">Matrícula activa</div></div>
+            <div class="stat-card"><div class="stat-label">Al día</div><div class="stat-value" id="stat-paid" style="color:#2E7D32">--</div><div class="stat-footer"><span id="stat-rate">--</span>% de cobertura</div></div>
+            <div class="stat-card"><div class="stat-label">En mora</div><div class="stat-value" id="stat-unpaid" style="color:var(--crimson)">--</div><div class="stat-footer"><span id="stat-overrides">0</span> overrides activos</div></div>
+            <div class="stat-card"><div class="stat-label">Incidentes</div><div class="stat-value" id="stat-incidents" style="color:#B8860B">--</div><div class="stat-footer">Reportes de examen</div></div>
+            <div class="stat-card"><div class="stat-label">Materiales Digitales</div><div class="stat-value" id="stat-materials" style="color:var(--charcoal)">--</div><div class="stat-footer">Documentos procesados</div></div>
+            <div class="stat-card"><div class="stat-label">Termómetro Global</div><div class="stat-value" id="stat-thermo" style="color:var(--charcoal)">--</div><div class="stat-footer">Promedio de competencias</div></div>
+          </div>
+
+          <!-- SECTION: Panel General -->
+          <div id="section-panel">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+              <div class="module-card">
+                <div class="module-card-header">
+                  <div class="module-title"><div class="icon-wrap crimson"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>Resumen Financiero</div>
+                </div>
+                <div class="module-card-body" id="panel-finance-summary"><div class="empty-state">Cargando datos financieros...</div></div>
+              </div>
+              <div class="module-card">
+                <div class="module-card-header">
+                  <div class="module-title"><div class="icon-wrap amber"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>Proyectos ABP</div>
+                </div>
+                <div class="module-card-body" id="panel-abp-summary"><div class="empty-state">Cargando proyectos...</div></div>
+              </div>
+            </div>
+            <div class="module-card" style="margin-top:1rem">
+              <div class="module-card-header">
+                <div class="module-title"><div class="icon-wrap emerald"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>Incidentes Recientes</div>
+              </div>
+              <div class="module-card-body" id="panel-incidents-summary"><div class="empty-state">No hay incidentes registrados.</div></div>
+            </div>
+            <div class="module-card" style="margin-top:1rem">
+              <div class="module-card-header">
+                <div class="module-title"><div class="icon-wrap amber"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg></div>Termómetro de Competencias Global</div>
+              </div>
+              <div class="module-card-body" id="panel-thermo-summary"><div class="empty-state">Cargando termómetro...</div></div>
             </div>
           </div>
-          <div class="flex items-center gap-2 text-xs">
-            <span class="h-2 w-2 rounded-full bg-brand-green"></span>
-            <span class="text-gray-500" id="paid-count">--</span>
-            <span class="text-gray-400 mx-1">/</span>
-            <span class="h-2 w-2 rounded-full bg-brand-danger"></span>
-            <span class="text-gray-500" id="unpaid-count">--</span>
+
+          <!-- SECTION: Financial Health & Overrides -->
+          <div id="section-financial" style="display:none">
+            <div class="module-card">
+              <div class="module-card-header">
+                <div class="module-title"><div class="icon-wrap crimson"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>Gestión de Pagos y Overrides</div>
+                <div class="pill-tabs" id="finance-filter-tabs">
+                  <button class="pill-tab active" data-filter="all">Todos</button>
+                  <button class="pill-tab" data-filter="mora">En mora</button>
+                  <button class="pill-tab" data-filter="override">Override</button>
+                </div>
+              </div>
+              <div class="module-card-body" id="financial-student-list"><div class="empty-state">Cargando estudiantes...</div></div>
+            </div>
           </div>
-        </div>
-        <div class="p-5 space-y-2 max-h-[600px] overflow-y-auto" id="student-financial-list">
-          <div class="h-12 rounded-xl shimmer-skeleton"></div>
-          <div class="h-12 rounded-xl shimmer-skeleton"></div>
-          <div class="h-12 rounded-xl shimmer-skeleton"></div>
+
+          <!-- SECTION: ABP Project Linker -->
+          <div id="section-abp" style="display:none">
+            <div class="module-card" style="margin-bottom:1rem">
+              <div class="module-card-header">
+                <div class="module-title"><div class="icon-wrap amber"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg></div>Registro de Proyecto ABP</div>
+                <button class="btn btn-crimson btn-sm" id="abp-create-btn">+ Nuevo Proyecto</button>
+              </div>
+            </div>
+            <div class="abp-board" id="abp-board"><div class="empty-state" style="grid-column:1/-1">Cargando proyectos...</div></div>
+          </div>
+
+          <!-- SECTION: Incident Monitor -->
+          <div id="section-incidents" style="display:none">
+            <div class="module-card">
+              <div class="module-card-header">
+                <div class="module-title"><div class="icon-wrap emerald"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>Monitoreo de Incidentes</div>
+                <span style="font-size:0.6875rem;color:var(--slate);font-weight:500" id="incident-count">0 registros</span>
+              </div>
+              <div class="module-card-body" style="padding:0;overflow-x:auto">
+                <table class="incident-table">
+                  <thead><tr><th>Estudiante</th><th>Examen</th><th>Estado</th><th>Fecha</th></tr></thead>
+                  <tbody id="incident-tbody"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--slate)">Cargando incidentes...</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION: Consola de Identidades -->
+          <div id="section-identidades" style="display:none">
+            <div class="module-card">
+              <div class="module-card-header">
+                <div class="module-title"><div class="icon-wrap crimson"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>Consola de Identidades</div>
+              </div>
+              <div class="module-card-body">
+                <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+                  <input id="id-search" class="input-field" placeholder="Buscar por nombre o documento..." />
+                  <button class="btn btn-crimson" id="id-search-btn">Buscar</button>
+                </div>
+                <div id="id-results"><div class="empty-state">Realiza una búsqueda para encontrar usuarios.</div></div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl p-5 transition-all hover:shadow-lg animate-slide-up" style="animation-delay:100ms">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gold/20">
-            <svg class="h-5 w-5 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-          <div>
-            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen Financiero</h2>
-            <p class="text-xs text-gray-400">Panorama general de pagos</p>
-          </div>
-        </div>
-        <div class="grid sm:grid-cols-3 gap-3" id="finance-summary">
-          <div class="rounded-xl bg-gray-50 dark:bg-gray-800 p-4 text-center">
-            <p class="text-2xl font-bold text-gray-900 dark:text-white" id="total-students">--</p>
-            <p class="text-xs text-gray-400">Total estudiantes</p>
-          </div>
-          <div class="rounded-xl bg-brand-green/10 p-4 text-center">
-            <p class="text-2xl font-bold text-brand-green" id="total-paid">--</p>
-            <p class="text-xs text-gray-400">Al día</p>
-          </div>
-          <div class="rounded-xl bg-brand-danger/10 p-4 text-center">
-            <p class="text-2xl font-bold text-brand-danger" id="total-unpaid">--</p>
-            <p class="text-xs text-gray-400">En mora</p>
+    </div>
+
+    <!-- ABP Create Modal -->
+    <div id="abp-modal" class="modal-overlay" style="display:none">
+      <div class="modal-box">
+        <h2>Registrar Proyecto ABP</h2>
+        <div style="display:flex;flex-direction:column;gap:0.75rem">
+          <div><label style="font-size:0.75rem;font-weight:600;color:var(--charcoal);display:block;margin-bottom:0.25rem">Nombre del proyecto</label><input id="abp-name-input" class="input-field" placeholder="Ej: Proyecto Sostenibilidad 2026" /></div>
+          <div><label style="font-size:0.75rem;font-weight:600;color:var(--charcoal);display:block;margin-bottom:0.25rem">Descripción</label><textarea id="abp-desc-input" class="input-field" rows="2" placeholder="Descripción opcional del proyecto..."></textarea></div>
+          <div><label style="font-size:0.75rem;font-weight:600;color:var(--charcoal);display:block;margin-bottom:0.25rem">Materias vinculadas</label><div id="abp-subject-select" class="tag-select"></div></div>
+          <div><label style="font-size:0.75rem;font-weight:600;color:var(--charcoal);display:block;margin-bottom:0.25rem">Palabra clave de activación</label><input id="abp-keyword-input" class="input-field" value="abp" placeholder="abp" /></div>
+          <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem">
+            <button class="btn btn-ghost" id="abp-modal-cancel">Cancelar</button>
+            <button class="btn btn-crimson" id="abp-modal-save">Guardar Proyecto</button>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <WsRiskAlert />
-</Layout>
+
+    <!-- Reset Password Modal -->
+    <div id="reset-modal" class="modal-overlay" style="display:none">
+      <div class="modal-box">
+        <h2>Contraseña Restablecida</h2>
+        <div style="font-size:0.8125rem;color:var(--charcoal);margin-bottom:1rem">
+          <p>Se ha generado una contraseña temporal para <strong id="reset-name"></strong>:</p>
+          <div style="padding:0.75rem;border-radius:0.5rem;background:rgba(253,192,3,0.1);border:1px solid rgba(253,192,3,0.2);font-family:monospace;font-size:1rem;text-align:center;margin:0.75rem 0;font-weight:700" id="reset-pass"></div>
+          <p style="font-size:0.75rem;color:var(--crimson);font-weight:600">⚠️ Copia esta contraseña ahora. No se mostrará de nuevo.</p>
+        </div>
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+          <button class="btn btn-crimson" id="reset-modal-close">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <AIChat role="admin" />
+  </body>
+</html>
+
 <script define:vars={{ apiUrl }}>
-  (function () {
-    var token = localStorage.getItem('auth_token')
-    if (!token) { window.location.href = '/'; return }
+(function () {
+  var token = localStorage.getItem('access_token')
+  if (!token) { window.location.href = '/login'; return }
 
-    var listEl = document.getElementById('student-financial-list')
+  var name = localStorage.getItem('userName') || 'Administrador'
+  var sidebarName = document.getElementById('sidebar-name')
+  var sidebarAvatar = document.getElementById('sidebar-avatar')
+  if (sidebarName) sidebarName.textContent = name
+  if (sidebarAvatar) sidebarAvatar.textContent = name.charAt(0).toUpperCase()
 
-    async function loadStudents() {
-      try {
-        var res = await fetch(apiUrl + '/api/admin/students', {
-          headers: { 'Authorization': 'Bearer ' + token },
-        })
-        if (!res.ok) throw new Error()
-        var students = await res.json()
-        if (!students || students.length === 0) {
-          listEl.innerHTML = '<p class="text-sm text-gray-400 py-8 text-center">No hay estudiantes registrados</p>'
-          return
-        }
-        var paid = 0, unpaid = 0
-        listEl.innerHTML = students.map(function (s) {
-          if (s.is_paid !== false) paid++; else unpaid++
-          return '<div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 flex items-center gap-3 transition-all hover:shadow-sm">' +
-            '<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-maroon/10 dark:bg-brand-maroon/20 text-sm font-bold text-brand-maroon dark:text-brand-gold">' + (s.nombre ? s.nombre.charAt(0).toUpperCase() : '?') + '</div>' +
-            '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-900 dark:text-white truncate">' + (s.nombre || s._id) + '</p><p class="text-xs text-gray-400 truncate">ID: ' + (s._id || '') + ' · ' + (s.grado || '-') + '</p></div>' +
-            '<div class="flex items-center gap-2 shrink-0">' +
-            '<span class="text-[10px] font-bold uppercase tracking-wider ' + (s.is_paid !== false ? 'text-brand-green' : 'text-brand-danger') + '">' + (s.is_paid !== false ? 'Pagado' : 'En mora') + '</span>' +
-            '<label class="relative inline-flex h-6 w-11 cursor-pointer items-center">' +
-            '<input type="checkbox" class="peer sr-only" ' + (s.is_paid !== false ? 'checked' : '') + ' data-student="' + (s._id || '') + '" />' +
-            '<span class="absolute inset-0 rounded-full bg-gray-300 dark:bg-gray-700 peer-checked:bg-brand-green transition-colors duration-300"></span>' +
-            '<span class="absolute left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-300 peer-checked:translate-x-5"></span></label></div></div>'
-        }).join('')
-        document.getElementById('total-students').textContent = students.length
-        document.getElementById('total-paid').textContent = paid
-        document.getElementById('total-unpaid').textContent = unpaid
-        document.getElementById('paid-count').textContent = paid
-        document.getElementById('unpaid-count').textContent = unpaid
+  // ── Navigation ──
+  var currentSection = 'panel'
+  var navLinks = document.querySelectorAll('[data-nav]')
+  var sections = {
+    panel: document.getElementById('section-panel'),
+    financial: document.getElementById('section-financial'),
+    abp: document.getElementById('section-abp'),
+    incidents: document.getElementById('section-incidents'),
+    identidades: document.getElementById('section-identidades'),
+  }
 
-        listEl.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
-          cb.addEventListener('change', async function () {
-            var sid = cb.getAttribute('data-student')
-            var newStatus = cb.checked
-            try {
-              var r = await fetch(apiUrl + '/api/admin/students/' + encodeURIComponent(sid) + '/financial', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ is_paid: newStatus }),
-              })
-              if (!r.ok) throw new Error()
-              var row = cb.closest('[class*="rounded-xl"]')
-              if (row) {
-                var span = row.querySelector('span.font-bold')
-                if (span) {
-                  span.textContent = newStatus ? 'Pagado' : 'En mora'
-                  span.className = 'text-[10px] font-bold uppercase tracking-wider ' + (newStatus ? 'text-brand-green' : 'text-brand-danger')
-                }
-              }
-              loadStudents()
-            } catch (_) { cb.checked = !newStatus }
-          })
-        })
-      } catch (_) {
-        listEl.innerHTML = '<p class="text-sm text-brand-danger py-8 text-center">Error al cargar estudiantes. Verifica tu conexión.</p>'
+  function showSection(id) {
+    currentSection = id
+    Object.keys(sections).forEach(function (k) { sections[k].style.display = k === id ? 'block' : 'none' })
+    navLinks.forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-nav') === id) })
+    if (id === 'financial') loadFinancialStudents()
+    if (id === 'abp') loadAbpProjects()
+    if (id === 'incidents') loadIncidents()
+    if (id === 'panel') { loadPanelData(); loadThermometer() }
+    if (id === 'identidades') loadIdentityDirectory('')
+  }
+
+  navLinks.forEach(function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); var nav = a.getAttribute('data-nav'); if (nav && sections[nav]) showSection(nav) })
+  })
+
+  // ── Sidebar Toggle ──
+  var sidebar = document.getElementById('admin-sidebar')
+  var overlay = document.getElementById('sidebar-overlay')
+  var toggleBtn = document.getElementById('sidebar-toggle-btn')
+  if (toggleBtn) { toggleBtn.addEventListener('click', function () { sidebar.classList.toggle('open'); overlay.classList.toggle('open') }) }
+  if (overlay) { overlay.addEventListener('click', function () { sidebar.classList.remove('open'); overlay.classList.remove('open') }) }
+
+  // ── API Helpers ──
+  function apiHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token } }
+  function apiFetch(path, opts) {
+    var url = apiUrl.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+    var merged = Object.assign({ headers: apiHeaders() }, opts || {})
+    if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) { merged.body = JSON.stringify(merged.body) }
+    return fetch(url, merged).then(function (r) { if (r.status === 401) { localStorage.clear(); window.location.href = '/login' }; return r.json() })
+  }
+
+  // ── Stats ──
+  function loadStats() {
+    apiFetch('/api/admin/financial-summary').then(function (d) {
+      document.getElementById('stat-total').textContent = d.total_students || 0
+      document.getElementById('stat-paid').textContent = d.total_paid || 0
+      document.getElementById('stat-unpaid').textContent = d.total_in_arrears || 0
+      document.getElementById('stat-rate').textContent = d.collection_rate || 0
+      document.getElementById('stat-overrides').textContent = d.active_overrides || 0
+    }).catch(function () {})
+    apiFetch('/api/admin/materials-count').then(function (d) {
+      document.getElementById('stat-materials').textContent = d.total || 0
+    }).catch(function () {})
+    apiFetch('/api/admin/skill-thermometer').then(function (d) {
+      document.getElementById('stat-thermo').textContent = d.average_score || '0.0'
+    }).catch(function () {})
+  }
+
+  // ── Panel Data ──
+  function loadPanelData() {
+    apiFetch('/api/admin/financial-summary').then(function (data) {
+      if (data.total_students > 0) {
+        document.getElementById('panel-finance-summary').innerHTML =
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">' +
+          '<div style="padding:0.75rem;border-radius:0.5rem;background:rgba(76,175,80,0.06);border:1px solid rgba(76,175,80,0.12)"><div style="font-size:0.6875rem;font-weight:600;text-transform:uppercase;color:#2E7D32">Recaudado</div><div style="font-family:Syne;font-size:1.125rem;font-weight:700;color:#1B5E20;margin-top:0.125rem">$' + (data.total_collected || 0).toLocaleString() + '</div></div>' +
+          '<div style="padding:0.75rem;border-radius:0.5rem;background:rgba(128,0,0,0.06);border:1px solid rgba(128,0,0,0.12)"><div style="font-size:0.6875rem;font-weight:600;text-transform:uppercase;color:var(--crimson)">Cobertura</div><div style="font-family:Syne;font-size:1.125rem;font-weight:700;color:var(--crimson);margin-top:0.125rem">' + (data.collection_rate || 0) + '%</div></div></div>'
       }
-    }
-    loadStudents()
-  })()
+    }).catch(function () {})
+    apiFetch('/api/admin/abp-projects').then(function (projects) {
+      var el = document.getElementById('panel-abp-summary')
+      if (!projects || projects.length === 0) { el.innerHTML = '<div class="empty-state">Sin proyectos ABP registrados.</div>'; return }
+      el.innerHTML = projects.slice(0, 3).map(function (p) { return '<div style="padding:0.5rem 0;border-bottom:1px solid var(--border-light);font-size:0.8125rem;font-weight:600;color:var(--charcoal)">' + (p.name || '—') + '</div>' }).join('') +
+        (projects.length > 3 ? '<div style="font-size:0.75rem;color:var(--slate);padding-top:0.5rem;text-align:center">+' + (projects.length - 3) + ' más</div>' : '')
+    }).catch(function () {})
+    apiFetch('/api/admin/incidents?limit=5').then(function (inc) {
+      var el = document.getElementById('panel-incidents-summary')
+      if (!inc || inc.length === 0) { el.innerHTML = '<div class="empty-state">No hay incidentes registrados.</div>'; return }
+      el.innerHTML = inc.map(function (i) {
+        return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.375rem 0;border-bottom:1px solid var(--border-light);font-size:0.75rem"><span style="width:0.375rem;height:0.375rem;border-radius:50%;background:' + (i.severity === 'high' ? '#BA1A1A' : '#B8860B') + '"></span><span style="color:var(--charcoal)">' + (i.student_name || i.student_id || '-') + '</span><span style="color:var(--slate)">' + (i.exam_title || '') + '</span></div>'
+      }).join('')
+    }).catch(function () {})
+  }
+
+  function loadThermometer() {
+    apiFetch('/api/admin/skill-thermometer').then(function (d) {
+      var el = document.getElementById('panel-thermo-summary')
+      el.innerHTML =
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:0.75rem">' +
+        '<div style="text-align:center"><div style="font-size:1.25rem;font-weight:700;color:#B8860B">' + d.oro + '</div><div style="font-size:0.6875rem;color:var(--slate)">Oro</div></div>' +
+        '<div style="text-align:center"><div style="font-size:1.25rem;font-weight:700;color:#4B5563">' + d.plata + '</div><div style="font-size:0.6875rem;color:var(--slate)">Plata</div></div>' +
+        '<div style="text-align:center"><div style="font-size:1.25rem;font-weight:700;color:#8B5E3C">' + d.bronce + '</div><div style="font-size:0.6875rem;color:var(--slate)">Bronce</div></div>' +
+        '</div>' +
+        '<div class="thermometer-bar"><div class="seg-oro" style="width:' + (d.oro_pct || 0) + '%"></div><div class="seg-plata" style="width:' + (d.plata_pct || 0) + '%"></div><div class="seg-bronce" style="width:' + (d.bronce_pct || 0) + '%"></div></div>' +
+        '<div style="font-size:0.75rem;color:var(--slate);text-align:center;margin-top:0.5rem">' + d.total_quizzes + ' quizzes · Promedio global: <strong>' + d.average_score + '</strong></div>'
+    }).catch(function () {})
+  }
+
+  // ── Financial Students ──
+  var currentFilter = 'all'
+  function loadFinancialStudents() {
+    var list = document.getElementById('financial-student-list')
+    list.innerHTML = '<div class="empty-state">Cargando estudiantes...</div>'
+    apiFetch('/api/admin/students').then(function (students) {
+      if (!students || students.length === 0) { list.innerHTML = '<div class="empty-state">No hay estudiantes registrados.</div>'; return }
+      apiFetch('/api/students/risk').then(function (riskData) {
+        var riskMap = {}; if (Array.isArray(riskData)) riskData.forEach(function (r) { riskMap[r.profile_id] = r.avg_score })
+        var filtered = students.filter(function (s) { if (currentFilter === 'mora') return !s.is_paid; return true })
+        if (filtered.length === 0) { list.innerHTML = '<div class="empty-state">No hay estudiantes en esta categoría.</div>'; return }
+        list.innerHTML = filtered.map(function (s) {
+          var sid = s._id || ''; var isPaid = s.is_paid !== false; var initial = (s.nombre || '?').charAt(0).toUpperCase()
+          return '<div class="student-row" data-sid="' + sid + '" data-paid="' + isPaid + '"><div class="student-avatar">' + initial + '</div><div class="student-info"><div class="name">' + (s.nombre || 'Sin nombre') + '</div><div class="meta">ID: ' + sid + (riskMap[sid] ? ' · Prom: ' + riskMap[sid] : '') + '</div></div><div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0"><span style="font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;' + (isPaid ? 'color:#2E7D32' : 'color:var(--crimson)') + '">' + (isPaid ? 'Al día' : 'En mora') + '</span><label class="toggle-switch"><input type="checkbox" ' + (isPaid ? 'checked' : '') + ' data-sid="' + sid + '" /><span class="track"></span><span class="thumb"></span></label></div></div>'
+        }).join('')
+        list.querySelectorAll('.toggle-switch input').forEach(function (cb) {
+          cb.addEventListener('change', function () { var sid = cb.getAttribute('data-sid'); var wasPaid = cb.checked; apiFetch('/api/students/' + encodeURIComponent(sid) + '/bypass-override', { method: 'POST' }).then(function () { loadFinancialStudents(); loadStats() }).catch(function () { cb.checked = !wasPaid }) })
+        })
+      }).catch(function () { list.innerHTML = '<div class="empty-state">Error al cargar datos financieros.</div>' })
+    }).catch(function () { list.innerHTML = '<div class="empty-state">Error al conectar con el servidor.</div>' })
+  }
+  document.querySelectorAll('#finance-filter-tabs .pill-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () { document.querySelectorAll('#finance-filter-tabs .pill-tab').forEach(function (b) { b.classList.remove('active') }); btn.classList.add('active'); currentFilter = btn.getAttribute('data-filter'); loadFinancialStudents() })
+  })
+
+  // ── ABP Projects ──
+  var allSubjects = []
+  function loadAbpProjects() {
+    var board = document.getElementById('abp-board')
+    board.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Cargando proyectos...</div>'
+    apiFetch('/api/subjects').then(function (subjects) { allSubjects = Array.isArray(subjects) ? subjects : [] }).catch(function () { allSubjects = [] })
+    apiFetch('/api/admin/abp-projects').then(function (projects) {
+      if (!projects || projects.length === 0) { board.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No hay proyectos ABP registrados. Crea el primero.</div>'; return }
+      board.innerHTML = projects.map(function (p) {
+        var subs = Array.isArray(p.linked_subject_names) ? p.linked_subject_names : []
+        return '<div class="abp-card" data-pid="' + (p.id || '') + '"><div class="abp-name">' + (p.name || 'Sin nombre') + '</div>' + (p.description ? '<div class="abp-desc">' + p.description + '</div>' : '') + '<div class="abp-subjects">' + (subs.length ? subs.map(function (s) { return '<span class="abp-subject-tag">' + s + '</span>' }).join('') : '<span style="font-size:0.625rem;color:var(--slate)">Sin materias vinculadas</span>') + '</div><div style="margin-top:0.375rem;display:flex;gap:0.375rem"><span style="font-size:0.625rem;color:var(--slate)">Palabra clave: <strong>' + (p.project_trigger_keyword || 'abp') + '</strong></span><button class="btn btn-sm btn-ghost abp-delete-btn" data-pid="' + (p.id || '') + '" style="margin-left:auto">Eliminar</button></div></div>'
+      }).join('')
+      board.querySelectorAll('.abp-delete-btn').forEach(function (btn) { btn.addEventListener('click', function (e) { e.stopPropagation(); var pid = btn.getAttribute('data-pid'); if (!pid) return; apiFetch('/api/admin/abp-projects/' + encodeURIComponent(pid), { method: 'DELETE' }).then(function () { loadAbpProjects(); loadStats() }).catch(function () { alert('Error al eliminar proyecto') }) }) })
+    }).catch(function () { board.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error al cargar proyectos.</div>' })
+  }
+
+  // ABP Create Modal
+  var modal = document.getElementById('abp-modal')
+  document.getElementById('abp-create-btn').addEventListener('click', function () {
+    modal.style.display = 'flex'
+    document.getElementById('abp-name-input').value = ''; document.getElementById('abp-desc-input').value = ''; document.getElementById('abp-keyword-input').value = 'abp'
+    var container = document.getElementById('abp-subject-select')
+    if (allSubjects.length) {
+      container.innerHTML = allSubjects.map(function (s) { return '<span class="tag-option" data-sid="' + (s.id || '') + '">' + (s.name || s.id) + '</span>' }).join('')
+      container.querySelectorAll('.tag-option').forEach(function (t) { t.addEventListener('click', function () { t.classList.toggle('selected') }) })
+    } else { container.innerHTML = '<span style="font-size:0.75rem;color:var(--slate)">Cargando materias...</span>' }
+  })
+  document.getElementById('abp-modal-cancel').addEventListener('click', function () { modal.style.display = 'none' })
+  modal.addEventListener('click', function (e) { if (e.target === modal) modal.style.display = 'none' })
+  document.getElementById('abp-modal-save').addEventListener('click', function () {
+    var name = document.getElementById('abp-name-input').value.trim(); if (!name) { alert('Ingresa un nombre para el proyecto.'); return }
+    var selected = document.querySelectorAll('#abp-subject-select .tag-option.selected')
+    var subjectIds = Array.from(selected).map(function (t) { return t.getAttribute('data-sid') })
+    var payload = { name: name, description: document.getElementById('abp-desc-input').value.trim(), linked_subject_ids: subjectIds, project_trigger_keyword: document.getElementById('abp-keyword-input').value.trim() || 'abp' }
+    var btn = document.getElementById('abp-modal-save'); btn.textContent = 'Guardando...'; btn.disabled = true
+    apiFetch('/api/admin/abp-projects', { method: 'POST', body: payload }).then(function () { modal.style.display = 'none'; loadAbpProjects(); loadStats(); btn.textContent = 'Guardar Proyecto'; btn.disabled = false }).catch(function () { alert('Error al crear proyecto'); btn.textContent = 'Guardar Proyecto'; btn.disabled = false })
+  })
+
+  // ── Incidents ──
+  function loadIncidents() {
+    var tbody = document.getElementById('incident-tbody')
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--slate)">Cargando incidentes...</td></tr>'
+    apiFetch('/api/admin/incidents?limit=50').then(function (incidents) {
+      var count = document.getElementById('incident-count')
+      if (!incidents || incidents.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--slate)">No hay incidentes registrados.</td></tr>'; if (count) count.textContent = '0 registros'; document.getElementById('stat-incidents').textContent = '0'; return }
+      if (count) count.textContent = incidents.length + (incidents.length === 1 ? ' registro' : ' registros')
+      document.getElementById('stat-incidents').textContent = incidents.length
+      tbody.innerHTML = incidents.map(function (inc) {
+        var dateStr = inc.created_at ? new Date(inc.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-'
+        return '<tr><td style="font-weight:600">' + (inc.student_name || 'ID: ' + (inc.student_id || '-').substring(0, 8)) + '</td><td>' + (inc.exam_title || 'Examen #' + (inc.exam_id || '-').substring(0, 8)) + '</td><td><span class="status-badge safe">' + inc.status + '</span></td><td style="font-size:0.75rem;color:var(--slate)">' + dateStr + '</td></tr>'
+      }).join('')
+    }).catch(function () { var t2 = document.getElementById('incident-tbody'); if (t2) t2.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--slate)">Error al cargar incidentes.</td></tr>' })
+  }
+
+  // ── Identity Console ──
+  function loadIdentityDirectory(search) {
+    var el = document.getElementById('id-results')
+    el.innerHTML = '<div class="empty-state">Buscando...</div>'
+    var url = '/api/admin/identity-directory'
+    if (search) url += '?search=' + encodeURIComponent(search)
+    apiFetch(url).then(function (users) {
+      if (!users || users.length === 0) { el.innerHTML = '<div class="empty-state">No se encontraron usuarios.</div>'; return }
+      el.innerHTML = users.map(function (u) {
+        var initial = (u.fullname || '?').charAt(0).toUpperCase()
+        var roleLabel = { student: 'Estudiante', teacher: 'Docente', admin: 'Administrador' }
+        var label = roleLabel[u.role] || u.role
+        return '<div class="identity-row"><div class="id-avatar">' + initial + '</div><div class="id-info"><div class="id-name">' + (u.fullname || 'Sin nombre') + '</div><div class="id-meta">' + u.login_credential + ' · ' + label + (u.grade ? ' · ' + u.grade : '') + ' · ' + (u.is_active ? 'Activo' : 'Inactivo') + '</div></div><button class="btn btn-sm btn-crimson reset-pwd-btn" data-pid="' + u.id + '" data-name="' + (u.fullname || '') + '">Restablecer</button></div>'
+      }).join('')
+      el.querySelectorAll('.reset-pwd-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var pid = btn.getAttribute('data-pid'); var fname = btn.getAttribute('data-name')
+          btn.disabled = true; btn.textContent = 'Generando...'
+          apiFetch('/api/admin/reset-password', { method: 'POST', body: { profile_id: pid } }).then(function (data) {
+            if (data.temporary_password) {
+              document.getElementById('reset-name').textContent = fname || data.fullname || pid
+              document.getElementById('reset-pass').textContent = data.temporary_password
+              document.getElementById('reset-modal').style.display = 'flex'
+              btn.textContent = '✓ Restablecido'; btn.style.background = '#2E7D32'
+              setTimeout(function () { btn.textContent = 'Restablecer'; btn.disabled = false; btn.style.background = '' }, 3000)
+            } else { throw new Error('Sin respuesta') }
+          }).catch(function () { btn.textContent = 'Error'; btn.disabled = false })
+        })
+      })
+    }).catch(function () { el.innerHTML = '<div class="empty-state">Error al cargar el directorio.</div>' })
+  }
+
+  document.getElementById('id-search-btn').addEventListener('click', function () {
+    var q = document.getElementById('id-search').value.trim(); loadIdentityDirectory(q)
+  })
+  document.getElementById('id-search').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { var q = document.getElementById('id-search').value.trim(); loadIdentityDirectory(q) }
+  })
+  document.getElementById('reset-modal-close').addEventListener('click', function () { document.getElementById('reset-modal').style.display = 'none' })
+  document.getElementById('reset-modal').addEventListener('click', function (e) { if (e.target === this) this.style.display = 'none' })
+
+  // ── Initial Load ──
+  loadStats(); loadAbpProjects(); loadIncidents(); loadPanelData(); loadThermometer()
+  setInterval(loadStats, 30000)
+})()
 </script>

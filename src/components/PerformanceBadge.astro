@@ -1,7 +1,7 @@
 ---
 export interface Props { value: number }
 const { value } = Astro.props
-const color = value >= 4.0 ? 'bg-brand-green text-white' : value >= 3.5 ? 'bg-brand-gold text-gray-900' : 'bg-brand-danger text-white'
+const color = value >= 4.0 ? 'bg-[#00FF66] text-black' : value >= 3.5 ? 'bg-[#FFE600] text-black' : 'bg-[#FF0055] text-white'
 const label = value >= 4.0 ? 'Sobresaliente' : value >= 3.5 ? 'Aceptable' : 'En Riesgo'
 ---
 <span class={"inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold " + color}>{label}</span>

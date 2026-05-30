@@ -212,9 +212,9 @@ const endpoint = baseUrl + '/api/login'
 
         localStorage.setItem('userRole', claims.rol || claims.tipo || currentTab.toUpperCase())
         localStorage.setItem('userName', claims.nombre || claims.name || '')
-        localStorage.setItem('userId', claims.documento || claims.id || docId)
+        localStorage.setItem('userId', claims.id || claims.profile_id || claims.documento || docId)
         localStorage.setItem('is_paid', String(claims.is_paid !== false))
-        if (claims.token) localStorage.setItem('auth_token', claims.token)
+        if (claims.token) localStorage.setItem('access_token', claims.token)
 
         submitText.textContent = '¡Bienvenido!'
         window.location.href = redirectTarget

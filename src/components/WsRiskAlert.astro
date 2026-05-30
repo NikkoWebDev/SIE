@@ -13,7 +13,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
     var delay = 1000
 
     function connect() {
-      var token = localStorage.getItem('auth_token')
+      var token = localStorage.getItem('access_token')
       if (!token) { scheduleReconnect(); return }
       try {
         ws = new WebSocket(wsUrl + '?token=' + encodeURIComponent(token))
@@ -48,6 +48,10 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
     }
 
     function showRiskAlert(msg) {
+      var mainContainer = document.querySelector('.relative.min-h-screen')
+      if (mainContainer && !mainContainer.classList.contains('ambient-risk-active')) {
+        mainContainer.classList.add('ambient-risk-active')
+      }
       var el = document.createElement('div')
       el.className =
         'pointer-events-auto animate-slide-down rounded-2xl border-2 border-brand-danger/40 bg-white dark:bg-gray-900 shadow-2xl p-4 flex items-start gap-3 transition-all duration-500'

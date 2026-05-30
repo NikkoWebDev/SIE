@@ -104,9 +104,11 @@ class RiskEvent(BaseModel):
 
 
 def grade_color(score: float) -> str:
-    if score < 3.5:
-        return "#FF0000"
-    return "#00FF00"
+    if score >= 4.0:
+        return "#00FF66"
+    if score >= 3.5:
+        return "#FFE600"
+    return "#FF0055"
 
 
 def grade_status(score: float) -> str:

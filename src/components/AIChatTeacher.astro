@@ -1,0 +1,243 @@
+---
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
+---
+
+<div id="ai-teacher-root" class="fixed bottom-6 right-6 z-50" data-api-url={apiUrl}>
+  <button id="ai-teacher-toggle"
+    class="flex h-14 w-14 items-center justify-center rounded-full bg-brand-green text-white shadow-2xl shadow-brand-green/20 transition-all duration-300 hover:scale-105 hover:shadow-brand-green/30 active:scale-95"
+    aria-label="Abrir Asistente Docente">
+    <svg id="teacher-icon-chat" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+    <svg id="teacher-icon-close" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+
+  <div id="ai-teacher-panel"
+    class="absolute bottom-16 right-0 w-[380px] sm:w-[440px] h-[560px] rounded-2xl border border-white/10 bg-black/90 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden origin-bottom-right transition-all duration-300 opacity-0 scale-95 pointer-events-none">
+    <div class="flex items-center gap-3 border-b border-white/10 bg-gradient-to-r from-brand-green to-brand-green/90 px-5 py-4 shrink-0">
+      <div class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10">
+        <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h3 class="text-sm font-semibold text-white">Asistente Docente · VYNTRA</h3>
+        <p class="text-xs text-green-300/70 truncate">Seguimiento académico y análisis pedagógico</p>
+      </div>
+      <span class="flex items-center gap-1.5 text-[10px] text-green-400">
+        <span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span>
+        En línea
+      </span>
+    </div>
+
+    <div id="teacher-messages" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm bg-gray-950">
+      <div class="flex items-start gap-3 animate-slide-up">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-xs font-bold text-green-400">D</div>
+        <div class="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-4 py-3 text-gray-300 leading-relaxed">
+          <p>Bienvenido, docente. Soy el <strong class="text-green-400">Asistente VYNTRA</strong>. Puedo ayudarte a analizar el rendimiento de tus estudiantes, identificar alertas tempranas y obtener recomendaciones pedagógicas. ¿En qué puedo ayudarte hoy?</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="teacher-typing" class="hidden px-4 pb-2">
+      <div class="flex items-start gap-3">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-xs font-bold text-green-400">D</div>
+        <div class="rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+          <div class="flex gap-1.5">
+            <span class="h-2 w-2 rounded-full bg-green-400/60 animate-bounce" style="animation-delay:0ms"></span>
+            <span class="h-2 w-2 rounded-full bg-green-400/60 animate-bounce" style="animation-delay:150ms"></span>
+            <span class="h-2 w-2 rounded-full bg-green-400/60 animate-bounce" style="animation-delay:300ms"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-white/10 bg-black/50 px-4 py-3 shrink-0">
+      <form id="teacher-form" class="flex gap-2">
+        <input
+          id="teacher-input"
+          type="text"
+          placeholder="Consulta académica, estudiante o materia..."
+          class="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-green/40 focus:border-brand-green/60 transition-all"
+        />
+        <button
+          id="teacher-send"
+          type="submit"
+          class="flex items-center justify-center rounded-xl bg-brand-green px-4 py-2.5 text-white transition-all hover:bg-brand-green/80 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ apiUrl }}>
+  (function () {
+    var root = document.getElementById('ai-teacher-root')
+    var toggle = document.getElementById('ai-teacher-toggle')
+    var panel = document.getElementById('ai-teacher-panel')
+    var chatIcon = document.getElementById('teacher-icon-chat')
+    var closeIcon = document.getElementById('teacher-icon-close')
+    var messages = document.getElementById('teacher-messages')
+    var form = document.getElementById('teacher-form')
+    var input = document.getElementById('teacher-input')
+    var sendBtn = document.getElementById('teacher-send')
+    var typing = document.getElementById('teacher-typing')
+
+    var isOpen = false
+    var token = localStorage.getItem('access_token')
+    var userId = localStorage.getItem('userId')
+    var teacherName = localStorage.getItem('userName') || 'Docente'
+
+    toggle.addEventListener('click', function () {
+      isOpen = !isOpen
+      panel.classList.toggle('opacity-0', !isOpen)
+      panel.classList.toggle('scale-95', !isOpen)
+      panel.classList.toggle('pointer-events-none', !isOpen)
+      panel.classList.toggle('opacity-100', isOpen)
+      panel.classList.toggle('scale-100', isOpen)
+      panel.classList.toggle('pointer-events-auto', isOpen)
+      chatIcon.classList.toggle('hidden', isOpen)
+      closeIcon.classList.toggle('hidden', !isOpen)
+      if (isOpen) scrollToBottom()
+    })
+
+    function scrollToBottom() {
+      messages.scrollTop = messages.scrollHeight
+    }
+
+    function addMessage(content, role) {
+      var div = document.createElement('div')
+      div.className = 'flex items-start gap-3 ' + (role === 'user' ? 'flex-row-reverse' : '') + ' animate-slide-up'
+      var avatar = document.createElement('div')
+      avatar.className = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ' +
+        (role === 'user' ? 'bg-brand-green text-white' : 'bg-green-500/20 text-green-400')
+      avatar.textContent = role === 'user' ? 'D' : 'V'
+      var bubble = document.createElement('div')
+      bubble.className = 'rounded-2xl px-4 py-3 leading-relaxed max-w-[85%] ' +
+        (role === 'user'
+          ? 'rounded-tr-sm bg-brand-green text-white'
+          : 'rounded-tl-sm bg-white/5 border border-white/10 text-gray-300')
+      bubble.textContent = content
+      div.appendChild(avatar)
+      div.appendChild(bubble)
+      messages.appendChild(div)
+      scrollToBottom()
+      return bubble
+    }
+
+    function addStreamingMessage() {
+      var div = document.createElement('div')
+      div.className = 'flex items-start gap-3 animate-slide-up'
+      var avatar = document.createElement('div')
+      avatar.className = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-xs font-bold text-green-400'
+      avatar.textContent = 'V'
+      var bubbleContainer = document.createElement('div')
+      bubbleContainer.className = 'rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-4 py-3 text-gray-300 leading-relaxed'
+      bubbleContainer.id = 'teacher-streaming-bubble'
+      div.appendChild(avatar)
+      div.appendChild(bubbleContainer)
+      messages.appendChild(div)
+      scrollToBottom()
+      return bubbleContainer
+    }
+
+    function renderMarkdown(text) {
+      var html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong class="text-green-400">$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code class="bg-brand-green/20 text-green-300 px-1 py-0.5 rounded text-xs font-mono">$1</code>')
+        .replace(/\n/g, '<br>')
+      return html
+    }
+
+    async function buildContext() {
+      var ctx = 'Nombre del docente: ' + teacherName + '. '
+      try {
+        var gRes = await fetch(apiUrl + '/api/grades?teacher_id=' + encodeURIComponent(userId), {
+          headers: { 'Authorization': 'Bearer ' + token }
+        })
+        if (gRes.ok) {
+          var grades = await gRes.json()
+          if (grades && grades.length > 0) {
+            ctx += 'Ha registrado ' + grades.length + ' calificaciones recientemente. '
+          }
+        }
+      } catch (_) {}
+      try {
+        var riskRes = await fetch(apiUrl + '/api/students/risk', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        })
+        if (riskRes.ok) {
+          var riskData = await riskRes.json()
+          if (riskData && riskData.length > 0) {
+            ctx += 'Estudiantes en riesgo académico: ' + riskData.length + '. '
+          }
+        }
+      } catch (_) {}
+      return ctx
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault()
+      var text = input.value.trim()
+      if (!text) return
+      input.value = ''
+      sendBtn.disabled = true
+      addMessage(text, 'user')
+      typing.classList.remove('hidden')
+      scrollToBottom()
+
+      var context = await buildContext()
+      var bubble = addStreamingMessage()
+      typing.classList.add('hidden')
+
+      try {
+        var res = await fetch(apiUrl + '/api/ai/teacher-tutor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ message: text, context: context }),
+        })
+        if (!res.ok) {
+          bubble.innerHTML = '<span class="text-brand-danger">Error al conectar con el asistente.</span>'
+          sendBtn.disabled = false
+          return
+        }
+        var reader = res.body.getReader()
+        var decoder = new TextDecoder()
+        var buffer = ''
+        var fullText = ''
+        while (true) {
+          var result = await reader.read()
+          if (result.done) break
+          buffer += decoder.decode(result.value, { stream: true })
+          var lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+          for (var i = 0; i < lines.length; i++) {
+            var line = lines[i]
+            if (line.startsWith('data: ')) {
+              var data = line.slice(6)
+              if (data === '[DONE]') continue
+              try {
+                var parsed = JSON.parse(data)
+                if (parsed.token) {
+                  fullText += parsed.token
+                  bubble.innerHTML = renderMarkdown(fullText)
+                  scrollToBottom()
+                } else if (parsed.error) {
+                  bubble.innerHTML = '<span class="text-brand-danger">' + parsed.error + '</span>'
+                }
+              } catch (_) {}
+            }
+          }
+        }
+        if (!fullText) {
+          bubble.innerHTML = '<span class="text-gray-500">El asistente no generó respuesta. Intenta reformular tu consulta.</span>'
+        }
+      } catch (_) {
+        bubble.innerHTML = '<span class="text-brand-danger">Error de conexión. Verifica tu red e intenta de nuevo.</span>'
+      }
+      sendBtn.disabled = false
+    })
+  })()
+</script>

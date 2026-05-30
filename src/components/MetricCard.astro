@@ -4,8 +4,8 @@ export interface Props {
   value: number
 }
 const { label, value } = Astro.props
-const colorClass = value >= 4.0 ? 'text-brand-green' : value >= 3.5 ? 'text-brand-gold' : 'text-brand-danger'
-const barColor = value >= 4.0 ? 'bg-brand-green' : value >= 3.5 ? 'bg-brand-gold' : 'bg-brand-danger'
+const colorClass = value >= 4.0 ? 'text-[#00FF66]' : value >= 3.5 ? 'text-[#FFE600]' : 'text-[#FF0055]'
+const barColor = value >= 4.0 ? 'bg-[#00FF66]' : value >= 3.5 ? 'bg-[#FFE600]' : 'bg-[#FF0055]'
 ---
 <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all hover:shadow-md animate-slide-up">
   <div class="flex items-center justify-between mb-3">

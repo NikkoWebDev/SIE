@@ -1,5 +1,5 @@
 export const API_URL: string =
-  import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
+  import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 
 export const WS_URL: string =
   API_URL.replace(/^http/, 'ws') + '/ws'

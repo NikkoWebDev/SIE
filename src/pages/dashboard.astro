@@ -23,11 +23,11 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.o
 </Layout>
 <script>
   (function () {
-    var role = localStorage.getItem('userRole') || ''
+    var role = (localStorage.getItem('userRole') || '').toUpperCase()
     var name = localStorage.getItem('userName') || ''
     var target = ''
-    if (role === 'PROFESOR') target = '/docente'
-    else if (role === 'RECTOR') target = '/admin'
+    if (role === 'PROFESOR' || role === 'TEACHER') target = '/docente'
+    else if (role === 'RECTOR' || role === 'ADMIN') target = '/admin'
     else target = '/estudiante'
     if (name) document.getElementById('hub-title').textContent = 'Bienvenido, ' + name
     document.getElementById('hub-sub').textContent = 'Redirigiendo a tu panel...'

@@ -1,5 +1,5 @@
 ---
-const API_BASE = import.meta.env.PUBLIC_API_URL || "https://backend-colegio-hdx7.onrender.com"
+const API_BASE = import.meta.env.PUBLIC_API_URL || "http://localhost:8000"
 ---
 
 <!doctype html>
@@ -299,9 +299,9 @@ const API_BASE = import.meta.env.PUBLIC_API_URL || "https://backend-colegio-hdx7
       </div>
     </footer>
 
-    <script>
+    <script define:vars={{ API_BASE }}>
       (function() {
-        var API = '{{API_BASE}}'
+        var API = API_BASE
 
         // --- Stats ---
         async function loadStats() {

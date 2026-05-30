@@ -5,7 +5,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Hanken Grotesk"', 'sans-serif'],
+        sans: ['Sora', 'sans-serif'],
+        display: ['Syne', 'sans-serif'],
       },
       colors: {
         brand: {
@@ -13,6 +14,11 @@ export default {
           gold: '#fdc003',
           green: '#4caf50',
           danger: '#ba1a1a',
+        },
+        academic: {
+          excellent: '#00FF66',
+          acceptable: '#FFE600',
+          risk: '#FF0055',
         },
       },
       animation: {

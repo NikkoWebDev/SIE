@@ -2,150 +2,1219 @@
 import Layout from '@layouts/Layout.astro'
 import FloatingPillNav from '@components/FloatingPillNav.astro'
 import WsRiskAlert from '@components/WsRiskAlert.astro'
-import ScoreOrbital from '@components/ScoreOrbital.astro'
-import PerformanceBadge from '@components/PerformanceBadge.astro'
-import MetricCard from '@components/MetricCard.astro'
-import DangerAlert from '@components/DangerAlert.astro'
 import AIChat from '@components/AIChat.astro'
-const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
+import ScoreOrbital from '@components/ScoreOrbital.astro'
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
+const studentId = "USER_ID_PLACEHOLDER"
 ---
-<Layout titulo="Panel Estudiante · C sol SIE">
+
+<Layout titulo="Panel Estudiante · C sol SIE" sinMenu>
   <FloatingPillNav userRole="ESTUDIANTE" />
-  <div class="relative z-10 px-4 md:px-6 lg:px-8 pt-4 lg:pt-6 max-w-7xl mx-auto">
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 auto-rows-min">
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 mb-2 animate-slide-down">
-        <h1 class="text-xl md:text-3xl font-bold text-gray-900 dark:text-white truncate" id="student-name">Cargando...</h1>
-        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate" id="student-meta">Panel de rendimiento académico</p>
-      </div>
-      <div class="col-span-2 sm:col-span-2 lg:col-span-2 xl:col-span-3 row-span-2 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl p-5 md:p-6 flex flex-col items-center justify-center transition-all hover:shadow-lg" id="orbital-card">
-        <div class="relative inline-flex" id="score-orbital-placeholder">
-          <div class="h-24 w-24 md:h-32 md:w-32 rounded-full shimmer-skeleton"></div>
+  <div class="noise-overlay"></div>
+
+  <div class="relative min-h-screen theme-aware-bg" id="main-container">
+    <!-- Grid background -->
+    <div class="absolute inset-0 pointer-events-none grid-bg"></div>
+    <!-- Solar atmosphere (obsidian only) -->
+    <div class="solar-glow" id="solar-glow"></div>
+    <div class="solar-ring-bg" id="solar-ring"></div>
+    <div class="orbit-container" id="orbit-1">
+      <div class="orbit-dot"></div><div class="orbit-dot"></div>
+      <div class="orbit-dot"></div><div class="orbit-dot"></div>
+    </div>
+    <div class="orbit-container-2" id="orbit-2">
+      <div class="orbit-dot-2"></div><div class="orbit-dot-2"></div>
+      <div class="orbit-dot-2"></div>
+    </div>
+    <div class="glow-orb-maroon"></div>
+    <div class="glow-orb-amber"></div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-8 fade-in-section">
+        <div>
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight theme-text-primary" style="font-family:'Syne',sans-serif">
+            <span id="student-name">Cargando...</span>
+          </h1>
+          <p class="text-sm theme-text-tertiary mt-1" id="student-meta">Panel de rendimiento académico</p>
         </div>
-        <p class="mt-3 text-xs text-gray-400" id="orbital-label">Promedio general</p>
-      </div>
-      <div class="col-span-2 sm:col-span-2 lg:col-span-2 xl:col-span-2 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl p-5 flex flex-col justify-center transition-all hover:shadow-lg" id="attendance-card">
-        <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Asistencia</span>
-        <span class="text-2xl md:text-3xl font-bold text-brand-green mt-1" id="attendance-val">--%</span>
-        <div class="mt-2 h-2 rounded-full bg-gray-200/50 dark:bg-gray-700/50 overflow-hidden">
-          <div class="h-full rounded-full bg-brand-green transition-all duration-1000 ease-out" id="attendance-bar" style="width:0%"></div>
-        </div>
-        <span class="mt-1 text-xs text-gray-400" id="attendance-grade"></span>
-      </div>
-      <div class="col-span-2 sm:col-span-2 lg:col-span-2 xl:col-span-3 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl p-5 transition-all hover:shadow-lg" id="badge-card">
-        <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Estado Actual</span>
-        <div class="mt-3 flex items-center gap-3">
-          <div class="h-10 w-10 rounded-xl bg-brand-gold/20 flex items-center justify-center">
-            <svg class="h-5 w-5 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="flex items-center gap-2">
+          <button id="settings-toggle-btn" class="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.08] transition-all" title="Ajustes">
+            <svg class="h-4 w-4 theme-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </button>
+          <button id="theme-toggle-btn" class="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.08] transition-all" title="Cambiar tema">
+            <svg id="theme-icon-sun" class="h-4 w-4 text-amber-400 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <svg id="theme-icon-moon" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          </button>
+          <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" id="conn-dot"></span>
+            <span class="text-xs font-medium theme-text-tertiary" id="conn-text">Conectado</span>
           </div>
-          <div>
-            <span id="badge-value" class="text-sm font-semibold text-gray-900 dark:text-white">--</span>
-            <p class="text-xs text-gray-400" id="badge-sub">Rendimiento académico</p>
+          <div class="h-10 w-10 rounded-full bg-brand-maroon flex items-center justify-center text-amber-300 font-bold text-sm shadow-sm ring-2 ring-white/10">
+            <span id="student-initial">C</span>
           </div>
         </div>
       </div>
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 animate-slide-up" id="metrics-section">
-        <h2 class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white mb-3">Rendimiento por Área ABP</h2>
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3" id="metrics-grid">
-          {[1,2,3,4,5].map(() => (
-            <div class="h-24 rounded-xl shimmer-skeleton"></div>
-          ))}
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- LEFT COLUMN -->
+        <div class="lg:col-span-2 space-y-6">
+
+          <!-- CARD 1: Academic Status -->
+          <div class="glass-card-student overflow-hidden fade-in-section">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+              <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-xl bg-brand-maroon/20 flex items-center justify-center">
+                  <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                </div>
+                <div>
+                  <h2 class="text-sm font-semibold theme-text-primary">Rendimiento Académico</h2>
+                  <p class="text-xs theme-text-tertiary">Notas ABP por materia</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="text-right">
+                  <span class="text-xs theme-text-tertiary">Promedio</span>
+                  <p class="text-lg font-bold" id="avg-score-display" style="font-family:'Syne',sans-serif">--</p>
+                </div>
+                <div class="h-14 w-14 relative">
+                  <svg class="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.5" fill="none" class="stroke-white/[0.06]" stroke-width="3" />
+                    <circle id="avg-ring" cx="18" cy="18" r="15.5" fill="none" stroke="#800000" stroke-width="3" stroke-linecap="round" stroke-dasharray="97.4" stroke-dashoffset="97.4" class="transition-all duration-1000 ease-out" style="filter: drop-shadow(0 0 4px currentColor);" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" id="metrics-grid">
+                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
+                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
+                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: Hybrid ABP Hub -->
+          <div class="glass-card-student overflow-hidden fade-in-section">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+              <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                  <svg class="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                </div>
+                <div>
+                  <h2 class="text-sm font-semibold theme-text-primary">Hub ABP Integrador</h2>
+                  <p class="text-xs theme-text-tertiary">Gestión de proyectos y entregas</p>
+                </div>
+              </div>
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">Activo</span>
+            </div>
+            <div class="flex border-b border-white/[0.06] bg-white/[0.01]">
+              <button class="abp-tab-btn active flex-1 py-3 text-xs font-semibold uppercase tracking-wider transition-all" data-abp-tab="parciales">
+                <span class="flex items-center justify-center gap-1.5">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                  Entregas Parciales
+                </span>
+              </button>
+              <button class="abp-tab-btn flex-1 py-3 text-xs font-semibold uppercase tracking-wider transition-all" data-abp-tab="transversal">
+                <span class="flex items-center justify-center gap-1.5">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Proyecto Transversal
+                </span>
+              </button>
+            </div>
+            <!-- Entregas Parciales -->
+            <div id="abp-parciales" class="p-6">
+              <div class="grid grid-cols-3 gap-2" id="abp-subjects-grid">
+                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
+                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
+                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
+                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
+                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
+                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
+                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
+                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
+                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
+              </div>
+            </div>
+            <!-- Proyecto Transversal -->
+            <div id="abp-transversal" class="p-6 hidden">
+              <div id="abp-dropzone" class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/[0.08] bg-white/[0.02] py-10 px-6 transition-all hover:border-amber-500/30 hover:bg-amber-500/[0.02] cursor-pointer">
+                <svg class="h-10 w-10 text-amber-400/60 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                <p class="text-sm font-medium theme-text-secondary mb-1">Proyecto Transversal Integrador</p>
+                <p class="text-xs theme-text-tertiary mb-4">Arrastra tu macro-entregable aquí o haz clic para seleccionar</p>
+                <input id="abp-transversal-file" type="file" class="hidden" accept=".pdf,.doc,.docx,.zip,.rar,.7z" />
+                <button id="abp-transversal-select-btn" class="px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 transition-all">Seleccionar archivo</button>
+                <p id="abp-transversal-filename" class="text-xs theme-text-tertiary mt-3 hidden"></p>
+              </div>
+              <div class="mt-4">
+                <div class="flex items-center justify-between text-xs theme-text-tertiary mb-1.5">
+                  <span>Progreso del proyecto</span>
+                  <span class="font-semibold theme-text-primary" id="abp-progress-pct">0%</span>
+                </div>
+                <div class="h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div id="abp-progress-bar" class="h-full rounded-full bg-amber-500 transition-all duration-1000" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 3: Schedule -->
+          <div class="glass-card-student overflow-hidden fade-in-section">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+              <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-xl bg-brand-maroon/20 flex items-center justify-center">
+                  <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+                <div>
+                  <h2 class="text-sm font-semibold theme-text-primary">Horario & Tareas</h2>
+                  <p class="text-xs theme-text-tertiary">VYNTRA Go · Cronograma semanal</p>
+                </div>
+              </div>
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">Semana activa</span>
+            </div>
+            <div class="p-6">
+              <div class="space-y-0" id="schedule-list">
+                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
+                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
+                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
+                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
+                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="space-y-6">
+
+          <!-- CARD 4: Financial Status -->
+          <div class="glass-card-student overflow-hidden fade-in-section">
+            <div class="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06]">
+              <div class="h-9 w-9 rounded-xl bg-brand-maroon/20 flex items-center justify-center">
+                <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div>
+                <h2 class="text-sm font-semibold theme-text-primary">Estado Financiero</h2>
+                <p class="text-xs theme-text-tertiary">Situación de pagos</p>
+              </div>
+            </div>
+            <div class="p-6" id="financial-card">
+              <div class="flex items-center gap-4">
+                <div class="h-14 w-14 rounded-full bg-white/5 flex items-center justify-center shrink-0" id="fin-icon-container">
+                  <svg class="h-7 w-7 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold theme-text-primary" id="fin-status-label">Consultando...</p>
+                  <p class="text-xs theme-text-tertiary" id="fin-status-detail">Estado de cuenta</p>
+                </div>
+              </div>
+              <!-- Financial lock alert (appears when blocked) -->
+              <div id="fin-lock-alert" class="hidden mt-4 rounded-xl bg-[#800000]/15 border border-[#800000]/25 p-4">
+                <div class="flex items-center gap-3">
+                  <svg class="h-5 w-5 text-[#800000] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  <div>
+                    <p class="text-xs font-semibold text-[#800000]">Acceso restringido por mora</p>
+                    <p class="text-[11px] text-[#800000]/70 mt-0.5">La descarga de boletín y exámenes estará disponible al regularizar tu situación financiera.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 pt-4 border-t border-white/[0.06]">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="theme-text-tertiary">Meses en mora</span>
+                  <span class="font-semibold theme-text-primary" id="fin-months">--</span>
+                </div>
+                <div class="flex items-center justify-between text-sm mt-2">
+                  <span class="theme-text-tertiary">Saldo pendiente</span>
+                  <span class="font-semibold theme-text-primary" id="fin-balance">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="glass-card-student overflow-hidden fade-in-section">
+            <div class="px-6 py-4 border-b border-white/[0.06]">
+              <h2 class="text-sm font-semibold theme-text-primary">Resumen Académico</h2>
+            </div>
+            <div class="p-6 space-y-4" id="summary-section">
+              <div class="flex items-center justify-between">
+                <span class="text-sm theme-text-tertiary">Estado general</span>
+                <span id="summary-status" class="text-sm font-semibold text-gray-400">--</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm theme-text-tertiary">Materias cursando</span>
+                <span id="summary-subjects" class="text-sm font-semibold theme-text-primary">--</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm theme-text-tertiary">Áreas en riesgo</span>
+                <span id="summary-risk" class="text-sm font-semibold text-brand-danger">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 5: Recursos Académicos (Material Locker + AI Quiz) -->
+          <div class="glass-card-student overflow-hidden fade-in-section">
+            <div class="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06]">
+              <div class="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+                <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              </div>
+              <div>
+                <h2 class="text-sm font-semibold theme-text-primary">Recursos Académicos</h2>
+                <p class="text-xs theme-text-tertiary">Materiales, documentos y desafíos</p>
+              </div>
+            </div>
+            <div class="flex border-b border-white/[0.06] bg-white/[0.01]">
+              <button class="recurso-tab-btn active flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all" data-tab="docs">Documentos</button>
+              <button class="recurso-tab-btn flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all" data-tab="materiales">Materiales</button>
+              <button class="recurso-tab-btn flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all" data-tab="quiz">Quiz IA</button>
+            </div>
+
+            <!-- Documents sub-tab -->
+            <div id="recurso-docs" class="p-6 space-y-2">
+              <div id="locker-unlocked">
+                <button class="locker-doc-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] hover:border-amber-500/30 transition-all text-left" data-doc="boletin">
+                  <svg class="h-5 w-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  <span class="flex-1">Boletín Académico</span>
+                  <svg class="h-4 w-4 theme-text-quaternary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                </button>
+                <button class="locker-doc-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] hover:border-amber-500/30 transition-all text-left" data-doc="reporte">
+                  <svg class="h-5 w-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  <span class="flex-1">Reporte de Notas</span>
+                  <svg class="h-4 w-4 theme-text-quaternary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                </button>
+                <button class="locker-doc-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] hover:border-amber-500/30 transition-all text-left" data-doc="horario">
+                  <svg class="h-5 w-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <span class="flex-1">Horario Semanal</span>
+                  <svg class="h-4 w-4 theme-text-quaternary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                </button>
+              </div>
+              <!-- Exam link cards (locked when in arrears) -->
+              <div id="exam-links-section" class="mt-3 pt-3 border-t border-white/[0.06] space-y-2">
+                <p class="text-[11px] font-semibold uppercase tracking-wider theme-text-tertiary">Exámenes activos</p>
+                <button class="exam-link-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] transition-all text-left" data-exam-id="exam-1">
+                  <svg class="h-5 w-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  <span class="flex-1">Examen Parcial · Matemáticas</span>
+                  <span class="text-[10px] font-semibold uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Disponible</span>
+                </button>
+                <button class="exam-link-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] transition-all text-left" data-exam-id="exam-2">
+                  <svg class="h-5 w-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  <span class="flex-1">Examen Final · Ciencias</span>
+                  <span class="text-[10px] font-semibold uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Disponible</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Materials sub-tab -->
+            <div id="recurso-materiales" class="p-6 hidden">
+              <p class="text-xs theme-text-tertiary mb-4">Resúmenes de clase y material de estudio</p>
+              <div id="materials-grid" class="grid grid-cols-2 gap-2">
+                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
+                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
+              </div>
+            </div>
+
+            <!-- Quiz sub-tab -->
+            <div id="recurso-quiz" class="p-6 hidden">
+              <div id="quiz-setup">
+                <div class="mb-4">
+                  <label class="text-xs font-semibold theme-text-secondary block mb-1.5">Selecciona una materia</label>
+                  <select id="quiz-subject-select" class="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm theme-text-primary focus:outline-none focus:ring-2 focus:ring-brand-maroon/40 transition-all">
+                    <option value="">-- Elegir materia --</option>
+                    <option value="Investigación Guiada">Investigación Guiada</option>
+                    <option value="Matemáticas Aplicadas">Matemáticas Aplicadas</option>
+                    <option value="Ciencias Naturales">Ciencias Naturales</option>
+                    <option value="Lenguaje y Literatura">Lenguaje y Literatura</option>
+                    <option value="Inglés Avanzado">Inglés Avanzado</option>
+                    <option value="Ciencias Sociales">Ciencias Sociales</option>
+                    <option value="Tecnología e Informática">Tecnología e Informática</option>
+                    <option value="Arte y Creatividad">Arte y Creatividad</option>
+                    <option value="Música y Expresión">Música y Expresión</option>
+                  </select>
+                </div>
+                <button id="quiz-start-btn" class="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-maroon px-4 py-3 text-sm font-semibold text-white hover:bg-brand-maroon/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Iniciar Desafío
+                </button>
+              </div>
+              <div id="quiz-active" class="hidden">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <p class="text-xs font-semibold theme-text-secondary" id="quiz-subject-label">Matemáticas</p>
+                    <p class="text-[11px] theme-text-tertiary" id="quiz-progress">Pregunta 1 de 5</p>
+                  </div>
+                  <div id="quiz-badge" class="hidden px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+                    <span class="text-[11px] font-bold text-amber-400" id="quiz-badge-label">Bronce</span>
+                  </div>
+                </div>
+                <p class="text-sm font-medium theme-text-primary mb-4" id="quiz-question">Cargando pregunta...</p>
+                <div id="quiz-options" class="space-y-2 mb-4"></div>
+                <div class="flex gap-2">
+                  <button id="quiz-submit-btn" class="flex-1 rounded-xl bg-brand-maroon px-4 py-2.5 text-xs font-semibold text-white hover:bg-brand-maroon/80 transition-all disabled:opacity-50">Responder</button>
+                  <button id="quiz-next-btn" class="flex-1 rounded-xl border border-white/[0.08] px-4 py-2.5 text-xs font-semibold theme-text-secondary hover:bg-white/[0.04] transition-all hidden">Siguiente</button>
+                </div>
+              </div>
+              <div id="quiz-results" class="hidden text-center py-4">
+                <div class="text-3xl mb-2" id="quiz-results-icon">🏆</div>
+                <p class="text-sm font-bold theme-text-primary" id="quiz-results-score">0/5</p>
+                <p class="text-xs theme-text-tertiary mt-1" id="quiz-results-badge">Insignia: Bronce</p>
+                <button id="quiz-retry-btn" class="mt-4 rounded-xl border border-white/[0.08] px-6 py-2.5 text-xs font-semibold theme-text-secondary hover:bg-white/[0.04] transition-all">Intentar de nuevo</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 6: Behavior & Merits -->
+          <div class="glass-card-student overflow-hidden fade-in-section">
+            <div class="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06]">
+              <div class="h-9 w-9 rounded-xl bg-brand-maroon/20 flex items-center justify-center">
+                <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+              </div>
+              <div>
+                <h2 class="text-sm font-semibold theme-text-primary">Comportamiento & Méritos</h2>
+                <p class="text-xs theme-text-tertiary">Registro de observaciones</p>
+              </div>
+            </div>
+            <div class="p-6" id="behavior-logs-container">
+              <div class="space-y-3" id="behavior-timeline">
+                <div class="h-12 rounded-xl shimmer-skeleton-student"></div>
+                <div class="h-12 rounded-xl shimmer-skeleton-student"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="col-span-2 sm:col-span-4 lg:col-span-4 xl:col-span-5">
-        <AIChat />
+
+      <!-- Telemetry freeze overlay (headless — hidden by default) -->
+      <div id="telemetry-freeze-overlay" class="fixed inset-0 z-[90] hidden" style="background:rgba(128,0,0,0.15);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
+        <div class="flex items-center justify-center h-full">
+          <div class="text-center px-8 py-10 rounded-2xl bg-[#040405]/90 border border-[#800000]/30 max-w-sm">
+            <svg class="h-12 w-12 mx-auto text-[#800000] mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+            <p class="text-lg font-bold text-white font-syne">Conexión interrumpida</p>
+            <p class="text-sm text-gray-500 mt-2">Hemos detectado una pérdida de conexión. Tu progreso está a salvo. Reanudaremos automáticamente cuando la conexión se restablezca.</p>
+            <div class="mt-6 flex items-center justify-center gap-3">
+              <span class="h-2 w-2 rounded-full bg-[#FF0055] animate-pulse"></span>
+              <span class="text-xs text-gray-600">Reconectando...</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="col-span-2 sm:col-span-4 lg:col-span-2 xl:col-span-3 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl p-5 transition-all hover:shadow-lg" id="risk-history">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Alertas Recientes</h3>
-        <div id="risk-list" class="space-y-2 text-sm text-gray-500 dark:text-gray-400">
-          <div class="h-4 rounded shimmer-skeleton"></div>
-          <div class="h-4 rounded shimmer-skeleton w-3/4"></div>
-          <div class="h-4 rounded shimmer-skeleton w-1/2"></div>
+
+      <!-- Toast container -->
+      <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+      <!-- Settings Modal -->
+      <div id="settings-modal" class="fixed inset-0 z-[80] hidden flex items-center justify-center" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">
+        <div class="glass-card-student w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+            <h2 class="text-sm font-semibold theme-text-primary" style="font-family:'Syne',sans-serif">Ajustes</h2>
+            <button id="settings-close-btn" class="h-8 w-8 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.08] transition-all">
+              <svg class="h-4 w-4 theme-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="p-6 space-y-6">
+            <!-- Theme -->
+            <div>
+              <p class="text-xs font-semibold theme-text-secondary uppercase tracking-wider mb-3">Apariencia</p>
+              <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <div class="flex items-center gap-3">
+                  <svg class="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                  <div>
+                    <p class="text-sm font-medium theme-text-primary">Obsidian Crimson</p>
+                    <p class="text-xs theme-text-tertiary">Modo oscuro premium</p>
+                  </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="settings-theme-toggle" class="sr-only peer" />
+                  <div class="w-9 h-5 rounded-full bg-gray-600 peer-checked:bg-amber-500/40 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+                </label>
+              </div>
+            </div>
+            <!-- Accent color -->
+            <div>
+              <p class="text-xs font-semibold theme-text-secondary uppercase tracking-wider mb-3">Color de acento</p>
+              <div class="flex gap-3">
+                <button class="accent-btn w-8 h-8 rounded-xl border-2 border-brand-maroon bg-brand-maroon active" data-accent="maroon" title="Maroon"></button>
+                <button class="accent-btn w-8 h-8 rounded-xl border-2 border-transparent bg-amber-500" data-accent="gold" title="Gold"></button>
+                <button class="accent-btn w-8 h-8 rounded-xl border-2 border-transparent bg-emerald-500" data-accent="emerald" title="Emerald"></button>
+              </div>
+            </div>
+            <!-- Password -->
+            <div>
+              <p class="text-xs font-semibold theme-text-secondary uppercase tracking-wider mb-3">Cambiar contraseña</p>
+              <form id="password-form" class="space-y-3">
+                <input id="pw-current" type="password" placeholder="Contraseña actual" class="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm theme-text-primary placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-maroon/40 transition-all" />
+                <input id="pw-new" type="password" placeholder="Nueva contraseña" class="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm theme-text-primary placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-maroon/40 transition-all" />
+                <input id="pw-confirm" type="password" placeholder="Confirmar nueva contraseña" class="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm theme-text-primary placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-maroon/40 transition-all" />
+                <button type="submit" class="w-full rounded-xl bg-brand-maroon px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-maroon/80 transition-all">
+                  Actualizar contraseña
+                </button>
+                <p id="pw-feedback" class="text-xs theme-text-tertiary text-center"></p>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+    <div class="h-16"></div>
   </div>
   <WsRiskAlert />
+  <AIChat role="student" />
 </Layout>
-<script define:vars={{ apiUrl }}>
+
+<style is:global>
+  :root {
+    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .glass-card-student {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.5rem;
+    transition: all 0.3s ease;
+  }
+  .glass-card-student:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .shimmer-skeleton-student {
+    background: linear-gradient(90deg, transparent 0%, rgba(128,0,0,0.08) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmerDash 2s infinite linear;
+    border-radius: 0.75rem;
+  }
+  @keyframes shimmerDash {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .noise-overlay {
+    position: fixed; inset: 0; z-index: 1;
+    pointer-events: none; opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    background-repeat: repeat; background-size: 256px 256px;
+  }
+  .fade-in-section {
+    opacity: 0;
+    animation: fadeSlideUp 0.8s var(--ease-out-expo) forwards;
+  }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .solar-glow {
+    position: fixed; width: 120vmax; height: 120vmax; left: 50%; top: 50%;
+    transform: translate(-50%,-55%);
+    background: radial-gradient(ellipse 40% 35% at 50% 50%, rgba(253,192,3,0.06) 0%, rgba(128,0,0,0.04) 30%, transparent 60%);
+    animation: pulseSlow 8s ease-in-out infinite;
+    pointer-events: none; z-index: 0;
+  }
+  .solar-ring-bg {
+    position: fixed; width: 90vmin; height: 90vmin; left: 50%; top: 45%;
+    transform: translate(-50%,-50%); border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, rgba(253,192,3,0.08) 0%, rgba(253,192,3,0.02) 35%, transparent 55%);
+    animation: coronaPulse 6s ease-in-out infinite;
+    pointer-events: none; z-index: 0;
+  }
+  .solar-ring-bg::before {
+    content: ''; position: absolute; inset: -2px; border-radius: 50%;
+    border: 1px solid rgba(253,192,3,0.08);
+    animation: ringRotate 20s linear infinite;
+  }
+  .solar-ring-bg::after {
+    content: ''; position: absolute; inset: -20px; border-radius: 50%;
+    border: 1px dashed rgba(253,192,3,0.04);
+    animation: ringRotate 30s linear infinite reverse;
+  }
+  @keyframes pulseSlow {
+    0%,100% { transform: translate(-50%,-55%) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%,-55%) scale(1.08); opacity: 1; }
+  }
+  @keyframes coronaPulse {
+    0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+    50% { transform: translate(-50%,-50%) scale(1.12); opacity: 1; }
+  }
+  @keyframes ringRotate { to { transform: rotate(360deg); } }
+  .orbit-container {
+    position: fixed; left: 50%; top: 45%; width: 70vmin; height: 70vmin;
+    transform: translate(-50%,-50%);
+    animation: ringRotate 40s linear infinite;
+    pointer-events: none; z-index: 0;
+  }
+  .orbit-dot {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #FDC003; opacity: 0.3;
+  }
+  .orbit-dot:nth-child(1) { top: 0; left: 50%; transform: translate(-50%,-50%); }
+  .orbit-dot:nth-child(2) { top: 50%; right: 0; transform: translate(50%,-50%); }
+  .orbit-dot:nth-child(3) { bottom: 0; left: 50%; transform: translate(-50%,50%); }
+  .orbit-dot:nth-child(4) { top: 50%; left: 0; transform: translate(-50%,-50%); }
+  .orbit-container-2 {
+    position: fixed; left: 50%; top: 45%; width: 55vmin; height: 55vmin;
+    transform: translate(-50%,-50%);
+    animation: ringRotate 25s linear infinite reverse;
+    pointer-events: none; z-index: 0;
+  }
+  .orbit-dot-2 {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #800000; opacity: 0.5;
+  }
+  .orbit-dot-2:nth-child(1) { top: 0; left: 50%; transform: translate(-50%,-50%); }
+  .orbit-dot-2:nth-child(2) { bottom: 15%; right: 0; transform: translate(50%,50%); }
+  .orbit-dot-2:nth-child(3) { bottom: 0; left: 25%; transform: translate(0,50%); }
+  .glow-orb-maroon {
+    position: fixed; top: 10%; right: 5%; width: 400px; height: 400px;
+    background: rgba(128,0,0,0.05); filter: blur(120px); border-radius: 50%;
+    pointer-events: none;
+  }
+  .glow-orb-amber {
+    position: fixed; bottom: 20%; left: 10%; width: 300px; height: 300px;
+    background: rgba(253,192,3,0.05); filter: blur(100px); border-radius: 50%;
+    pointer-events: none;
+  }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(128,0,0,0.3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(128,0,0,0.5); }
+  .ambient-risk-active { box-shadow: inset 0 0 80px rgba(255,0,85,0.15), inset 0 0 160px rgba(255,0,85,0.08); }
+
+  .abp-tab-btn {
+    color: rgba(255,255,255,0.3);
+    border-bottom: 2px solid transparent;
+  }
+  .abp-tab-btn.active {
+    color: #FDC003;
+    border-bottom-color: #FDC003;
+    background: rgba(253,192,3,0.04);
+  }
+  .recurso-tab-btn {
+    color: rgba(255,255,255,0.3);
+    border-bottom: 2px solid transparent;
+  }
+  .recurso-tab-btn.active {
+    color: #34D399;
+    border-bottom-color: #34D399;
+    background: rgba(52,211,153,0.04);
+  }
+
+  [data-theme="alabaster"] #main-container { background: #F5F0EB; }
+  [data-theme="alabaster"] .glass-card-student {
+    background: rgba(255,255,255,0.7);
+    border-color: rgba(0,0,0,0.06);
+  }
+  [data-theme="alabaster"] .glass-card-student:hover {
+    background: rgba(255,255,255,0.85);
+    border-color: rgba(0,0,0,0.1);
+  }
+  [data-theme="alabaster"] .theme-text-primary { color: #1A1A2E; }
+  [data-theme="alabaster"] .theme-text-secondary { color: #4B5563; }
+  [data-theme="alabaster"] .theme-text-tertiary { color: #6B7280; }
+  [data-theme="alabaster"] .theme-text-quaternary { color: #9CA3AF; }
+  [data-theme="alabaster"] .solar-glow,
+  [data-theme="alabaster"] .solar-ring-bg,
+  [data-theme="alabaster"] .orbit-container,
+  [data-theme="alabaster"] .orbit-container-2,
+  [data-theme="alabaster"] .glow-orb-maroon,
+  [data-theme="alabaster"] .glow-orb-amber { opacity: 0; }
+  [data-theme="alabaster"] .grid-bg { opacity: 0.3; }
+  [data-theme="alabaster"] .noise-overlay { opacity: 0.01; }
+  [data-theme="alabaster"] .abp-tab-btn.active { color: #800000; border-bottom-color: #800000; }
+  [data-theme="alabaster"] .recurso-tab-btn.active { color: #059669; border-bottom-color: #059669; }
+
+  .theme-text-primary { color: #F9FAFB; }
+  .theme-text-secondary { color: #D1D5DB; }
+  .theme-text-tertiary { color: #6B7280; }
+  .theme-text-quaternary { color: #4B5563; }
+
+  .font-syne { font-family: 'Syne', sans-serif; }
+</style>
+
+<script define:vars={{ apiUrl, studentId }}>
   (async function () {
-    var token = localStorage.getItem('auth_token')
+    var token = localStorage.getItem('access_token')
     var userId = localStorage.getItem('userId')
     var name = localStorage.getItem('userName')
     if (!token || !userId) { window.location.href = '/'; return }
-    if (name) document.getElementById('student-name').textContent = name
-    document.getElementById('student-meta').textContent = 'ID: ' + userId + ' · Panel de rendimiento'
+    if (name) {
+      document.getElementById('student-name').textContent = name
+      document.getElementById('student-initial').textContent = name.charAt(0).toUpperCase()
+    }
+    document.getElementById('student-meta').textContent = 'ID: ' + userId.slice(0, 8) + ' · Panel de rendimiento'
 
-    try {
-      var res = await fetch(apiUrl + '/api/grades/download-pdf?student_id=' + encodeURIComponent(userId), {
-        headers: { 'Authorization': 'Bearer ' + token },
+    // ── Theme System ──
+    var currentTheme = localStorage.getItem('vyntra-theme') || 'obsidian'
+    var themeToggleBtn = document.getElementById('theme-toggle-btn')
+    var settingsThemeToggle = document.getElementById('settings-theme-toggle')
+    var themeIconSun = document.getElementById('theme-icon-sun')
+    var themeIconMoon = document.getElementById('theme-icon-moon')
+
+    function applyTheme(theme) {
+      currentTheme = theme
+      document.documentElement.setAttribute('data-theme', theme)
+      localStorage.setItem('vyntra-theme', theme)
+      var isObsidian = theme === 'obsidian'
+      themeIconSun.classList.toggle('hidden', !isObsidian)
+      themeIconMoon.classList.toggle('hidden', isObsidian)
+      if (settingsThemeToggle) settingsThemeToggle.checked = !isObsidian
+    }
+    applyTheme(currentTheme)
+
+    themeToggleBtn.addEventListener('click', function () {
+      applyTheme(currentTheme === 'obsidian' ? 'alabaster' : 'obsidian')
+    })
+    if (settingsThemeToggle) {
+      settingsThemeToggle.addEventListener('change', function () {
+        applyTheme(this.checked ? 'alabaster' : 'obsidian')
       })
-      if (res.status === 403) {
-        document.getElementById('badge-value').textContent = 'Estatus financiero irregular'
-        document.getElementById('badge-value').className = 'text-sm font-semibold text-brand-danger'
-        document.getElementById('badge-sub').textContent = 'Descarga restringida'
-      }
-    } catch (_) {}
+    }
 
-    try {
-      var gradesRes = await fetch(apiUrl + '/api/grades?student_id=' + encodeURIComponent(userId), {
-        headers: { 'Authorization': 'Bearer ' + token },
+    // ── Accent Color ──
+    document.querySelectorAll('.accent-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.accent-btn').forEach(function (b) { b.classList.remove('active'); b.style.borderColor = 'transparent' })
+        this.classList.add('active')
+        this.style.borderColor = 'rgba(255,255,255,0.3)'
+        var accent = this.getAttribute('data-accent')
+        localStorage.setItem('vyntra-accent', accent)
       })
-      if (gradesRes.ok) {
-        var grades = await gradesRes.json()
-        renderGrades(grades)
+    })
+    var savedAccent = localStorage.getItem('vyntra-accent') || 'maroon'
+    document.querySelectorAll('.accent-btn').forEach(function (b) {
+      if (b.getAttribute('data-accent') === savedAccent) {
+        b.classList.add('active')
+        b.style.borderColor = 'rgba(255,255,255,0.3)'
       }
-    } catch (_) {}
+    })
 
+    // ── Settings Modal ──
+    var settingsModal = document.getElementById('settings-modal')
+    document.getElementById('settings-toggle-btn').addEventListener('click', function () { settingsModal.classList.remove('hidden') })
+    document.getElementById('settings-close-btn').addEventListener('click', function () { settingsModal.classList.add('hidden') })
+    settingsModal.addEventListener('click', function (e) { if (e.target === settingsModal) this.classList.add('hidden') })
+
+    // ── Password Form ──
+    document.getElementById('password-form').addEventListener('submit', async function (e) {
+      e.preventDefault()
+      var current = document.getElementById('pw-current').value.trim()
+      var newPw = document.getElementById('pw-new').value
+      var confirm = document.getElementById('pw-confirm').value
+      var feedback = document.getElementById('pw-feedback')
+      if (!current || !newPw || !confirm) { feedback.textContent = 'Completa todos los campos'; return }
+      if (newPw !== confirm) { feedback.textContent = 'Las contraseñas no coinciden'; return }
+      if (newPw.length < 6) { feedback.textContent = 'La contraseña debe tener al menos 6 caracteres'; return }
+      feedback.textContent = 'Actualizando...'
+      try {
+        var res = await fetch(apiUrl + '/api/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ current_password: current, new_password: newPw }),
+        })
+        if (res.ok) {
+          feedback.textContent = '✓ Contraseña actualizada'
+          feedback.style.color = '#00FF66'
+          document.getElementById('password-form').reset()
+        } else {
+          var err = await res.json().catch(function () { return { detail: 'Error' } })
+          feedback.textContent = '✗ ' + (err.detail || 'Error al actualizar')
+          feedback.style.color = '#FF0055'
+        }
+      } catch (_) {
+        feedback.textContent = '✗ Error de conexión'
+        feedback.style.color = '#FF0055'
+      }
+    })
+
+    // ── PDF Download ──
+    async function downloadPDF() {
+      try {
+        var res = await fetch(apiUrl + '/api/grades/download-pdf?student_id=' + encodeURIComponent(userId), {
+          headers: { 'Authorization': 'Bearer ' + token }
+        })
+        if (!res.ok) { var err = await res.json().catch(function () { return { detail: 'Error al descargar' } }); throw new Error(err.detail || 'Error ' + res.status) }
+        var blob = await res.blob()
+        var url = URL.createObjectURL(blob)
+        var a = document.createElement('a'); a.href = url; a.download = 'boletin_academico.pdf'
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
+      } catch (e) { alert('Error: ' + e.message) }
+    }
+
+    // ── Toast helper ──
+    function showToast(msg, type) {
+      var container = document.getElementById('toast-container')
+      var colors = { success: 'border-emerald-500/30 text-emerald-400', error: 'border-[#FF0055]/30 text-[#FF0055]', info: 'border-amber-500/30 text-amber-400' }
+      var c = colors[type] || colors.info
+      var div = document.createElement('div')
+      div.className = 'flex items-center gap-3 rounded-xl border bg-black/90 backdrop-blur-xl px-5 py-4 shadow-2xl pointer-events-auto animate-slide-up ' + c.split(' ')[0]
+      div.innerHTML = '<span class="text-sm ' + c.split(' ')[1] + '">' + msg + '</span>'
+      container.appendChild(div)
+      setTimeout(function () { div.remove() }, 4000)
+    }
+
+    // ── Load grades ──
+    try {
+      var gRes = await fetch(apiUrl + '/api/grades?student_id=' + encodeURIComponent(userId), { headers: { 'Authorization': 'Bearer ' + token } })
+      if (gRes.ok) { var grades = await gRes.json(); renderGrades(grades) }
+    } catch (_) {}
+    // Load financial
+    var fin
+    try {
+      var fRes = await fetch(apiUrl + '/api/students/' + encodeURIComponent(userId) + '/financial-status', { headers: { 'Authorization': 'Bearer ' + token } })
+      if (fRes.ok) { fin = await fRes.json(); renderFinancial(fin) }
+    } catch (_) {}
+    renderAbpTracker()
+    renderBehaviorLogs()
+    renderSchedule()
+    loadMaterials()
+
+    // ── Hybrid ABP Hub tabs ──
+    document.querySelectorAll('.abp-tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.abp-tab-btn').forEach(function (b) { b.classList.remove('active') })
+        this.classList.add('active')
+        var tab = this.getAttribute('data-abp-tab')
+        document.getElementById('abp-parciales').classList.toggle('hidden', tab !== 'parciales')
+        document.getElementById('abp-transversal').classList.toggle('hidden', tab !== 'transversal')
+      })
+    })
+
+    // ── Proyecto Transversal file select ──
+    var transversalFileInput = document.getElementById('abp-transversal-file')
+    document.getElementById('abp-transversal-select-btn').addEventListener('click', function () { transversalFileInput.click() })
+    transversalFileInput.addEventListener('change', function () {
+      if (this.files && this.files[0]) {
+        document.getElementById('abp-transversal-filename').textContent = '✓ ' + this.files[0].name
+        document.getElementById('abp-transversal-filename').classList.remove('hidden')
+        document.getElementById('abp-dropzone').classList.add('border-emerald-500/30', 'bg-emerald-500/[0.02]')
+        showToast('Archivo seleccionado: ' + this.files[0].name, 'success')
+      }
+    })
+
+    // ── Recursos tabs ──
+    document.querySelectorAll('.recurso-tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.recurso-tab-btn').forEach(function (b) { b.classList.remove('active') })
+        this.classList.add('active')
+        var tab = this.getAttribute('data-tab')
+        document.getElementById('recurso-docs').classList.toggle('hidden', tab !== 'docs')
+        document.getElementById('recurso-materiales').classList.toggle('hidden', tab !== 'materiales')
+        document.getElementById('recurso-quiz').classList.toggle('hidden', tab !== 'quiz')
+      })
+    })
+
+    // ── Document locker buttons ──
+    document.querySelectorAll('.locker-doc-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var docType = btn.getAttribute('data-doc')
+        if (docType === 'boletin') {
+          if (fin && fin.months_in_arrears >= 2 && !fin.financial_override) { showToast('Acción bloqueada por mora. Regulariza tu situación.', 'error'); return }
+          downloadPDF()
+        } else {
+          showToast('Descarga iniciada: ' + docType, 'info')
+        }
+      })
+    })
+
+    // ── Exam links with financial lock ──
+    document.querySelectorAll('.exam-link-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (fin && fin.months_in_arrears >= 2 && !fin.financial_override) { showToast('Exámenes bloqueados por mora. Regulariza tu situación.', 'error'); return }
+        var examId = btn.getAttribute('data-exam-id')
+        localStorage.setItem('active_exam_id', examId)
+        showToast('Ingresando al examen...', 'info')
+      })
+    })
+
+    // ── Financial with targeted lock ──
+    function renderFinancial(fin) {
+      var icon = document.getElementById('fin-icon-container')
+      var label = document.getElementById('fin-status-label')
+      var detail = document.getElementById('fin-status-detail')
+      var monthsEl = document.getElementById('fin-months')
+      var balanceEl = document.getElementById('fin-balance')
+      var lockAlert = document.getElementById('fin-lock-alert')
+      monthsEl.textContent = fin.months_in_arrears || '0'
+      balanceEl.textContent = '$' + ((fin.total_balance || 0).toLocaleString('es-CO'))
+      var isLocked = fin.months_in_arrears >= 2 && !fin.financial_override
+      lockAlert.classList.toggle('hidden', !isLocked)
+      if (isLocked) {
+        icon.className = 'h-14 w-14 rounded-full bg-[#FF0055]/20 flex items-center justify-center shrink-0'
+        icon.innerHTML = '<svg class="h-7 w-7 text-[#FF0055]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>'
+        label.textContent = 'Mora activa'
+        label.className = 'text-sm font-semibold text-[#FF0055]'
+        detail.textContent = 'Algunas funciones restringidas'
+        var mc = document.getElementById('main-container')
+        if (mc) mc.classList.add('ambient-risk-active')
+      } else {
+        icon.className = 'h-14 w-14 rounded-full bg-[#00FF66]/10 flex items-center justify-center shrink-0'
+        icon.innerHTML = '<svg class="h-7 w-7 text-[#00FF66]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+        label.textContent = 'Al día'
+        label.className = 'text-sm font-semibold text-[#00FF66]'
+        detail.textContent = 'Estado financiero regular'
+      }
+    }
+
+    // ── Grades render ──
     function renderGrades(grades) {
       var grid = document.getElementById('metrics-grid')
       if (!grid) return
-      if (!grades || grades.length === 0) {
-        grid.innerHTML = '<p class="col-span-full text-sm text-gray-400 py-8 text-center">No hay notas registradas</p>'
+      if (!grades || grades.length === 0) { grid.innerHTML = '<p class="col-span-full text-sm text-gray-500 py-8 text-center">No hay notas registradas</p>'; return }
+      var total = grades.reduce(function (s, g) { return s + g.score }, 0)
+      var avg = total / grades.length
+      var atRisk = grades.filter(function (g) { return g.score < 3.5 })
+      grid.innerHTML = grades.map(function (g) {
+        var name = g.subject_name || g.subject_id || g.subject || '-'
+        var c = g.score >= 4.0 ? 'text-[#00FF66]' : g.score >= 3.5 ? 'text-[#FFE600]' : 'text-[#FF0055]'
+        var bar = g.score >= 4.0 ? 'bg-[#00FF66]' : g.score >= 3.5 ? 'bg-[#FFE600]' : 'bg-[#FF0055]'
+        return '<div class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 transition-all hover:bg-white/[0.06] hover:border-white/[0.1]"><div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-gray-300 truncate">' + name + '</span><span class="text-base font-bold ' + c + '">' + g.score.toFixed(1) + '</span></div><div class="h-1.5 rounded-full bg-white/[0.06] overflow-hidden"><div class="h-full rounded-full ' + bar + ' transition-all duration-1000" style="width:' + (g.score / 5 * 100) + '%"></div></div></div>'
+      }).join('')
+      var display = document.getElementById('avg-score-display')
+      display.textContent = avg.toFixed(1)
+      var col = avg >= 4.0 ? '#00FF66' : avg >= 3.5 ? '#FFE600' : '#FF0055'
+      display.style.color = col
+      var circumference = 97.4
+      var offset = circumference * (1 - avg / 5)
+      var ring = document.getElementById('avg-ring')
+      ring.setAttribute('stroke', col)
+      ring.setAttribute('stroke-dashoffset', offset.toString())
+      var statusEl = document.getElementById('summary-status')
+      if (avg >= 4.0) { statusEl.textContent = 'Sobresaliente'; statusEl.style.color = '#00FF66' }
+      else if (avg >= 3.5) { statusEl.textContent = 'Aceptable'; statusEl.style.color = '#FFE600' }
+      else { statusEl.textContent = 'En Riesgo'; statusEl.style.color = '#FF0055' }
+      document.getElementById('summary-subjects').textContent = grades.length.toString()
+      var riskEl = document.getElementById('summary-risk')
+      riskEl.textContent = atRisk.length > 0 ? atRisk.length + ' área(s)' : 'Ninguna'
+      riskEl.style.color = atRisk.length > 0 ? '#FF0055' : '#00FF66'
+      if (avg < 3.5) document.getElementById('main-container').classList.add('ambient-risk-active')
+    }
+
+    // ── Schedule ──
+    function renderSchedule() {
+      var list = document.getElementById('schedule-list')
+      var days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie']
+      var subjects = ['Investigación Guiada', 'Matemáticas Aplicadas', 'Ciencias Naturales', 'Lenguaje y Literatura', 'Tecnología e Informática']
+      var times = ['7:00 - 8:30', '8:45 - 10:15', '10:30 - 12:00', '13:00 - 14:30', '14:45 - 16:15']
+      var notes = ['Entrega de proyecto ABP', 'Revisión de tareas', 'Laboratorio', 'Clase regular', 'Programación']
+      var icons = ['📝', '📚', '🧪', '📖', '💻']
+      list.innerHTML = '<div class="relative pl-8"><div class="absolute left-[11px] top-2 bottom-2 w-px bg-gradient-to-b from-brand-maroon/40 via-amber-500/20 to-transparent"></div>' +
+        days.map(function (d, i) { return '<div class="relative pb-6"><div class="absolute left-[-18px] top-1.5 h-5 w-5 rounded-full border-2 border-brand-maroon theme-aware-dot flex items-center justify-center"><div class="h-1.5 w-1.5 rounded-full bg-brand-gold"></div></div><div class="' + (i % 2 === 0 ? 'mr-8' : 'ml-8') + '"><div class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 hover:bg-white/[0.06] hover:border-white/[0.1] transition-all"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="text-xs">' + icons[i] + '</span><span class="text-sm font-semibold text-white">' + subjects[i % subjects.length] + '</span></div><span class="text-xs font-bold text-brand-maroon uppercase tracking-wider">' + d + '</span></div><div class="flex items-center justify-between"><span class="text-xs text-gray-500">' + times[i] + '</span><span class="text-xs text-gray-600">' + notes[i] + '</span></div></div></div></div>' }).join('') + '</div>'
+    }
+
+    // ── ABP Tracker ──
+    function renderAbpTracker() {
+      var abpSubjects = ['Investigación Guiada', 'Matemáticas Aplicadas', 'Ciencias Naturales', 'Lenguaje y Literatura', 'Inglés Avanzado', 'Ciencias Sociales', 'Tecnología e Informática', 'Arte y Creatividad', 'Música y Expresión']
+      var progressPct = 65
+      var grid = document.getElementById('abp-subjects-grid')
+      if (!grid) return
+      document.getElementById('abp-progress-pct').textContent = progressPct + '%'
+      document.getElementById('abp-progress-bar').style.width = progressPct + '%'
+      grid.innerHTML = abpSubjects.map(function (s, i) {
+        return '<div class="flex flex-col gap-1 rounded-lg border border-white/[0.06] bg-white/[0.03] p-2.5 hover:bg-white/[0.06] transition-all"><div class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 shrink-0 rounded-full ' + (i < 6 ? 'bg-emerald-500' : 'bg-gray-600') + '"></span><span class="text-[10px] font-medium text-gray-400 truncate flex-1">' + s + '</span>' + (i < 6 ? '<span class="text-[9px] text-emerald-500">✓</span>' : '<span class="text-[9px] text-amber-500">⏳</span>') + '</div><button class="abp-subject-upload-btn text-[9px] text-gray-600 hover:text-amber-400 transition-all text-left mt-1" data-subject="' + s + '">+ Subir entrega</button></div>'
+      }).join('')
+      document.querySelectorAll('.abp-subject-upload-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var subject = this.getAttribute('data-subject')
+          var input = document.createElement('input')
+          input.type = 'file'
+          input.accept = '.pdf,.doc,.docx,.zip,.png,.jpg'
+          input.addEventListener('change', function () {
+            if (this.files && this.files[0]) showToast('Archivo seleccionado para ' + subject + ': ' + this.files[0].name, 'success')
+          })
+          input.click()
+        })
+      })
+    }
+
+    // ── Behavior Logs ──
+    function renderBehaviorLogs() {
+      var container = document.getElementById('behavior-timeline')
+      if (!container) return
+      fetch(apiUrl + '/api/students/' + encodeURIComponent(userId) + '/behavior-logs', { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(function (r) { return r.ok ? r.json() : [] })
+        .then(function (logs) {
+          if (!logs || logs.length === 0) { container.innerHTML = '<div class="flex flex-col items-center py-6 text-center"><svg class="h-8 w-8 text-gray-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg><p class="text-xs text-gray-600">Sin registros de comportamiento</p></div>'; return }
+          var icons = { positive: '🌟', merit: '🏅', disciplinary: '⚠️', observation: '📝' }
+          var colors = { positive: 'border-emerald-500/20 bg-emerald-500/5', merit: 'border-amber-500/20 bg-amber-500/5', disciplinary: 'border-brand-danger/20 bg-brand-danger/5', observation: 'border-blue-500/20 bg-blue-500/5' }
+          var dotColors = { positive: 'bg-emerald-500', merit: 'bg-amber-500', disciplinary: 'bg-brand-danger', observation: 'bg-blue-500' }
+          container.innerHTML = '<div class="relative pl-6"><div class="absolute left-[7px] top-2 bottom-2 w-px bg-white/[0.06]"></div>' +
+            logs.map(function (log) { return '<div class="relative pb-4 last:pb-0"><div class="absolute left-[-14px] top-1.5 h-2.5 w-2.5 rounded-full ' + (dotColors[log.log_type] || dotColors.observation) + ' ring-2 ring-[#040405]"></div><div class="rounded-lg border ' + (colors[log.log_type] || colors.observation) + ' px-3 py-2.5"><div class="flex items-center justify-between mb-1"><span class="text-xs font-semibold text-gray-300">' + (icons[log.log_type] || '📝') + ' ' + (log.log_type === 'positive' ? 'Positivo' : log.log_type === 'merit' ? 'Mérito' : log.log_type === 'disciplinary' ? 'Disciplinario' : 'Observación') + '</span><span class="text-[10px] text-gray-600">' + (log.created_at ? log.created_at.slice(0, 10) : '') + '</span></div><p class="text-xs text-gray-500">' + (log.description || '') + '</p></div></div>' }).join('') + '</div>'
+        }).catch(function () { container.innerHTML = '<p class="text-xs text-gray-600 text-center py-4">No se pudieron cargar los registros</p>' })
+    }
+
+    // ── Materials from Cloudinary ──
+    function loadMaterials() {
+      var grid = document.getElementById('materials-grid')
+      if (!grid) return
+      // In production, fetch from /api/materials
+      var mockMaterials = [
+        { title: 'Resumen: Matemáticas', summary: 'Ecuaciones cuadráticas, factorización y teorema de Pitágoras aplicado a proyectos ABP.', url: '#' },
+        { title: 'Guía: Investigación', summary: 'Metodología científica, formulación de hipótesis y recolección de datos.', url: '#' },
+      ]
+      if (mockMaterials.length === 0) { grid.innerHTML = '<p class="col-span-full text-xs text-gray-600 text-center py-8">No hay materiales disponibles</p>'; return }
+      grid.innerHTML = mockMaterials.map(function (m) {
+        return '<div class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 hover:bg-white/[0.06] transition-all"><p class="text-xs font-semibold text-white mb-1 truncate">' + m.title + '</p><p class="text-[10px] text-gray-500 leading-relaxed line-clamp-3">' + m.summary + '</p><a href="' + m.url + '" class="text-[10px] text-amber-400 hover:text-amber-300 mt-1.5 inline-block">Ver completo →</a></div>'
+      }).join('')
+    }
+
+    // ── AI Skill Quiz ──
+    var quizState = { subject: '', questions: [], currentIdx: 0, score: 0, answered: false }
+
+    document.getElementById('quiz-start-btn').addEventListener('click', async function () {
+      var subject = document.getElementById('quiz-subject-select').value
+      if (!subject) { showToast('Selecciona una materia primero', 'error'); return }
+      quizState.subject = subject
+      quizState.score = 0
+      quizState.currentIdx = 0
+      quizState.answered = false
+      var btn = this
+      btn.disabled = true
+      btn.innerHTML = '<svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Generando...'
+      try {
+        var res = await fetch(apiUrl + '/api/ai/student-tutor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({
+            message: 'Genera un quiz de 3 a 5 preguntas de opción múltiple sobre la materia "' + subject + '" para un estudiante de grado 11. Devuelve SOLO un array JSON con objetos: {"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct": 0} donde correct es el índice de la respuesta correcta (0-3). No incluyas explicación, solo el JSON.',
+            context: '',
+          }),
+        })
+        if (!res.ok) throw new Error('Error del asistente')
+        var reader = res.body.getReader()
+        var decoder = new TextDecoder()
+        var buffer = ''
+        var fullText = ''
+        while (true) {
+          var result = await reader.read()
+          if (result.done) break
+          buffer += decoder.decode(result.value, { stream: true })
+          var lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+          for (var i = 0; i < lines.length; i++) {
+            var line = lines[i]
+            if (line.startsWith('data: ')) {
+              var data = line.slice(6)
+              if (data === '[DONE]' || data === 'data: [DONE]') continue
+              try { var parsed = JSON.parse(data); if (parsed.token) fullText += parsed.token } catch (_) {}
+            }
+          }
+        }
+        var jsonMatch = fullText.match(/\[[\s\S]*?\]/)
+        var questions = jsonMatch ? JSON.parse(jsonMatch[0]) : null
+        if (!questions || !Array.isArray(questions) || questions.length < 2) throw new Error('No se pudieron generar preguntas')
+        quizState.questions = questions
+        showQuizQuestion()
+      } catch (e) {
+        showToast('Error al generar quiz: ' + e.message, 'error')
+        btn.disabled = false
+        btn.innerHTML = '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Iniciar Desafío'
         return
       }
-      var avg = grades.reduce(function (s, g) { return s + g.score }, 0) / grades.length
-      var atRisk = grades.filter(function (g) { return g.score < 3.5 })
+      btn.disabled = false
+      btn.innerHTML = '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Iniciar Desafío'
+      document.getElementById('quiz-setup').classList.add('hidden')
+      document.getElementById('quiz-active').classList.remove('hidden')
+      document.getElementById('quiz-results').classList.add('hidden')
+    })
 
-      grid.innerHTML = grades.map(function (g) {
-        var c = g.score >= 4.0 ? 'text-brand-green' : g.score >= 3.5 ? 'text-brand-gold' : 'text-brand-danger'
-        var bar = g.score >= 4.0 ? 'bg-brand-green' : g.score >= 3.5 ? 'bg-brand-gold' : 'bg-brand-danger'
-        return '<div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 transition-all hover:shadow-md">' +
-          '<div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">' + (g.subject_id || g.subject || '-') + '</span><span class="text-lg font-bold ' + c + '">' + g.score.toFixed(1) + '</span></div>' +
-          '<div class="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"><div class="h-full rounded-full ' + bar + ' transition-all duration-1000" style="width:' + (g.score / 5 * 100) + '%"></div></div>' +
-          '</div>'
+    function showQuizQuestion() {
+      var qs = quizState.questions
+      var idx = quizState.currentIdx
+      if (idx >= qs.length) { showQuizResults(); return }
+      var q = qs[idx]
+      document.getElementById('quiz-subject-label').textContent = quizState.subject
+      document.getElementById('quiz-progress').textContent = 'Pregunta ' + (idx + 1) + ' de ' + qs.length
+      document.getElementById('quiz-question').textContent = q.question
+      var optionsDiv = document.getElementById('quiz-options')
+      optionsDiv.innerHTML = q.options.map(function (o, i) {
+        return '<label class="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 cursor-pointer hover:bg-white/[0.06] transition-all quiz-option" data-idx="' + i + '"><input type="radio" name="quiz-answer" value="' + i + '" class="sr-only" /><span class="h-4 w-4 rounded-full border-2 border-white/[0.15] flex items-center justify-center shrink-0"><span class="h-2 w-2 rounded-full hidden bg-brand-maroon"></span></span><span class="text-sm theme-text-secondary">' + o + '</span></label>'
       }).join('')
-
-      var orbPlaceholder = document.getElementById('score-orbital-placeholder')
-      if (orbPlaceholder) {
-        var pct = (avg / 5) * 100
-        var offset = 283 * (1 - avg / 5)
-        var col = avg >= 4.0 ? '#4caf50' : avg >= 3.5 ? '#fdc003' : '#ba1a1a'
-        var lbl = avg >= 4.0 ? 'Sobresaliente' : avg >= 3.5 ? 'Aceptable' : 'En Riesgo'
-        orbPlaceholder.innerHTML =
-          '<svg class="h-24 w-24 md:h-32 md:w-32 -rotate-90" viewBox="0 0 100 100">' +
-          '<circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="8" class="text-gray-200 dark:text-gray-700" />' +
-          '<circle cx="50" cy="50" r="45" fill="none" stroke="' + col + '" stroke-width="8" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="' + offset + '" class="transition-all duration-1000 ease-out" style="filter:drop-shadow(0 0 6px currentColor)" />' +
-          '</svg><div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">' + avg.toFixed(1) + '</span><span class="text-xs font-medium" style="color:' + col + '">' + lbl + '</span></div>'
-      }
-
-      document.getElementById('badge-value').textContent = lbl
-      document.getElementById('badge-value').className = 'text-sm font-semibold ' + (avg >= 4.0 ? 'text-brand-green' : avg >= 3.5 ? 'text-brand-gold' : 'text-brand-danger')
-
-      if (atRisk.length > 0) {
-        document.getElementById('metrics-section').insertAdjacentHTML('afterbegin',
-          '<div class="mb-3 rounded-xl border-2 border-brand-danger/30 bg-brand-danger/5 p-4 animate-slide-down">' +
-          '<div class="flex items-start gap-3"><div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-danger/10"><svg class="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>' +
-          '<div><h3 class="text-sm font-semibold text-brand-danger">Alerta de rendimiento crítico</h3><p class="text-sm text-gray-600 dark:text-gray-400">' + atRisk.length + ' área(s) por debajo de 3.5</p></div></div></div>')
-      }
-
-      var riskList = document.getElementById('risk-list')
-      if (riskList && atRisk.length > 0) {
-        riskList.innerHTML = atRisk.map(function (g) {
-          return '<div class="flex items-center gap-2"><span class="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-danger"></span><span class="truncate">' + (g.subject_id || g.subject) + '</span><span class="font-semibold text-brand-danger shrink-0">' + g.score.toFixed(1) + '</span></div>'
-        }).join('')
-      } else if (riskList) {
-        riskList.innerHTML = '<p class="text-brand-green">Sin alertas activas</p>'
-      }
+      quizState.answered = false
+      document.getElementById('quiz-submit-btn').classList.remove('hidden')
+      document.getElementById('quiz-next-btn').classList.add('hidden')
+      document.getElementById('quiz-options').querySelectorAll('input[type="radio"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+          document.querySelectorAll('.quiz-option').forEach(function (l) { l.querySelector('span span').classList.add('hidden'); l.querySelector('span').style.borderColor = 'rgba(255,255,255,0.15)' })
+          var label = this.closest('.quiz-option')
+          label.querySelector('span').style.borderColor = '#800000'
+          label.querySelector('span span').classList.remove('hidden')
+        })
+      })
     }
+
+    document.getElementById('quiz-submit-btn').addEventListener('click', function () {
+      if (quizState.answered) return
+      var selected = document.querySelector('input[name="quiz-answer"]:checked')
+      if (!selected) { showToast('Selecciona una respuesta', 'error'); return }
+      var q = quizState.questions[quizState.currentIdx]
+      var answerIdx = parseInt(selected.value)
+      var isCorrect = answerIdx === q.correct
+      quizState.answered = true
+      if (isCorrect) quizState.score++
+      document.querySelectorAll('.quiz-option').forEach(function (label, i) {
+        var idx = parseInt(label.getAttribute('data-idx'))
+        if (idx === q.correct) { label.style.borderColor = '#00FF66'; label.querySelector('span').style.borderColor = '#00FF66'; label.querySelector('span span').classList.remove('hidden'); label.querySelector('span span').style.background = '#00FF66' }
+        else if (idx === answerIdx && !isCorrect) { label.style.borderColor = '#FF0055'; label.querySelector('span').style.borderColor = '#FF0055' }
+      })
+      document.querySelectorAll('input[name="quiz-answer"]').forEach(function (r) { r.disabled = true })
+      this.classList.add('hidden')
+      var nextBtn = document.getElementById('quiz-next-btn')
+      nextBtn.classList.remove('hidden')
+      nextBtn.textContent = quizState.currentIdx + 1 >= quizState.questions.length ? 'Ver resultados' : 'Siguiente'
+    })
+
+    document.getElementById('quiz-next-btn').addEventListener('click', function () {
+      quizState.currentIdx++
+      document.querySelectorAll('input[name="quiz-answer"]').forEach(function (r) { r.disabled = false; r.checked = false })
+      document.querySelectorAll('.quiz-option').forEach(function (l) { l.style.borderColor = 'rgba(255,255,255,0.06)'; l.querySelector('span').style.borderColor = 'rgba(255,255,255,0.15)'; l.querySelector('span span').style.background = ''; l.querySelector('span span').classList.add('hidden') })
+      showQuizQuestion()
+    })
+
+    function showQuizResults() {
+      document.getElementById('quiz-active').classList.add('hidden')
+      document.getElementById('quiz-results').classList.remove('hidden')
+      var total = quizState.questions.length
+      var scorePct = Math.round(quizState.score / total * 100)
+      var badge = scorePct >= 80 ? { label: 'Oro', icon: '🥇', emoji: '🏆' } : scorePct >= 50 ? { label: 'Plata', icon: '🥈', emoji: '⭐' } : { label: 'Bronce', icon: '🥉', emoji: '💪' }
+      document.getElementById('quiz-results-icon').textContent = badge.emoji
+      document.getElementById('quiz-results-score').textContent = quizState.score + '/' + total + ' (' + scorePct + '%)'
+      document.getElementById('quiz-results-badge').textContent = 'Insignia: ' + badge.label + ' ' + badge.icon
+      localStorage.setItem('vyntra-skill-badge', badge.label)
+      showToast('¡' + badge.label + '! Has obtenido la insignia ' + badge.label + '.', 'success')
+    }
+
+    document.getElementById('quiz-retry-btn').addEventListener('click', function () {
+      document.getElementById('quiz-results').classList.add('hidden')
+      document.getElementById('quiz-setup').classList.remove('hidden')
+      document.getElementById('quiz-badge').classList.remove('hidden')
+      document.getElementById('quiz-badge-label').textContent = localStorage.getItem('vyntra-skill-badge') || '—'
+    })
+
+    // ── Telemetry: Headless Outage Detection ──
+    ;(function setupTelemetry() {
+      var offlineStart = null
+      var isFrozen = false
+      var pendingOutage = null
+      var freezeOverlay = document.getElementById('telemetry-freeze-overlay')
+      var connDot = document.getElementById('conn-dot')
+      var connText = document.getElementById('conn-text')
+      var outageSubmittedKey = 'vyntra-outage-pending-' + userId
+      var examSnapshotKey = 'vyntra-exam-snapshot'
+
+      function freezeUI() {
+        if (isFrozen) return
+        isFrozen = true
+        freezeOverlay.classList.remove('hidden')
+        connDot.className = 'h-2 w-2 rounded-full bg-[#FF0055] animate-pulse'
+        connText.textContent = 'Desconectado'
+      }
+
+      function unfreezeUI() {
+        isFrozen = false
+        freezeOverlay.classList.add('hidden')
+        connDot.className = 'h-2 w-2 rounded-full bg-emerald-500 animate-pulse'
+        connText.textContent = 'Conectado'
+      }
+
+      async function submitOutageReport() {
+        var examId = localStorage.getItem('active_exam_id') || 'unknown'
+        var snapshot = localStorage.getItem(examSnapshotKey)
+        var payload = {
+          student_id: userId,
+          exam_id: examId,
+          incident_type: 'network_loss',
+          description: 'Conexión perdida por más de 12 segundos durante el examen. Reanudación automática.',
+        }
+        if (snapshot) payload.snapshot = snapshot
+        try {
+          var res = await fetch(apiUrl + '/api/students/report-outage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(payload),
+          })
+          if (res.ok) {
+            localStorage.removeItem(outageSubmittedKey)
+            localStorage.removeItem(examSnapshotKey)
+            pendingOutage = null
+            showToast('Evaluación protegida. Puedes continuar.', 'success')
+            return true
+          }
+        } catch (_) {}
+        return false
+      }
+
+      // Save exam snapshot periodically when exam is active
+      function saveExamSnapshot() {
+        if (localStorage.getItem('active_exam_id')) {
+          var snapshot = { savedAt: Date.now(), userId: userId }
+          localStorage.setItem(examSnapshotKey, JSON.stringify(snapshot))
+        }
+      }
+
+      window.addEventListener('offline', function () {
+        offlineStart = Date.now()
+        connDot.className = 'h-2 w-2 rounded-full bg-amber-500 animate-pulse'
+        connText.textContent = 'Verificando...'
+        // Start checking offline duration
+        var checkInterval = setInterval(function () {
+          if (navigator.onLine) { clearInterval(checkInterval); return }
+          if (offlineStart && (Date.now() - offlineStart >= 12000)) {
+            clearInterval(checkInterval)
+            if (localStorage.getItem('active_exam_id')) {
+              saveExamSnapshot()
+              freezeUI()
+              pendingOutage = true
+              localStorage.setItem(outageSubmittedKey, 'true')
+            }
+          }
+        }, 1000)
+      })
+
+      window.addEventListener('online', async function () {
+        offlineStart = null
+        if (pendingOutage || localStorage.getItem(outageSubmittedKey)) {
+          var submitted = await submitOutageReport()
+          if (submitted) unfreezeUI()
+          else {
+            // Silent retry loop
+            var retries = 0
+            var retryInterval = setInterval(async function () {
+              retries++
+              var ok = await submitOutageReport()
+              if (ok || retries > 10) { clearInterval(retryInterval); if (ok) unfreezeUI() }
+            }, 3000)
+          }
+        } else {
+          unfreezeUI()
+        }
+      })
+
+      // Heartbeat every 5s
+      setInterval(async function () {
+        saveExamSnapshot()
+        try {
+          var hRes = await fetch(apiUrl + '/api/health', { method: 'HEAD', cache: 'no-cache', signal: AbortSignal.timeout(5000) })
+          if (hRes.ok || hRes.status === 204) {
+            if (!navigator.onLine) return
+            if (localStorage.getItem(outageSubmittedKey) && isFrozen) {
+              var ok = await submitOutageReport()
+              if (ok) unfreezeUI()
+            }
+            if (!isFrozen) {
+              connDot.className = 'h-2 w-2 rounded-full bg-emerald-500 animate-pulse'
+              connText.textContent = 'Conectado'
+            }
+          } else { throw new Error('not ok') }
+        } catch (_) {
+          if (navigator.onLine && !isFrozen) {
+            connDot.className = 'h-2 w-2 rounded-full bg-amber-500 animate-pulse'
+            connText.textContent = 'Latencia alta'
+          }
+        }
+      }, 5000)
+
+      // Check for pending outage from previous session
+      if (localStorage.getItem(outageSubmittedKey)) {
+        pendingOutage = true
+        submitOutageReport().then(function (ok) {
+          if (ok) { localStorage.removeItem(outageSubmittedKey); unfreezeUI() }
+        })
+      }
+    })()
   })()
 </script>

@@ -67,7 +67,7 @@ const grades = ['6', '7', '8', '9', '10', '11']
     var btn = document.getElementById('gf-submit')
     form.addEventListener('submit', async function (e) {
       e.preventDefault()
-      var token = localStorage.getItem('auth_token')
+      var token = localStorage.getItem('access_token')
       var teacherId = localStorage.getItem('userId')
       if (!token || !teacherId) { feedback.textContent = 'Sesion requerida'; return }
       var payload = {

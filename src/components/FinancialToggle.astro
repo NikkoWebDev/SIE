@@ -32,7 +32,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.o
     cb.addEventListener('change', async function () {
       var studentId = cb.getAttribute('data-student')
       var endpoint = apiUrl + '/api/admin/students/' + encodeURIComponent(studentId) + '/financial'
-      var token = localStorage.getItem('auth_token')
+      var token = localStorage.getItem('access_token')
       var newStatus = cb.checked
       try {
         var res = await fetch(endpoint, {

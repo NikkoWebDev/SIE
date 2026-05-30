@@ -113,8 +113,7 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
                   <input id="doc-id" type="text" inputmode="numeric" autocomplete="username" placeholder="ID-000000" required class="input-glass" />
                 </div>
               </div>
-              <!-- Password (conditional) -->
-              <div id="password-group" class="space-y-2 transition-all duration-500 overflow-hidden" style="max-height:0;opacity:0;pointer-events:none">
+              <div id="password-group" class="space-y-2 transition-all duration-500 overflow-hidden" style="max-height:120px;opacity:1;pointer-events:auto">
                 <label for="password" class="label-caps">Contraseña</label>
                 <div class="relative">
                   <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
@@ -328,36 +327,24 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
     var toastMsg = document.getElementById('toast-msg')
     var toastClose = document.getElementById('toast-close')
     var currentTab = 'estudiante'
-    var endpoint = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.com').replace(/\/+$/, '') + '/api/auth/login'
+    var endpoint = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '') + '/api/auth/login'
 
-    // --- Wake-up server (legacy Render ping) ---
     ;(function wakeUp() {
       try {
-        var pingUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.com').replace(/\/+$/, '')
+        var pingUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
         fetch(pingUrl + '/api/health', { method: 'GET', priority: 'low' }).catch(function(){})
       } catch(e) {}
     })()
 
-    // --- Tab toggle ---
     function setTab(tab) {
       currentTab = tab
-      if (tab === 'estudiante') {
-        slider.style.left = '4px'
-        passwordGroup.style.maxHeight = '0'
-        passwordGroup.style.opacity = '0'
-        passwordGroup.style.pointerEvents = 'none'
-        passwordInput.required = false
-        tabEst.className = 'flex-1 relative z-10 text-sm font-semibold text-white transition-colors'
-        tabPer.className = 'flex-1 relative z-10 text-sm font-semibold text-gray-500 transition-colors'
-      } else {
-        slider.style.left = 'calc(50% + 4px)'
-        passwordGroup.style.maxHeight = '120px'
-        passwordGroup.style.opacity = '1'
-        passwordGroup.style.pointerEvents = 'auto'
-        passwordInput.required = true
-        tabPer.className = 'flex-1 relative z-10 text-sm font-semibold text-white transition-colors'
-        tabEst.className = 'flex-1 relative z-10 text-sm font-semibold text-gray-500 transition-colors'
-      }
+      slider.style.left = tab === 'estudiante' ? '4px' : 'calc(50% + 4px)'
+      passwordGroup.style.maxHeight = '120px'
+      passwordGroup.style.opacity = '1'
+      passwordGroup.style.pointerEvents = 'auto'
+      passwordInput.required = true
+      tabEst.className = 'flex-1 relative z-10 text-sm font-semibold ' + (tab === 'estudiante' ? 'text-white' : 'text-gray-500') + ' transition-colors'
+      tabPer.className = 'flex-1 relative z-10 text-sm font-semibold ' + (tab === 'personal' ? 'text-white' : 'text-gray-500') + ' transition-colors'
     }
     tabEst.addEventListener('click', function () { setTab('estudiante') })
     tabPer.addEventListener('click', function () { setTab('personal') })
@@ -399,19 +386,16 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
         return
       }
 
-      var payload = { tipo: currentTab === 'estudiante' ? 'estudiante' : 'personal', documento: docId }
-      if (currentTab === 'personal') {
-        if (!password) {
-          errorDiv.textContent = 'Ingresa tu contraseña.'
-          submitText.textContent = 'Ingresar al Portal'
-          submitSpinner.classList.add('hidden')
-          submitBtn.disabled = false
-          return
-        }
-        payload.contraseña = password
+      if (!password) {
+        errorDiv.textContent = 'Ingresa tu contraseña.'
+        submitText.textContent = 'Ingresar al Portal'
+        submitSpinner.classList.add('hidden')
+        submitBtn.disabled = false
+        return
       }
 
-      // 25s timeout (legacy Render wake-up)
+      var payload = { login_credential: docId, password: password }
+
       var controller = new AbortController()
       var timeoutId = setTimeout(function () { controller.abort() }, 25000)
 
@@ -433,25 +417,28 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.co
 
         var data = await res.json()
         var token = data.access_token || data.token || ''
-        var role = (data.rol || data.tipo || currentTab).toUpperCase()
+        var usuario = data.usuario || {}
+        var role = (usuario.rol || data.rol || currentTab).toUpperCase()
 
         localStorage.setItem('access_token', token)
         localStorage.setItem('userRole', role)
-        localStorage.setItem('userName', data.nombre || data.fullname || data.name || '')
-        localStorage.setItem('userId', data.documento || data.document_id || docId)
+        localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
+        localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || docId)
+        localStorage.setItem('profile_id', usuario.profile_id || '')
         localStorage.setItem('is_paid', String(data.is_paid !== false))
         if (data.grado || data.grade) localStorage.setItem('userGrade', data.grado || data.grade)
         if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
 
         submitText.textContent = '¡Bienvenido!'
 
-        // Smart role redirect (legacy style)
         var redirectMap = {
-          'RECTOR': '/admin',
           'ADMIN': '/admin',
+          'RECTOR': '/admin',
           'PROFESOR': '/docente',
           'DOCENTE': '/docente',
           'ESTUDIANTE': '/estudiante',
+          'STUDENT': '/estudiante',
+          'TEACHER': '/docente',
         }
         window.location.href = redirectMap[role] || '/dashboard'
       } catch (err) {

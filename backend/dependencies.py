@@ -3,16 +3,16 @@ from __future__ import annotations
 import json
 import logging
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from datetime import datetime, timedelta, timezone
-
 import jwt
 from dotenv import load_dotenv
-from fastapi import HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse, Response
-from motor.motor_asyncio import AsyncIOMotorClient
+from fastapi import HTTPException, Request
+from supabase import Client
+
+from config.database import get_db
 
 _dotenv_path = Path(__file__).resolve().parent.parent / ".env"
 if _dotenv_path.exists():
@@ -20,24 +20,16 @@ if _dotenv_path.exists():
 
 logger = logging.getLogger("siee.deps")
 
-COLLECTIONS: tuple[str, ...] = (
-    "students", "admins", "grades", "notices", "subjects", "guides",
-    "deliveries", "assignments", "exams", "exam_results", "exam_incidents",
-    "candidates", "votes",
-)
-
 RISK_THRESHOLD: float = 3.5
 MAX_GRADE: float = 5.0
 JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
 JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
-MONGO_URI: str = os.getenv("MONGO_URL") or os.getenv(
-    "MONGODB_URI",
-    "mongodb+srv://admin:password@cluster0.example.mongodb.net/?retryWrites=true&w=majority",
-)
-MONGO_DB: str = os.getenv("MONGO_DB", "sie_core")
 
 SKIP_AUTH_PATHS: frozenset[str] = frozenset({
-    "/", "/api/health", "/api/login", "/api/auth/login", "/docs", "/openapi.json", "/redoc",
+    "/", "/api/health", "/api/login", "/api/auth/login", "/api/auth/register",
+    "/api/notices", "/api/admin/stats", "/api/admin/mora-students", "/api/admin/at-risk-students",
+    "/api/subjects", "/api/admin/candidates", "/api/admin/election-results",
+    "/docs", "/openapi.json", "/redoc",
 })
 FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
     "/api/grades/download-pdf",
@@ -46,36 +38,6 @@ FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
     "/api/students/report",
     "/api/reports/",
 )
-
-_mongo_client: AsyncIOMotorClient | None = None
-_db: Any = None
-
-
-def get_db() -> Any:
-    if _db is None:
-        raise HTTPException(status_code=503, detail="Database not available")
-    return _db
-
-
-async def init_db() -> None:
-    global _mongo_client, _db
-    _mongo_client = AsyncIOMotorClient(
-        MONGO_URI,
-        maxPoolSize=20,
-        minPoolSize=2,
-        serverSelectionTimeoutMS=5000,
-        connectTimeoutMS=5000,
-    )
-    _db = _mongo_client[MONGO_DB]
-    await _mongo_client.admin.command("ping")
-    logger.info("mongodb connected | db=%s", MONGO_DB)
-
-
-async def close_db() -> None:
-    if _mongo_client:
-        _mongo_client.close()
-        logger.info("mongodb disconnected")
-
 
 TOKEN_EXPIRY_HOURS: int = int(os.getenv("TOKEN_EXPIRY_HOURS", "8"))
 
@@ -94,7 +56,7 @@ def decode_jwt(token: str) -> dict[str, Any]:
     )
 
 
-async def auth_dependency(request: Request) -> str:
+def auth_dependency(request: Request) -> str:
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authorization required")
@@ -104,24 +66,44 @@ async def auth_dependency(request: Request) -> str:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+    request.state.user_role = claims.get("role", "student")
     return claims["sub"]
+
+
+def teacher_dependency(request: Request) -> str:
+    user_id = auth_dependency(request)
+    role: str = getattr(request.state, "user_role", "")
+    if role.lower() not in ("teacher", "profesor"):
+        raise HTTPException(status_code=403, detail="Se requieren permisos de docente")
+    return user_id
+
+
+def admin_dependency(request: Request) -> str:
+    user_id = auth_dependency(request)
+    role: str = getattr(request.state, "user_role", "")
+    if role.lower() not in ("admin", "rector"):
+        raise HTTPException(status_code=403, detail="Se requieren permisos de administrador")
+    return user_id
 
 
 async def financial_guard(request: Request) -> None:
     student_id = request.query_params.get("student_id")
     if not student_id and request.method in ("POST", "PUT"):
         try:
-            body = await request.json()
-            student_id = body.get("student_id")
+            body = await request.body()
+            parsed = json.loads(body)
+            student_id = parsed.get("student_id")
         except Exception:
-            pass
+            logger.debug("could not parse student_id from POST body for path=%s", request.url.path)
     if not student_id:
         raise HTTPException(status_code=422, detail="student_id required")
-    db = get_db()
-    student = await db["students"].find_one({"_id": student_id})
-    if student is None:
+    db: Client = next(get_db())
+    result = db.table("student_metadata").select("*").eq("profile_id", student_id).execute()
+    rows = result.data
+    if not rows:
         raise HTTPException(status_code=404, detail="Student not found")
-    if student.get("is_paid") is False:
+    meta = rows[0]
+    if meta.get("months_in_arrears", 0) >= 2 and not meta.get("financial_override", False):
         logger.warning("financial-block student=%s path=%s", student_id, request.url.path)
         raise HTTPException(
             status_code=403,

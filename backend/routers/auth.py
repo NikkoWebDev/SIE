@@ -4,20 +4,14 @@ from typing import Any
 import bcrypt
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
+from supabase import Client
 
-from dependencies import encode_jwt, get_db, TOKEN_EXPIRY_HOURS
-from models import LoginRequest
+from config.database import get_db
+from dependencies import encode_jwt, TOKEN_EXPIRY_HOURS
+from models import LoginRequest, UserCreate, UserLogin
 
 logger = logging.getLogger("siee.auth")
-
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-FALLBACK_MODE: bool = False
-FALLBACK_USERS: dict[str, dict[str, Any]] = {}
-
-RECTOR_DOC_ID: str = "12345678"
-RECTOR_NAME: str = "Rector Administrador"
-RECTOR_PASS: str = "admin"
 
 
 def _hash_password(plain: str) -> str:
@@ -31,175 +25,128 @@ def _verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
-async def _hydrate_fallback(db: Any) -> None:
-    global FALLBACK_MODE, FALLBACK_USERS
+def _safe_query(db: Client, **kwargs):
     try:
-        count = await db["admins"].count_documents({})
-    except Exception:
-        count = 0
+        return kwargs["action"]().execute()
+    except Exception as e:
+        err = str(e)
+        if "42501" in err or "permission denied" in err.lower():
+            raise HTTPException(
+                status_code=503,
+                detail="Base de datos no inicializada — ejecuta seed.sql en Supabase Dashboard"
+            )
+        if "does not exist" in err.lower():
+            raise HTTPException(
+                status_code=503,
+                detail="Base de datos no inicializada — ejecuta seed.sql en Supabase Dashboard"
+            )
+        raise
 
-    if count == 0:
-        FALLBACK_MODE = True
-        base_claims = {
-            RECTOR_DOC_ID: {
-                "sub": RECTOR_DOC_ID,
-                "role": "RECTOR",
-                "fullname": RECTOR_NAME,
-                "grade": "",
-            },
-        }
-        hashed = _hash_password(RECTOR_PASS)
-        FALLBACK_USERS = {
-            k: {**v, "password_hash": hashed}
-            for k, v in base_claims.items()
-        }
-        logger.warning("auth running in FALLBACK mode — seed admins collection")
-    else:
-        FALLBACK_MODE = False
-        FALLBACK_USERS = {}
-        logger.info("auth using live admins collection (%d docs)", count)
+
+@router.post("/register", status_code=201)
+async def register(data: UserCreate) -> JSONResponse:
+    db: Client = next(get_db())
+    res = _safe_query(
+        db,
+        action=lambda: db.table("profiles")
+            .select("*")
+            .eq("login_credential", data.login_credential)
+    )
+    if res.data:
+        raise HTTPException(status_code=409, detail="Usuario ya existe")
+
+    hashed = _hash_password(data.password)
+    result = db.table("profiles").insert({
+        "login_credential": data.login_credential,
+        "fullname": data.fullname,
+        "password_hash": hashed,
+        "role": data.role.value,
+        "is_active": True,
+    }).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Error al crear usuario")
+    profile = result.data[0]
+    return JSONResponse(status_code=201, content={
+        "profile_id": profile["id"],
+        "login_credential": profile["login_credential"],
+        "fullname": profile["fullname"],
+        "role": profile["role"],
+    })
 
 
 @router.post("/login")
-async def login(data: LoginRequest) -> JSONResponse:
-    db = get_db()
-    doc_id = data.document_id.strip()
-    plain_pw: str | None = None if data.password is None else str(data.password)
+async def login(data: UserLogin) -> JSONResponse:
+    db: Client = next(get_db())
+    res = _safe_query(
+        db,
+        action=lambda: db.table("profiles")
+            .select("*")
+            .eq("login_credential", data.login_credential)
+    )
+    if not res.data:
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    if FALLBACK_MODE:
-        fb = FALLBACK_USERS.get(doc_id)
-        if fb is None:
-            raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        if plain_pw is not None and _verify_password(plain_pw, fb["password_hash"]):
-            claims = {
-                "sub": fb["sub"],
-                "role": fb["role"],
-                "fullname": fb["fullname"],
-            }
-            if fb.get("grade"):
-                claims["grade"] = fb["grade"]
-            token = encode_jwt(claims)
-            return JSONResponse(content={
-                "token": token,
-                "expires_in_hours": TOKEN_EXPIRY_HOURS,
-                "usuario": {
-                    "rol": fb["role"],
-                    "nombre": fb["fullname"],
-                    "documento": doc_id,
-                },
-            })
-        student = await db["students"].find_one({"document_id": doc_id})
-        if student:
-            claims = {
-                "sub": doc_id,
-                "role": "ESTUDIANTE",
-                "fullname": student.get("fullname", ""),
-                "grade": student.get("grade", ""),
-            }
-            token = encode_jwt(claims)
-            return JSONResponse(content={
-                "token": token,
-                "expires_in_hours": TOKEN_EXPIRY_HOURS,
-                "usuario": {
-                    "rol": "ESTUDIANTE",
-                    "nombre": student.get("fullname", ""),
-                    "documento": doc_id,
-                    "grado": student.get("grade", ""),
-                    "is_paid": student.get("is_paid", True),
-                },
-            })
-        raise HTTPException(status_code=404, detail="Usuario no registrado")
+    profile = res.data[0]
+    if not profile.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Usuario desactivado")
 
-    if plain_pw is not None:
-        admin = await db["admins"].find_one({"document_id": doc_id})
-        if admin:
-            hashed = str(admin.get("password", ""))
-            if hashed.startswith("$2") or hashed.startswith("$argon"):
-                ok = _verify_password(plain_pw, hashed)
-            else:
-                ok = plain_pw == hashed
-            if ok:
-                role = admin.get("role", "RECTOR")
-                name = admin.get("fullname", "")
-                claims: dict[str, Any] = {
-                    "sub": doc_id,
-                    "role": role,
-                    "fullname": name,
-                }
-                assignment = await db["assignments"].find_one({"document_id": doc_id})
-                if assignment:
-                    claims["subject"] = assignment.get("subject", "")
-                    claims["grade"] = assignment.get("grade", "")
-                token = encode_jwt(claims)
-                return JSONResponse(content={
-                    "token": token,
-                    "expires_in_hours": TOKEN_EXPIRY_HOURS,
-                    "usuario": {
-                        "rol": role,
-                        "nombre": name,
-                        "documento": doc_id,
-                        **(
-                            {"materia": claims.get("subject", ""), "grado": claims.get("grade", "")}
-                            if role in ("PROFESOR", "RECTOR")
-                            else {}
-                        ),
-                    },
-                })
-            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    stored_hash = profile.get("password_hash", "")
+    if not stored_hash or not _verify_password(data.password, stored_hash):
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-        teacher = await db["teachers"].find_one({"document_id": doc_id})
-        if teacher:
-            hashed = str(teacher.get("password", ""))
-            if hashed.startswith("$2") or hashed.startswith("$argon"):
-                ok = _verify_password(plain_pw, hashed)
-            else:
-                ok = plain_pw == hashed
-            if ok:
-                claims: dict[str, Any] = {
-                    "sub": doc_id,
-                    "role": "PROFESOR",
-                    "fullname": teacher.get("teacher_name", teacher.get("fullname", "")),
-                }
-                if teacher.get("subject"):
-                    claims["subject"] = teacher.get("subject")
-                if teacher.get("grade"):
-                    claims["grade"] = teacher.get("grade")
-                token = encode_jwt(claims)
-                return JSONResponse(content={
-                    "token": token,
-                    "expires_in_hours": TOKEN_EXPIRY_HOURS,
-                    "usuario": {
-                        "rol": "PROFESOR",
-                        "nombre": teacher.get("teacher_name", ""),
-                        "documento": doc_id,
-                        **(
-                            {"materia": claims.get("subject", ""), "grado": claims.get("grade", "")}
-                            if "subject" in claims
-                            else {}
-                        ),
-                    },
-                })
-            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    claims: dict[str, Any] = {
+        "sub": profile["id"],
+        "login_credential": profile["login_credential"],
+        "role": profile["role"],
+        "fullname": profile["fullname"],
+    }
+    token = encode_jwt(claims)
 
-    student = await db["students"].find_one({"document_id": doc_id})
-    if student:
+    return JSONResponse(content={
+        "access_token": token,
+        "token_type": "bearer",
+        "expires_in_hours": TOKEN_EXPIRY_HOURS,
+        "usuario": {
+            "profile_id": profile["id"],
+            "login_credential": profile["login_credential"],
+            "rol": profile["role"],
+            "nombre": profile["fullname"],
+        },
+    })
+
+
+@router.post("/login-legacy")
+async def login_legacy(data: LoginRequest) -> JSONResponse:
+    db: Client = next(get_db())
+    res = _safe_query(
+        db,
+        action=lambda: db.table("profiles")
+            .select("*")
+            .eq("login_credential", data.document_id)
+    )
+    if not res.data:
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+    profile = res.data[0]
+    stored_hash = profile.get("password_hash", "")
+    if data.password and stored_hash and _verify_password(data.password, stored_hash):
         claims: dict[str, Any] = {
-            "sub": doc_id,
-            "role": "ESTUDIANTE",
-            "fullname": student.get("fullname", ""),
-            "grade": student.get("grade", ""),
+            "sub": profile["id"],
+            "login_credential": profile["login_credential"],
+            "role": profile["role"],
+            "fullname": profile["fullname"],
         }
         token = encode_jwt(claims)
         return JSONResponse(content={
             "token": token,
             "expires_in_hours": TOKEN_EXPIRY_HOURS,
             "usuario": {
-                "rol": "ESTUDIANTE",
-                "nombre": student.get("fullname", ""),
-                "documento": doc_id,
-                "grado": student.get("grade", ""),
-                "is_paid": student.get("is_paid", True),
+                "profile_id": profile["id"],
+                "rol": profile["role"],
+                "nombre": profile["fullname"],
+                "documento": data.document_id,
             },
         })
 
-    raise HTTPException(status_code=404, detail="Usuario no registrado")
+    raise HTTPException(status_code=401, detail="Credenciales inválidas")

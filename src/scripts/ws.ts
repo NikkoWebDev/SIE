@@ -15,7 +15,7 @@ export class WsClient {
 
   connect(): void {
     if (this.destroyed) return
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null
     if (!token) { this.schedule(); return }
     try {
       this.ws = new WebSocket(WS_URL + '?token=' + encodeURIComponent(token))

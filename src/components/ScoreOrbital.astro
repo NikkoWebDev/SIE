@@ -3,17 +3,33 @@ export interface Props { value: number }
 const { value } = Astro.props
 const pct = (value / 5) * 100
 const offset = 283 * (1 - value / 5)
-const color = value >= 4.0 ? '#4caf50' : value >= 3.5 ? '#fdc003' : '#ba1a1a'
+const color = value >= 4.0 ? '#00FF66' : value >= 3.5 ? '#FFE600' : '#FF0055'
 const label = value >= 4.0 ? 'Sobresaliente' : value >= 3.5 ? 'Aceptable' : 'En Riesgo'
+const isExcellent = value >= 4.0
 ---
-<svg class="h-32 w-32 -rotate-90" viewBox="0 0 100 100">
-  <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="8" class="text-gray-200 dark:text-gray-700" />
-  <circle cx="50" cy="50" r="45" fill="none" stroke={color} stroke-width="8" stroke-linecap="round"
-    stroke-dasharray="283" stroke-dashoffset={offset}
-    class="transition-all duration-1000 ease-out"
-    style="filter: drop-shadow(0 0 6px currentColor);" />
-</svg>
-<div class="absolute inset-0 flex flex-col items-center justify-center">
-  <span class="text-3xl font-bold text-gray-900 dark:text-white">{value.toFixed(1)}</span>
-  <span class="text-xs font-medium" style={`color: ${color}`}>{label}</span>
+<div class="relative inline-flex items-center justify-center">
+  {isExcellent && <div class="absolute inset-0 flex items-center justify-center animate-spin" style="animation-duration: 8s">
+    <svg class="h-40 w-40" viewBox="0 0 100 100">
+      {Array.from({ length: 16 }, (_, i) => {
+        const angle = (i * 360) / 16
+        const rad = (angle * Math.PI) / 180
+        const x1 = 50 + 40 * Math.cos(rad)
+        const y1 = 50 + 40 * Math.sin(rad)
+        const x2 = 50 + 48 * Math.cos(rad)
+        const y2 = 50 + 48 * Math.sin(rad)
+        return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#00FF66" stroke-width="1.5" stroke-linecap="round" opacity="0.6" />
+      })}
+    </svg>
+  </div>}
+  <svg class="h-32 w-32 -rotate-90 relative" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="8" class="text-gray-200 dark:text-gray-700" />
+    <circle cx="50" cy="50" r="45" fill="none" stroke={color} stroke-width="8" stroke-linecap="round"
+      stroke-dasharray="283" stroke-dashoffset={offset}
+      class="transition-all duration-1000 ease-out"
+      style="filter: drop-shadow(0 0 6px currentColor);" />
+  </svg>
+  <div class="absolute inset-0 flex flex-col items-center justify-center">
+    <span class="text-3xl font-bold text-gray-900 dark:text-white">{value.toFixed(1)}</span>
+    <span class="text-xs font-medium" style={`color: ${color}`}>{label}</span>
+  </div>
 </div>

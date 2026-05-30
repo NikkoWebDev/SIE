@@ -4,12 +4,14 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from bson import ObjectId
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
+from supabase import Client
 
-from dependencies import auth_dependency, get_db
-from models import ExamCreate, ExamSubmit, IncidentReport, VoteRequest
+from config.database import get_db
+from dependencies import auth_dependency, financial_guard, is_financial_locked_path
+from managers import ws_manager
+from models import ExamCreate, ExamProgressSchema, ExamSubmit, IncidentReport, grade_status
 
 logger = logging.getLogger("siee.exams")
 router = APIRouter(prefix="/api", tags=["exams"])
@@ -17,12 +19,14 @@ router = APIRouter(prefix="/api", tags=["exams"])
 
 @router.post("/teacher/create-exam", status_code=201)
 async def create_exam(data: ExamCreate, user_id: str = Depends(auth_dependency)) -> JSONResponse:
-    db = get_db()
+    db: Client = next(get_db())
     doc = data.model_dump()
+    doc["questions"] = [q.model_dump() for q in doc["questions"]]
     doc["is_active"] = True
-    doc["created_at"] = datetime.now(timezone.utc)
-    result = await db["exams"].insert_one(doc)
-    return JSONResponse(content={"message": "Examen creado", "exam_id": str(result.inserted_id)}, status_code=201)
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    result = db.table("exams").insert(doc).execute()
+    exam_id = result.data[0]["id"]
+    return JSONResponse(content={"message": "Examen creado", "exam_id": exam_id}, status_code=201)
 
 
 @router.get("/teacher/exams")
@@ -31,70 +35,59 @@ async def list_exams(
     subject: Optional[str] = None,
     user_id: str = Depends(auth_dependency),
 ) -> JSONResponse:
-    db = get_db()
-    query: dict[str, Any] = {}
+    db: Client = next(get_db())
+    query = db.table("exams").select("*")
     if grade:
-        query["grade"] = grade
+        query = query.eq("grade", grade)
     if subject:
-        query["subject"] = subject
-    exams: list[dict[str, Any]] = []
-    async for e in db["exams"].find(query).sort("_id", -1):
-        e["_id"] = str(e["_id"])
-        exams.append(e)
-    return JSONResponse(content=exams)
+        query = query.eq("subject", subject)
+    result = query.order("created_at", desc=True).execute()
+    return JSONResponse(content=result.data)
 
 
 @router.get("/student/exams")
 async def list_student_exams(grade: Optional[str] = None, user_id: str = Depends(auth_dependency)) -> JSONResponse:
-    db = get_db()
-    query: dict[str, Any] = {"is_active": True}
+    db: Client = next(get_db())
+    query = db.table("exams").select("*").eq("is_active", True)
     if grade:
-        query["grade"] = grade
-    exams: list[dict[str, Any]] = []
-    async for e in db["exams"].find(query).sort("_id", -1):
-        e["_id"] = str(e["_id"])
-        for q in e.get("questions", []):
+        query = query.eq("grade", grade)
+    result = query.order("created_at", desc=True).execute()
+    for exam in result.data:
+        questions = exam.get("questions", [])
+        for q in questions:
             if "correct" in q:
                 del q["correct"]
-        exams.append(e)
-    return JSONResponse(content=exams)
+    return JSONResponse(content=result.data)
 
 
 @router.get("/student/exam/{exam_id}")
 async def get_exam(exam_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
-    db = get_db()
-    try:
-        exam = await db["exams"].find_one({"_id": ObjectId(exam_id)})
-    except Exception:
-        raise HTTPException(status_code=400, detail="ID inválido")
-    if not exam:
+    db: Client = next(get_db())
+    result = db.table("exams").select("*").eq("id", exam_id).execute()
+    if not result.data:
         raise HTTPException(status_code=404, detail="Examen no encontrado")
+    exam = result.data[0]
     for q in exam.get("questions", []):
         if "correct" in q:
             del q["correct"]
-    exam["_id"] = str(exam["_id"])
     return JSONResponse(content=exam)
 
 
 @router.post("/student/submit-exam")
 async def submit_exam(data: ExamSubmit, user_id: str = Depends(auth_dependency)) -> JSONResponse:
-    db = get_db()
-    try:
-        exam = await db["exams"].find_one({"_id": ObjectId(data.exam_id)})
-    except Exception:
-        raise HTTPException(status_code=400, detail="ID de examen inválido")
-    if not exam:
+    db: Client = next(get_db())
+
+    exam_result = db.table("exams").select("*").eq("id", data.exam_id).execute()
+    if not exam_result.data:
         raise HTTPException(status_code=404, detail="Examen no encontrado")
+    exam = exam_result.data[0]
 
     questions = exam.get("questions", [])
     if not questions:
         raise HTTPException(status_code=400, detail="Examen sin preguntas")
 
-    dupe = await db["exam_results"].find_one({
-        "student_id": data.student_id,
-        "exam_id": data.exam_id,
-    })
-    if dupe:
+    dupe = db.table("exam_results").select("*").eq("student_id", data.student_id).eq("exam_id", data.exam_id).execute()
+    if dupe.data:
         raise HTTPException(status_code=400, detail="Ya has presentado este examen")
 
     correct_count = 0
@@ -103,33 +96,28 @@ async def submit_exam(data: ExamSubmit, user_id: str = Depends(auth_dependency))
             correct_count += 1
 
     final_grade = round((correct_count / len(questions)) * 5, 1) if questions else 0.0
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).isoformat()
 
-    await db["exam_results"].insert_one({
+    db.table("exam_results").insert({
         "student_id": data.student_id,
         "exam_id": data.exam_id,
-        "grade": final_grade,
+        "score": final_grade,
         "correct": correct_count,
         "total": len(questions),
         "created_at": now,
-    })
+    }).execute()
 
-    await db["grades"].update_one(
-        {"student_id": data.student_id, "subject_id": exam.get("subject", "")},
-        {"$set": {
-            "student_id": data.student_id,
-            "subject_id": exam.get("subject", ""),
-            "project_id": f"exam_{data.exam_id[:8]}",
-            "score": final_grade,
-            "observations": f"Nota automática: {exam.get('title', 'Examen')}",
-            "created_at": now,
-            "teacher_id": user_id,
-            "course_id": exam.get("grade", ""),
-        }},
-        upsert=True,
-    )
+    db.table("grades").upsert({
+        "student_id": data.student_id,
+        "subject_id": exam.get("subject", ""),
+        "project_id": f"exam_{data.exam_id[:8]}",
+        "score": final_grade,
+        "observations": f"Nota automática: {exam.get('title', 'Examen')}",
+        "created_at": now,
+        "teacher_id": user_id,
+        "course_id": exam.get("grade", ""),
+    }, on_conflict="student_id, subject_id, project_id").execute()
 
-    from models import grade_status
     return JSONResponse(content={
         "grade": final_grade,
         "correct": correct_count,
@@ -138,35 +126,87 @@ async def submit_exam(data: ExamSubmit, user_id: str = Depends(auth_dependency))
     })
 
 
+@router.post("/exam/save-progress")
+async def save_exam_progress(data: ExamProgressSchema, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+    db: Client = next(get_db())
+    now = datetime.now(timezone.utc).isoformat()
+    doc = data.model_dump()
+    doc["last_saved_at"] = now
+
+    existing = db.table("exam_progress").select("*").eq("student_id", data.student_id).eq("exam_id", data.exam_id).execute()
+    if existing.data:
+        db.table("exam_progress").update(doc).eq("id", existing.data[0]["id"]).execute()
+    else:
+        db.table("exam_progress").insert(doc).execute()
+
+    return JSONResponse(content={"status": "saved", "at": now})
+
+
+@router.get("/exam/progress/{student_id}/{exam_id}")
+async def get_exam_progress(student_id: str, exam_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+    db: Client = next(get_db())
+    result = db.table("exam_progress").select("*").eq("student_id", student_id).eq("exam_id", exam_id).execute()
+    if not result.data:
+        return JSONResponse(content={})
+    return JSONResponse(content=result.data[0])
+
+
 @router.get("/teacher/exam-results/{exam_id}")
 async def get_exam_results(exam_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
-    db = get_db()
-    results: list[dict[str, Any]] = []
-    async for r in db["exam_results"].find({"exam_id": exam_id}):
-        results.append({
+    db: Client = next(get_db())
+    result = db.table("exam_results").select("*").eq("exam_id", exam_id).execute()
+    formatted = []
+    for r in result.data:
+        formatted.append({
             "student_id": r.get("student_id"),
-            "grade": r.get("grade"),
+            "grade": float(r.get("score", 0)),
             "correct": r.get("correct"),
             "total": r.get("total"),
             "created_at": str(r.get("created_at", "")),
         })
-    return JSONResponse(content=results)
+    return JSONResponse(content=formatted)
 
 
 @router.post("/exams/report-incident")
 async def report_incident(data: IncidentReport, user_id: str = Depends(auth_dependency)) -> JSONResponse:
-    db = get_db()
+    db: Client = next(get_db())
     doc = data.model_dump()
-    doc["created_at"] = datetime.now(timezone.utc)
-    await db["exam_incidents"].insert_one(doc)
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    db.table("incident_reports").insert(doc).execute()
+    await ws_manager.broadcast({
+        "type": "exam_interrupted",
+        "student_id": doc.get("student_id"),
+        "exam_id": doc.get("exam_id"),
+        "incident_type": doc.get("incident_type"),
+        "created_at": doc["created_at"],
+    })
     return JSONResponse(content={"status": "ok"})
 
 
 @router.get("/exam-incidents")
 async def list_incidents(user_id: str = Depends(auth_dependency)) -> JSONResponse:
-    db = get_db()
-    incidents: list[dict[str, Any]] = []
-    async for i in db["exam_incidents"].find().sort("_id", -1).limit(100):
-        i["_id"] = str(i["_id"])
-        incidents.append(i)
-    return JSONResponse(content=incidents)
+    db: Client = next(get_db())
+    result = db.table("incident_reports").select("*").order("created_at", desc=True).limit(100).execute()
+    return JSONResponse(content=result.data)
+
+
+@router.post("/exam/handle-disconnect")
+async def handle_disconnect(data: IncidentReport, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+    db: Client = next(get_db())
+    doc = data.model_dump()
+    doc["incident_type"] = "network_loss"
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    db.table("incident_reports").insert(doc).execute()
+
+    progress = db.table("exam_progress").select("*").eq("student_id", data.student_id).eq("exam_id", data.exam_id).execute()
+    if progress.data:
+        db.table("exam_progress").update({"interrupted": True, "last_saved_at": doc["created_at"]}).eq("id", progress.data[0]["id"]).execute()
+
+    await ws_manager.broadcast({
+        "type": "exam_interrupted",
+        "student_id": doc.get("student_id"),
+        "exam_id": doc.get("exam_id"),
+        "incident_type": "network_loss",
+        "created_at": doc["created_at"],
+    })
+    return JSONResponse(content={"status": "disconnect_logged", "can_resume": True})

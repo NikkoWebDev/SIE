@@ -31,12 +31,12 @@ const skeletonHeight = 'h-16 lg:h-screen'
 
 <nav
   id="floating-pill-nav"
-  class={skeletonHeight + " fixed bottom-4 left-1/2 -translate-x-1/2 z-50 lg:left-0 lg:bottom-auto lg:top-0 lg:translate-x-0 lg:z-40 lg:w-64 flex lg:flex-col items-center gap-1 rounded-2xl lg:rounded-none bg-white/70 dark:bg-gray-900/70 backdrop-blur-3xl border border-white/20 dark:border-white/10 shadow-2xl px-2 py-2 lg:px-3 lg:py-6 transition-all duration-300"}
+  class={skeletonHeight + " fixed bottom-4 left-1/2 -translate-x-1/2 z-50 lg:left-0 lg:bottom-auto lg:top-0 lg:translate-x-0 lg:z-40 lg:w-64 flex lg:flex-col items-center gap-1 rounded-2xl lg:rounded-none bg-black/80 lg:bg-black/90 backdrop-blur-3xl border border-white/10 shadow-2xl px-2 py-2 lg:px-3 lg:py-6 transition-all duration-300"}
   data-pill-nav
 >
   <div class="hidden lg:flex items-center gap-3 px-6 py-5 border-b border-white/10 w-full mb-4">
     <div class="h-9 w-9 rounded-full bg-brand-gold flex items-center justify-center text-brand-maroon font-bold text-lg shrink-0">C</div>
-    <span class="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">C sol · SIE</span>
+    <span class="text-lg font-semibold tracking-tight text-white">C sol · SIE</span>
   </div>
   {
     menu.map(item => {
@@ -49,7 +49,9 @@ const skeletonHeight = 'h-16 lg:h-screen'
           data-premium={item.premium ? 'true' : undefined}
           class={[
             'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
-            locked ? 'text-gray-400 dark:text-gray-600 opacity-60 pointer-events-none ring-1 ring-brand-danger/30' : 'text-gray-600 dark:text-gray-300 hover:bg-brand-maroon/10 dark:hover:bg-brand-maroon/20 hover:text-brand-maroon dark:hover:text-white',
+            locked
+              ? 'text-gray-600 opacity-60 pointer-events-none ring-1 ring-brand-danger/30'
+              : 'text-gray-400 hover:bg-brand-maroon/20 hover:text-amber-300',
           ].join(' ')}
           data-nav-item
           data-locked={locked ? 'true' : 'false'}
@@ -76,13 +78,22 @@ const skeletonHeight = 'h-16 lg:h-screen'
     </div>
   )}
   <div class="lg:border-t lg:border-white/10 lg:w-full lg:pt-4 lg:px-3 lg:mt-2">
-    <button id="pill-theme-toggle" class="hidden lg:flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-brand-maroon/10 dark:hover:bg-brand-maroon/20 transition-colors">
+    <button id="pill-theme-toggle" class="hidden lg:flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-brand-maroon/20 hover:text-amber-300 transition-colors">
       <svg class="h-5 w-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
       <svg class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
       <span id="pill-theme-label">Modo oscuro</span>
     </button>
   </div>
 </nav>
+
+<style>
+  #floating-pill-nav {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  #floating-pill-nav a:hover svg {
+    color: #FDC003;
+  }
+</style>
 
 <script>
   (function () {
@@ -101,9 +112,11 @@ const skeletonHeight = 'h-16 lg:h-screen'
         el.classList.toggle('ring-1', locked)
         el.classList.toggle('ring-brand-danger/30', locked)
         if (locked) {
-          el.classList.remove('text-gray-600', 'dark:text-gray-300', 'hover:bg-brand-maroon/10', 'dark:hover:bg-brand-maroon/20', 'hover:text-brand-maroon', 'dark:hover:text-white')
+          el.classList.remove('text-gray-400', 'hover:bg-brand-maroon/20', 'hover:text-amber-300')
+          el.classList.add('text-gray-600')
         } else {
-          el.classList.add('text-gray-600', 'dark:text-gray-300', 'hover:bg-brand-maroon/10', 'dark:hover:bg-brand-maroon/20', 'hover:text-brand-maroon', 'dark:hover:text-white')
+          el.classList.remove('text-gray-600')
+          el.classList.add('text-gray-400', 'hover:bg-brand-maroon/20', 'hover:text-amber-300')
         }
       })
     }

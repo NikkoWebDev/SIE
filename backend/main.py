@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import os
@@ -14,35 +13,36 @@ _dotenv_path = Path(__file__).resolve().parent.parent / ".env"
 if _dotenv_path.exists():
     load_dotenv(_dotenv_path)
 
+import traceback
+
 import jwt
 from fastapi import FastAPI, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from supabase import Client
 
+from config.database import get_db
 from dependencies import (
-    JWT_ALGORITHM, JWT_SECRET, MONGO_DB, MONGO_URI, SKIP_AUTH_PATHS,
-    decode_jwt, get_db, init_db, is_financial_locked_path,
+    JWT_ALGORITHM, JWT_SECRET, SKIP_AUTH_PATHS,
+    decode_jwt, get_db as dep_get_db, is_financial_locked_path,
 )
-from routers.grades import get_risk_queue, risk_agent_worker, set_ws_manager
-from routers.auth import router as auth_router, _hydrate_fallback
+from managers import ws_manager
+from routers.auth import router as auth_router
 from routers.students import router as students_router
 from routers.grades import router as grades_router
 from routers.notices import router as notices_router
 from routers.subjects import router as subjects_router
 from routers.exams import router as exams_router
 from routers.admin import router as admin_router
+from routers.ai_agent import router as ai_router
+from routers.teachers import router as teachers_router
 
 logging.basicConfig(
     level=logging.WARNING if os.getenv("ENV") == "production" else logging.DEBUG,
     format="[%(asctime)s] %(levelname)s %(name)s | %(message)s",
 )
 logger = logging.getLogger("siee.core")
-
-COLLECTIONS: tuple[str, ...] = (
-    "students", "admins", "grades", "notices", "subjects", "guides",
-    "deliveries", "assignments", "exams", "exam_results", "exam_incidents",
-    "candidates", "votes",
-)
 
 FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
     "/api/grades/download-pdf",
@@ -52,106 +52,34 @@ FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
     "/api/reports/",
 )
 
-_worker_task: asyncio.Task[None] | None = None
 
-
-# ---------------------------------------------------------------------------
-# EcosystemSocketManager (WebSocket live alerts)
-# ---------------------------------------------------------------------------
-class EcosystemSocketManager:
-    def __init__(self) -> None:
-        self.active_connections: dict[str, WebSocket] = {}
-        self._lock = asyncio.Lock()
-
-    async def register(self, user_id: str, ws: WebSocket) -> None:
-        async with self._lock:
-            self.active_connections[user_id] = ws
-        logger.debug("ws+ %s (total=%d)", user_id, len(self.active_connections))
-
-    async def unregister(self, user_id: str) -> None:
-        async with self._lock:
-            ws = self.active_connections.pop(user_id, None)
-        if ws:
-            try:
-                await ws.close()
-            except Exception:
-                pass
-        logger.debug("ws- %s (total=%d)", user_id, len(self.active_connections))
-
-    async def send(self, user_id: str, payload: dict[str, Any]) -> bool:
-        async with self._lock:
-            ws = self.active_connections.get(user_id)
-        if ws is None:
-            return False
-        try:
-            await ws.send_json(payload)
-            return True
-        except Exception:
-            await self.unregister(user_id)
-            return False
-
-    async def broadcast(self, payload: dict[str, Any]) -> int:
-        async with self._lock:
-            snapshot = list(self.active_connections.items())
-        sent = 0
-        for uid, ws in snapshot:
-            try:
-                await ws.send_json(payload)
-                sent += 1
-            except Exception:
-                await self.unregister(uid)
-        return sent
-
-    @property
-    def count(self) -> int:
-        return len(self.active_connections)
-
-
-ws_manager = EcosystemSocketManager()
-
-
-# ---------------------------------------------------------------------------
-# App lifecycle
-# ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _worker_task
-    logger.info("siee core booting")
-    await init_db()
-    db = get_db()
-    await _hydrate_fallback(db)
+    logger.info("siee core booting (Supabase)")
     try:
-        for coll in COLLECTIONS:
-            await db.create_collection(coll)
+        db: Client = next(dep_get_db())
+        db.table("profiles").select("id").limit(1).execute()
+        logger.info("supabase connection verified")
     except Exception:
-        pass
-    try:
-        await db["grades"].create_index(
-            [("student_id", 1), ("subject_id", 1), ("created_at", -1)],
-            name="idx_grade_student_subject", background=True,
-        )
-        await db["students"].create_index(
-            [("is_at_risk", 1), ("is_paid", 1)], name="idx_student_flags", background=True,
-        )
-        await db["students"].create_index("document_id", unique=True, background=True, name="idx_student_doc")
-    except Exception:
-        pass
-    set_ws_manager(ws_manager)
-    _worker_task = asyncio.create_task(risk_agent_worker())
+        logger.info("supabase ping — run seed.sql in Supabase Dashboard first if you see 403s")
     yield
-    logger.info("siee core shutting down")
-    await get_risk_queue().put(None)
-    if _worker_task:
-        try:
-            await asyncio.wait_for(_worker_task, timeout=10.0)
-        except (asyncio.TimeoutError, asyncio.CancelledError):
-            _worker_task.cancel()
-    from dependencies import close_db
-    await close_db()
     logger.info("siee core stopped")
 
 
-app = FastAPI(title="SIEE Core — Solara Academic", version="4.0.0", lifespan=lifespan)
+app = FastAPI(title="SIEE Core — Solara Academic (Supabase)", version="5.0.0", lifespan=lifespan)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error("Unhandled exception: %s\n%s", exc, traceback.format_exc())
+    status = exc.status_code if isinstance(exc, StarletteHTTPException) else 500
+    detail = exc.detail if isinstance(exc, StarletteHTTPException) else "Error interno del servidor"
+    return JSONResponse(
+        status_code=status,
+        content={"detail": detail},
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -162,9 +90,6 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------------------------
-# Auth middleware
-# ---------------------------------------------------------------------------
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next: Any) -> Response:
     path = request.url.path
@@ -172,21 +97,18 @@ async def auth_middleware(request: Request, call_next: Any) -> Response:
         return await call_next(request)
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
-        return JSONResponse(status_code=401, content={"detail": "Authorization required"})
+        return JSONResponse(status_code=401, content={"detail": "Authorization required"}, headers={"Access-Control-Allow-Origin": "*"})
     try:
         claims = decode_jwt(auth_header[7:])
     except jwt.ExpiredSignatureError:
-        return JSONResponse(status_code=401, content={"detail": "Token expired"})
+        return JSONResponse(status_code=401, content={"detail": "Token expired"}, headers={"Access-Control-Allow-Origin": "*"})
     except jwt.PyJWTError:
-        return JSONResponse(status_code=401, content={"detail": "Invalid token"})
+        return JSONResponse(status_code=401, content={"detail": "Invalid token"}, headers={"Access-Control-Allow-Origin": "*"})
     request.state.user_id = claims["sub"]
-    request.state.user_role = claims.get("role", "ESTUDIANTE")
+    request.state.user_role = claims.get("role", "student")
     return await call_next(request)
 
 
-# ---------------------------------------------------------------------------
-# Financial guard middleware
-# ---------------------------------------------------------------------------
 @app.middleware("http")
 async def financial_guard_middleware(request: Request, call_next: Any) -> Response:
     if not is_financial_locked_path(request.url.path):
@@ -200,20 +122,26 @@ async def financial_guard_middleware(request: Request, call_next: Any) -> Respon
         except Exception:
             pass
     if not student_id:
-        return JSONResponse(status_code=422, content={"detail": "Query param student_id required"})
-    db = get_db()
-    student = await db["students"].find_one({"document_id": student_id})
-    if student is None:
-        return JSONResponse(status_code=404, content={"detail": "Student not found"})
-    if student.get("is_paid") is False:
-        logger.warning("financial-block student=%s path=%s", student_id, request.url.path)
-        return JSONResponse(status_code=403, content={"detail": "⚠️ Estatus financiero irregular — Descarga restringida por mora"})
+        return JSONResponse(status_code=422, content={"detail": "Query param student_id required"}, headers={"Access-Control-Allow-Origin": "*"})
+    try:
+        db: Client = next(dep_get_db())
+        result = db.table("student_metadata").select("*").eq("profile_id", student_id).execute()
+        rows = result.data
+        if not rows:
+            return JSONResponse(status_code=404, content={"detail": "Student not found"}, headers={"Access-Control-Allow-Origin": "*"})
+        meta = rows[0]
+        if meta.get("months_in_arrears", 0) >= 2 and not meta.get("financial_override", False):
+            logger.warning("financial-block student=%s path=%s", student_id, request.url.path)
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Estatus financiero irregular — Descarga restringida por mora"},
+                headers={"Access-Control-Allow-Origin": "*"},
+            )
+    except Exception as e:
+        logger.error("financial guard error: %s", e)
     return await call_next(request)
 
 
-# ---------------------------------------------------------------------------
-# Router mounts
-# ---------------------------------------------------------------------------
 app.include_router(auth_router)
 app.include_router(students_router)
 app.include_router(grades_router)
@@ -221,25 +149,24 @@ app.include_router(notices_router)
 app.include_router(subjects_router)
 app.include_router(exams_router)
 app.include_router(admin_router)
+app.include_router(ai_router)
+app.include_router(teachers_router)
 
 
 @app.get("/")
 async def root() -> dict[str, Any]:
-    return {"status": "online", "message": "SIEE Core — Solara Academic Backend v4.0.0", "colegio": "Ciudad del Sol"}
+    return {"status": "online", "message": "SIEE Core — Solara Academic (Supabase v5)", "colegio": "Ciudad del Sol"}
 
 
 @app.get("/api/health")
 async def health() -> dict[str, Any]:
     return {
         "status": "alive",
-        "queue_depth": get_risk_queue().qsize(),
         "ws_connected": ws_manager.count,
+        "database": "supabase",
     }
 
 
-# ---------------------------------------------------------------------------
-# WebSocket (live risk alerts + ABP notifications)
-# ---------------------------------------------------------------------------
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket, token: str = Query(..., min_length=1)) -> None:
     try:
