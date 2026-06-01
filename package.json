@@ -11,10 +11,12 @@
     "lint": "astro check"
   },
   "dependencies": {
+    "@astrojs/netlify": "^6.6.5",
     "@astrojs/sitemap": "^3.7.3",
     "@astrojs/tailwind": "^6.0.2",
     "@astrojs/vercel": "^9.0.5",
     "@sentry/browser": "^10.55.0",
+    "ajv": "^8.20.0",
     "astro": "^5.7.0",
     "playwright": "^1.60.0",
     "tailwindcss": "^3.4.17"
