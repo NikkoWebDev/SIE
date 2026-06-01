@@ -1,1220 +1,675 @@
 ---
 import Layout from '@layouts/Layout.astro'
-import FloatingPillNav from '@components/FloatingPillNav.astro'
 import WsRiskAlert from '@components/WsRiskAlert.astro'
 import AIChat from '@components/AIChat.astro'
-import ScoreOrbital from '@components/ScoreOrbital.astro'
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
-const studentId = "USER_ID_PLACEHOLDER"
+const wsUrl = apiUrl.replace(/^http/, 'ws')
 ---
-
-<Layout titulo="Panel Estudiante · C sol SIE" sinMenu>
-  <FloatingPillNav userRole="ESTUDIANTE" />
-  <div class="noise-overlay"></div>
-
-  <div class="relative min-h-screen theme-aware-bg" id="main-container">
-    <!-- Grid background -->
-    <div class="absolute inset-0 pointer-events-none grid-bg"></div>
-    <!-- Solar atmosphere (obsidian only) -->
-    <div class="solar-glow" id="solar-glow"></div>
-    <div class="solar-ring-bg" id="solar-ring"></div>
-    <div class="orbit-container" id="orbit-1">
-      <div class="orbit-dot"></div><div class="orbit-dot"></div>
-      <div class="orbit-dot"></div><div class="orbit-dot"></div>
-    </div>
-    <div class="orbit-container-2" id="orbit-2">
-      <div class="orbit-dot-2"></div><div class="orbit-dot-2"></div>
-      <div class="orbit-dot-2"></div>
-    </div>
-    <div class="glow-orb-maroon"></div>
-    <div class="glow-orb-amber"></div>
-
-    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-8 fade-in-section">
-        <div>
-          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight theme-text-primary" style="font-family:'Syne',sans-serif">
-            <span id="student-name">Cargando...</span>
-          </h1>
-          <p class="text-sm theme-text-tertiary mt-1" id="student-meta">Panel de rendimiento académico</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button id="settings-toggle-btn" class="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.08] transition-all" title="Ajustes">
-            <svg class="h-4 w-4 theme-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          </button>
-          <button id="theme-toggle-btn" class="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.08] transition-all" title="Cambiar tema">
-            <svg id="theme-icon-sun" class="h-4 w-4 text-amber-400 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-            <svg id="theme-icon-moon" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-          </button>
-          <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" id="conn-dot"></span>
-            <span class="text-xs font-medium theme-text-tertiary" id="conn-text">Conectado</span>
-          </div>
-          <div class="h-10 w-10 rounded-full bg-brand-maroon flex items-center justify-center text-amber-300 font-bold text-sm shadow-sm ring-2 ring-white/10">
-            <span id="student-initial">C</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- LEFT COLUMN -->
-        <div class="lg:col-span-2 space-y-6">
-
-          <!-- CARD 1: Academic Status -->
-          <div class="glass-card-student overflow-hidden fade-in-section">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-              <div class="flex items-center gap-3">
-                <div class="h-9 w-9 rounded-xl bg-brand-maroon/20 flex items-center justify-center">
-                  <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                </div>
-                <div>
-                  <h2 class="text-sm font-semibold theme-text-primary">Rendimiento Académico</h2>
-                  <p class="text-xs theme-text-tertiary">Notas ABP por materia</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-4">
-                <div class="text-right">
-                  <span class="text-xs theme-text-tertiary">Promedio</span>
-                  <p class="text-lg font-bold" id="avg-score-display" style="font-family:'Syne',sans-serif">--</p>
-                </div>
-                <div class="h-14 w-14 relative">
-                  <svg class="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.5" fill="none" class="stroke-white/[0.06]" stroke-width="3" />
-                    <circle id="avg-ring" cx="18" cy="18" r="15.5" fill="none" stroke="#800000" stroke-width="3" stroke-linecap="round" stroke-dasharray="97.4" stroke-dashoffset="97.4" class="transition-all duration-1000 ease-out" style="filter: drop-shadow(0 0 4px currentColor);" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" id="metrics-grid">
-                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
-                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
-                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- CARD 2: Hybrid ABP Hub -->
-          <div class="glass-card-student overflow-hidden fade-in-section">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-              <div class="flex items-center gap-3">
-                <div class="h-9 w-9 rounded-xl bg-amber-500/15 flex items-center justify-center">
-                  <svg class="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                </div>
-                <div>
-                  <h2 class="text-sm font-semibold theme-text-primary">Hub ABP Integrador</h2>
-                  <p class="text-xs theme-text-tertiary">Gestión de proyectos y entregas</p>
-                </div>
-              </div>
-              <span class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">Activo</span>
-            </div>
-            <div class="flex border-b border-white/[0.06] bg-white/[0.01]">
-              <button class="abp-tab-btn active flex-1 py-3 text-xs font-semibold uppercase tracking-wider transition-all" data-abp-tab="parciales">
-                <span class="flex items-center justify-center gap-1.5">
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                  Entregas Parciales
-                </span>
-              </button>
-              <button class="abp-tab-btn flex-1 py-3 text-xs font-semibold uppercase tracking-wider transition-all" data-abp-tab="transversal">
-                <span class="flex items-center justify-center gap-1.5">
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                  Proyecto Transversal
-                </span>
-              </button>
-            </div>
-            <!-- Entregas Parciales -->
-            <div id="abp-parciales" class="p-6">
-              <div class="grid grid-cols-3 gap-2" id="abp-subjects-grid">
-                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
-                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
-                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
-                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
-                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
-                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
-                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
-                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
-                <div class="h-16 rounded-lg shimmer-skeleton-student"></div>
-              </div>
-            </div>
-            <!-- Proyecto Transversal -->
-            <div id="abp-transversal" class="p-6 hidden">
-              <div id="abp-dropzone" class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/[0.08] bg-white/[0.02] py-10 px-6 transition-all hover:border-amber-500/30 hover:bg-amber-500/[0.02] cursor-pointer">
-                <svg class="h-10 w-10 text-amber-400/60 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                <p class="text-sm font-medium theme-text-secondary mb-1">Proyecto Transversal Integrador</p>
-                <p class="text-xs theme-text-tertiary mb-4">Arrastra tu macro-entregable aquí o haz clic para seleccionar</p>
-                <input id="abp-transversal-file" type="file" class="hidden" accept=".pdf,.doc,.docx,.zip,.rar,.7z" />
-                <button id="abp-transversal-select-btn" class="px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 transition-all">Seleccionar archivo</button>
-                <p id="abp-transversal-filename" class="text-xs theme-text-tertiary mt-3 hidden"></p>
-              </div>
-              <div class="mt-4">
-                <div class="flex items-center justify-between text-xs theme-text-tertiary mb-1.5">
-                  <span>Progreso del proyecto</span>
-                  <span class="font-semibold theme-text-primary" id="abp-progress-pct">0%</span>
-                </div>
-                <div class="h-2 rounded-full bg-white/[0.06] overflow-hidden">
-                  <div id="abp-progress-bar" class="h-full rounded-full bg-amber-500 transition-all duration-1000" style="width:0%"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- CARD 3: Schedule -->
-          <div class="glass-card-student overflow-hidden fade-in-section">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-              <div class="flex items-center gap-3">
-                <div class="h-9 w-9 rounded-xl bg-brand-maroon/20 flex items-center justify-center">
-                  <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                </div>
-                <div>
-                  <h2 class="text-sm font-semibold theme-text-primary">Horario & Tareas</h2>
-                  <p class="text-xs theme-text-tertiary">VYNTRA Go · Cronograma semanal</p>
-                </div>
-              </div>
-              <span class="text-[10px] font-semibold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">Semana activa</span>
-            </div>
-            <div class="p-6">
-              <div class="space-y-0" id="schedule-list">
-                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
-                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
-                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
-                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
-                <div class="h-14 rounded-xl shimmer-skeleton-student"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RIGHT COLUMN -->
-        <div class="space-y-6">
-
-          <!-- CARD 4: Financial Status -->
-          <div class="glass-card-student overflow-hidden fade-in-section">
-            <div class="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06]">
-              <div class="h-9 w-9 rounded-xl bg-brand-maroon/20 flex items-center justify-center">
-                <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              </div>
-              <div>
-                <h2 class="text-sm font-semibold theme-text-primary">Estado Financiero</h2>
-                <p class="text-xs theme-text-tertiary">Situación de pagos</p>
-              </div>
-            </div>
-            <div class="p-6" id="financial-card">
-              <div class="flex items-center gap-4">
-                <div class="h-14 w-14 rounded-full bg-white/5 flex items-center justify-center shrink-0" id="fin-icon-container">
-                  <svg class="h-7 w-7 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold theme-text-primary" id="fin-status-label">Consultando...</p>
-                  <p class="text-xs theme-text-tertiary" id="fin-status-detail">Estado de cuenta</p>
-                </div>
-              </div>
-              <!-- Financial lock alert (appears when blocked) -->
-              <div id="fin-lock-alert" class="hidden mt-4 rounded-xl bg-[#800000]/15 border border-[#800000]/25 p-4">
-                <div class="flex items-center gap-3">
-                  <svg class="h-5 w-5 text-[#800000] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                  <div>
-                    <p class="text-xs font-semibold text-[#800000]">Acceso restringido por mora</p>
-                    <p class="text-[11px] text-[#800000]/70 mt-0.5">La descarga de boletín y exámenes estará disponible al regularizar tu situación financiera.</p>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-4 pt-4 border-t border-white/[0.06]">
-                <div class="flex items-center justify-between text-sm">
-                  <span class="theme-text-tertiary">Meses en mora</span>
-                  <span class="font-semibold theme-text-primary" id="fin-months">--</span>
-                </div>
-                <div class="flex items-center justify-between text-sm mt-2">
-                  <span class="theme-text-tertiary">Saldo pendiente</span>
-                  <span class="font-semibold theme-text-primary" id="fin-balance">--</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Summary -->
-          <div class="glass-card-student overflow-hidden fade-in-section">
-            <div class="px-6 py-4 border-b border-white/[0.06]">
-              <h2 class="text-sm font-semibold theme-text-primary">Resumen Académico</h2>
-            </div>
-            <div class="p-6 space-y-4" id="summary-section">
-              <div class="flex items-center justify-between">
-                <span class="text-sm theme-text-tertiary">Estado general</span>
-                <span id="summary-status" class="text-sm font-semibold text-gray-400">--</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm theme-text-tertiary">Materias cursando</span>
-                <span id="summary-subjects" class="text-sm font-semibold theme-text-primary">--</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm theme-text-tertiary">Áreas en riesgo</span>
-                <span id="summary-risk" class="text-sm font-semibold text-brand-danger">--</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- CARD 5: Recursos Académicos (Material Locker + AI Quiz) -->
-          <div class="glass-card-student overflow-hidden fade-in-section">
-            <div class="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06]">
-              <div class="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center">
-                <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-              </div>
-              <div>
-                <h2 class="text-sm font-semibold theme-text-primary">Recursos Académicos</h2>
-                <p class="text-xs theme-text-tertiary">Materiales, documentos y desafíos</p>
-              </div>
-            </div>
-            <div class="flex border-b border-white/[0.06] bg-white/[0.01]">
-              <button class="recurso-tab-btn active flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all" data-tab="docs">Documentos</button>
-              <button class="recurso-tab-btn flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all" data-tab="materiales">Materiales</button>
-              <button class="recurso-tab-btn flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all" data-tab="quiz">Quiz IA</button>
-            </div>
-
-            <!-- Documents sub-tab -->
-            <div id="recurso-docs" class="p-6 space-y-2">
-              <div id="locker-unlocked">
-                <button class="locker-doc-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] hover:border-amber-500/30 transition-all text-left" data-doc="boletin">
-                  <svg class="h-5 w-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                  <span class="flex-1">Boletín Académico</span>
-                  <svg class="h-4 w-4 theme-text-quaternary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                </button>
-                <button class="locker-doc-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] hover:border-amber-500/30 transition-all text-left" data-doc="reporte">
-                  <svg class="h-5 w-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  <span class="flex-1">Reporte de Notas</span>
-                  <svg class="h-4 w-4 theme-text-quaternary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                </button>
-                <button class="locker-doc-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] hover:border-amber-500/30 transition-all text-left" data-doc="horario">
-                  <svg class="h-5 w-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                  <span class="flex-1">Horario Semanal</span>
-                  <svg class="h-4 w-4 theme-text-quaternary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                </button>
-              </div>
-              <!-- Exam link cards (locked when in arrears) -->
-              <div id="exam-links-section" class="mt-3 pt-3 border-t border-white/[0.06] space-y-2">
-                <p class="text-[11px] font-semibold uppercase tracking-wider theme-text-tertiary">Exámenes activos</p>
-                <button class="exam-link-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] transition-all text-left" data-exam-id="exam-1">
-                  <svg class="h-5 w-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  <span class="flex-1">Examen Parcial · Matemáticas</span>
-                  <span class="text-[10px] font-semibold uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Disponible</span>
-                </button>
-                <button class="exam-link-btn flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium theme-text-secondary hover:bg-white/[0.06] transition-all text-left" data-exam-id="exam-2">
-                  <svg class="h-5 w-5 text-brand-maroon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  <span class="flex-1">Examen Final · Ciencias</span>
-                  <span class="text-[10px] font-semibold uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Disponible</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Materials sub-tab -->
-            <div id="recurso-materiales" class="p-6 hidden">
-              <p class="text-xs theme-text-tertiary mb-4">Resúmenes de clase y material de estudio</p>
-              <div id="materials-grid" class="grid grid-cols-2 gap-2">
-                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
-                <div class="h-20 rounded-xl shimmer-skeleton-student"></div>
-              </div>
-            </div>
-
-            <!-- Quiz sub-tab -->
-            <div id="recurso-quiz" class="p-6 hidden">
-              <div id="quiz-setup">
-                <div class="mb-4">
-                  <label class="text-xs font-semibold theme-text-secondary block mb-1.5">Selecciona una materia</label>
-                  <select id="quiz-subject-select" class="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm theme-text-primary focus:outline-none focus:ring-2 focus:ring-brand-maroon/40 transition-all">
-                    <option value="">-- Elegir materia --</option>
-                    <option value="Investigación Guiada">Investigación Guiada</option>
-                    <option value="Matemáticas Aplicadas">Matemáticas Aplicadas</option>
-                    <option value="Ciencias Naturales">Ciencias Naturales</option>
-                    <option value="Lenguaje y Literatura">Lenguaje y Literatura</option>
-                    <option value="Inglés Avanzado">Inglés Avanzado</option>
-                    <option value="Ciencias Sociales">Ciencias Sociales</option>
-                    <option value="Tecnología e Informática">Tecnología e Informática</option>
-                    <option value="Arte y Creatividad">Arte y Creatividad</option>
-                    <option value="Música y Expresión">Música y Expresión</option>
-                  </select>
-                </div>
-                <button id="quiz-start-btn" class="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-maroon px-4 py-3 text-sm font-semibold text-white hover:bg-brand-maroon/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  Iniciar Desafío
-                </button>
-              </div>
-              <div id="quiz-active" class="hidden">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <p class="text-xs font-semibold theme-text-secondary" id="quiz-subject-label">Matemáticas</p>
-                    <p class="text-[11px] theme-text-tertiary" id="quiz-progress">Pregunta 1 de 5</p>
-                  </div>
-                  <div id="quiz-badge" class="hidden px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
-                    <span class="text-[11px] font-bold text-amber-400" id="quiz-badge-label">Bronce</span>
-                  </div>
-                </div>
-                <p class="text-sm font-medium theme-text-primary mb-4" id="quiz-question">Cargando pregunta...</p>
-                <div id="quiz-options" class="space-y-2 mb-4"></div>
-                <div class="flex gap-2">
-                  <button id="quiz-submit-btn" class="flex-1 rounded-xl bg-brand-maroon px-4 py-2.5 text-xs font-semibold text-white hover:bg-brand-maroon/80 transition-all disabled:opacity-50">Responder</button>
-                  <button id="quiz-next-btn" class="flex-1 rounded-xl border border-white/[0.08] px-4 py-2.5 text-xs font-semibold theme-text-secondary hover:bg-white/[0.04] transition-all hidden">Siguiente</button>
-                </div>
-              </div>
-              <div id="quiz-results" class="hidden text-center py-4">
-                <div class="text-3xl mb-2" id="quiz-results-icon">🏆</div>
-                <p class="text-sm font-bold theme-text-primary" id="quiz-results-score">0/5</p>
-                <p class="text-xs theme-text-tertiary mt-1" id="quiz-results-badge">Insignia: Bronce</p>
-                <button id="quiz-retry-btn" class="mt-4 rounded-xl border border-white/[0.08] px-6 py-2.5 text-xs font-semibold theme-text-secondary hover:bg-white/[0.04] transition-all">Intentar de nuevo</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- CARD 6: Behavior & Merits -->
-          <div class="glass-card-student overflow-hidden fade-in-section">
-            <div class="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06]">
-              <div class="h-9 w-9 rounded-xl bg-brand-maroon/20 flex items-center justify-center">
-                <svg class="h-5 w-5 text-brand-maroon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
-              </div>
-              <div>
-                <h2 class="text-sm font-semibold theme-text-primary">Comportamiento & Méritos</h2>
-                <p class="text-xs theme-text-tertiary">Registro de observaciones</p>
-              </div>
-            </div>
-            <div class="p-6" id="behavior-logs-container">
-              <div class="space-y-3" id="behavior-timeline">
-                <div class="h-12 rounded-xl shimmer-skeleton-student"></div>
-                <div class="h-12 rounded-xl shimmer-skeleton-student"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Telemetry freeze overlay (headless — hidden by default) -->
-      <div id="telemetry-freeze-overlay" class="fixed inset-0 z-[90] hidden" style="background:rgba(128,0,0,0.15);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
-        <div class="flex items-center justify-center h-full">
-          <div class="text-center px-8 py-10 rounded-2xl bg-[#040405]/90 border border-[#800000]/30 max-w-sm">
-            <svg class="h-12 w-12 mx-auto text-[#800000] mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-            <p class="text-lg font-bold text-white font-syne">Conexión interrumpida</p>
-            <p class="text-sm text-gray-500 mt-2">Hemos detectado una pérdida de conexión. Tu progreso está a salvo. Reanudaremos automáticamente cuando la conexión se restablezca.</p>
-            <div class="mt-6 flex items-center justify-center gap-3">
-              <span class="h-2 w-2 rounded-full bg-[#FF0055] animate-pulse"></span>
-              <span class="text-xs text-gray-600">Reconectando...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Toast container -->
-      <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none"></div>
-
-      <!-- Settings Modal -->
-      <div id="settings-modal" class="fixed inset-0 z-[80] hidden flex items-center justify-center" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">
-        <div class="glass-card-student w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-            <h2 class="text-sm font-semibold theme-text-primary" style="font-family:'Syne',sans-serif">Ajustes</h2>
-            <button id="settings-close-btn" class="h-8 w-8 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.08] transition-all">
-              <svg class="h-4 w-4 theme-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-6">
-            <!-- Theme -->
-            <div>
-              <p class="text-xs font-semibold theme-text-secondary uppercase tracking-wider mb-3">Apariencia</p>
-              <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <div class="flex items-center gap-3">
-                  <svg class="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                  <div>
-                    <p class="text-sm font-medium theme-text-primary">Obsidian Crimson</p>
-                    <p class="text-xs theme-text-tertiary">Modo oscuro premium</p>
-                  </div>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" id="settings-theme-toggle" class="sr-only peer" />
-                  <div class="w-9 h-5 rounded-full bg-gray-600 peer-checked:bg-amber-500/40 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
-                </label>
-              </div>
-            </div>
-            <!-- Accent color -->
-            <div>
-              <p class="text-xs font-semibold theme-text-secondary uppercase tracking-wider mb-3">Color de acento</p>
-              <div class="flex gap-3">
-                <button class="accent-btn w-8 h-8 rounded-xl border-2 border-brand-maroon bg-brand-maroon active" data-accent="maroon" title="Maroon"></button>
-                <button class="accent-btn w-8 h-8 rounded-xl border-2 border-transparent bg-amber-500" data-accent="gold" title="Gold"></button>
-                <button class="accent-btn w-8 h-8 rounded-xl border-2 border-transparent bg-emerald-500" data-accent="emerald" title="Emerald"></button>
-              </div>
-            </div>
-            <!-- Password -->
-            <div>
-              <p class="text-xs font-semibold theme-text-secondary uppercase tracking-wider mb-3">Cambiar contraseña</p>
-              <form id="password-form" class="space-y-3">
-                <input id="pw-current" type="password" placeholder="Contraseña actual" class="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm theme-text-primary placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-maroon/40 transition-all" />
-                <input id="pw-new" type="password" placeholder="Nueva contraseña" class="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm theme-text-primary placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-maroon/40 transition-all" />
-                <input id="pw-confirm" type="password" placeholder="Confirmar nueva contraseña" class="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm theme-text-primary placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-maroon/40 transition-all" />
-                <button type="submit" class="w-full rounded-xl bg-brand-maroon px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-maroon/80 transition-all">
-                  Actualizar contraseña
-                </button>
-                <p id="pw-feedback" class="text-xs theme-text-tertiary text-center"></p>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="h-16"></div>
-  </div>
+<Layout titulo="Estudiante">
   <WsRiskAlert />
-  <AIChat role="student" />
+
+  <style>
+    .est-sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;background:rgba(0,0,0,0.4);backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,0.04);z-index:50;padding:1.25rem 0;display:flex;flex-direction:column;gap:0.25rem}
+    .est-sidebar .logo-area{padding:0 1rem 1rem;border-bottom:1px solid rgba(255,255,255,0.04);margin-bottom:0.75rem}
+    .est-sidebar .logo-area h2{font-family:var(--font-display);font-size:1.1rem;color:#fff;font-weight:700}
+    .est-sidebar .logo-area p{font-size:0.6rem;color:rgba(255,255,255,0.35);letter-spacing:0.05em;text-transform:uppercase}
+    .est-nav-link{display:flex;align-items:center;gap:0.625rem;padding:0.5rem 1rem;margin:0 0.5rem;border-radius:0.625rem;font-size:0.75rem;color:rgba(255,255,255,0.5);font-weight:500;transition:all 0.15s ease;text-decoration:none;cursor:pointer}
+    .est-nav-link:hover{color:rgba(255,255,255,0.8);background:rgba(128,0,0,0.12)}
+    .est-nav-link.active{color:#FDC003;background:rgba(253,192,3,0.08)}
+    .est-main{margin-left:220px;padding:1.5rem 2rem;min-height:100vh;max-width:1200px}
+    .est-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+    .est-header h1{font-family:var(--font-display);font-weight:700;font-size:clamp(1.2rem,2vw,1.6rem);color:var(--text)}
+    .est-header .header-right{display:flex;align-items:center;gap:1rem}
+    .online-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+    .online-dot.online{background:#34D399;box-shadow:0 0 6px rgba(52,211,153,0.5)}
+    .online-dot.offline{background:#BA1A1A}
+    .live-clock{font-size:0.7rem;color:rgba(255,255,255,0.4);font-weight:500;font-variant-numeric:tabular-nums}
+    .section-content{display:none}
+    .section-content.active{display:block}
+    .exam-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:1rem;padding:1rem;cursor:pointer;transition:all 0.2s}
+    .exam-card:hover{border-color:rgba(253,192,3,0.3);background:rgba(253,192,3,0.03)}
+    .candidate-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:1.25rem;padding:1.25rem;text-align:center;transition:all 0.2s}
+    .candidate-card:hover{border-color:rgba(128,0,0,0.3)}
+    .candidate-card img{width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 0.75rem}
+    .exam-modal{position:fixed;inset:0;z-index:9999;background:#040405;display:none;flex-direction:column}
+    .exam-modal.open{display:flex}
+    .exam-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .exam-modal-body{flex:1;overflow-y:auto;padding:1.5rem;display:grid;grid-template-columns:1fr;gap:1rem}
+    .exam-question-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:1rem;padding:1.25rem}
+    .exam-option{display:flex;align-items:center;gap:0.625rem;padding:0.625rem 0.75rem;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.08);cursor:pointer;transition:all 0.15s;margin-bottom:0.375rem;font-size:0.8125rem}
+    .exam-option:hover{border-color:rgba(253,192,3,0.3);background:rgba(253,192,3,0.04)}
+    .exam-option input:checked + .opt-label{color:#FDC003}
+    .exam-option:has(input:checked){border-color:#FDC003;background:rgba(253,192,3,0.06)}
+    .lightbox-overlay{position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.92);display:none;align-items:center;justify-content:center;cursor:zoom-out}
+    .lightbox-overlay.open{display:flex}
+    .lightbox-overlay img{max-width:90vw;max-height:90vh;border-radius:0.75rem;object-fit:contain}
+    .strike-badge{display:inline-flex;align-items:center;gap:0.375rem;padding:0.25rem 0.75rem;border-radius:999px;font-size:0.6875rem;font-weight:600;background:rgba(186,26,26,0.12);color:#ff4d4d}
+    .timer-display{font-family:var(--font-display);font-weight:700;font-size:1.5rem;font-variant-numeric:tabular-nums}
+    .timer-display.warning{color:#ff4d4d;animation:pulse 1s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+    @media(max-width:768px){
+      .est-sidebar{transform:translateX(-100%);transition:transform .35s var(--ease-out);z-index:60}
+      .est-sidebar.open{transform:translateX(0)}
+      .est-main{margin-left:0;padding:1rem}
+      .est-header{flex-wrap:wrap;gap:.5rem}
+    }
+    @media(min-width:769px){.est-sidebar{transform:translateX(0)!important}}
+    @media(max-width:480px){.est-main{padding:.75rem!important}}
+    .est-sidebar-overlay{display:none;position:fixed;inset:0;z-index:55;background:rgba(0,0,0,.6)}
+    .est-sidebar.open~.est-sidebar-overlay{display:block}
+    @media(max-width:480px){
+      .exam-modal-header{padding:.75rem 1rem;flex-wrap:wrap;gap:.5rem}
+      .exam-modal-body{padding:1rem}
+      .est-header .header-right{gap:.5rem}
+      #online-text{display:none}
+      .candidate-card{padding:1rem}
+    }
+    @media(max-width:380px){
+      .est-header .live-clock{display:none}
+    }
+  </style>
+
+  <!-- Sidebar -->
+  <nav class="est-sidebar">
+    <div class="logo-area">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><h2>Vyntra</h2><p>Panel Estudiante</p></div>
+        <button class="show-mobile" onclick="document.querySelector('.est-sidebar').classList.remove('open')" style="color:rgba(255,255,255,.5);font-size:1.2rem;background:none;border:none;cursor:pointer">✕</button>
+      </div>
+    </div>
+    <button class="est-nav-link active" data-nav="inicio" tabindex="0"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg> Inicio</button>
+    <button class="est-nav-link" data-nav="examenes" tabindex="0"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> Exámenes</button>
+    <button class="est-nav-link" data-nav="votaciones" tabindex="0"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Votaciones</button>
+    <button class="est-nav-link" data-nav="aula" tabindex="0"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg> Aula Virtual</button>
+    <button class="est-nav-link" data-nav="tareas" tabindex="0"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg> Tareas</button>
+    <button class="est-nav-link" data-nav="boletin" tabindex="0"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Boletín</button>
+  </nav>
+  <div class="est-sidebar-overlay" onclick="document.querySelector('.est-sidebar').classList.remove('open')"></div>
+
+  <!-- Lightbox -->
+  <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()"><img id="lightbox-img" src="" alt=""></div>
+
+  <!-- Exam Modal -->
+  <div class="exam-modal" id="exam-modal">
+    <div class="exam-modal-header">
+      <div><strong id="exam-modal-title" style="font-size:0.875rem;color:#fff">Examen</strong><div class="strike-badge" id="strike-badge" style="display:none">⚠️ <span id="strike-val">0</span>/5</div></div>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <span class="timer-display" id="timer-display">00:00</span>
+        <button class="btn btn-ghost" onclick="intentarSalirManual()" style="font-size:0.75rem;color:rgba(255,255,255,0.5)">✕ Salir</button>
+      </div>
+    </div>
+    <div class="exam-modal-body" id="examen-preguntas-render"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="est-main">
+    <div class="est-header">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <button class="show-mobile" onclick="document.querySelector('.est-sidebar').classList.toggle('open')" style="padding:.35rem;border-radius:var(--radius-sm);color:rgba(255,255,255,.5);background:none;border:none;cursor:pointer">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div>
+          <h1><span id="student-name">Cargando...</span></h1>
+        <p style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:0.15rem" id="student-meta">Panel de rendimiento académico</p>
+      </div>
+      <div class="header-right">
+        <span id="online-indicator" style="display:flex;align-items:center;gap:0.375rem;font-size:0.7rem;color:rgba(255,255,255,0.4)"><span class="online-dot online" id="online-dot"></span> <span id="online-text">En línea</span></span>
+        <span class="live-clock" id="live-clock"></span>
+      </div>
+    </div>
+
+    <!-- Inicio -->
+    <div class="section-content active" id="sec-inicio">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+        <div class="card-float" style="padding:1.25rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+            <h2 style="font-size:0.85rem;font-weight:600;color:var(--text)">Rendimiento</h2>
+            <span style="font-family:var(--font-display);font-weight:700;font-size:1.5rem;color:var(--maroon)" id="avg-score-display">--</span>
+          </div>
+          <div id="metrics-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem"></div>
+        </div>
+        <div class="card-float" style="padding:1.25rem">
+          <h2 style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.75rem">📢 Avisos</h2>
+          <div id="notices-list" style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Cargando...</div>
+        </div>
+      </div>
+      <div class="card-float" style="padding:1.25rem">
+        <h2 style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.75rem">Notas por Materia</h2>
+        <div id="grades-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.75rem"></div>
+      </div>
+    </div>
+
+    <!-- Exámenes -->
+    <div class="section-content" id="sec-examenes">
+      <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+        <h2 style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.75rem">📝 Exámenes Disponibles</h2>
+        <div id="available-exams" style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- Votaciones -->
+    <div class="section-content" id="sec-votaciones">
+      <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+        <h2 style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.75rem">🗳️ Elecciones — Votación Estudiantil</h2>
+        <div id="candidates-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem"></div>
+      </div>
+    </div>
+
+    <!-- Aula Virtual -->
+    <div class="section-content" id="sec-aula">
+      <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+        <h2 style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.75rem">📚 Aula Virtual</h2>
+        <select id="subject-selector" class="input-field" style="margin-bottom:1rem;width:100%;max-width:400px"><option value="">Seleccionar materia...</option></select>
+        <div id="subject-resources" style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Selecciona una materia para ver sus recursos.</div>
+      </div>
+    </div>
+
+    <!-- Tareas -->
+    <div class="section-content" id="sec-tareas">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="card-float" style="padding:1.25rem">
+          <h2 style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.75rem">📤 Subir Tarea</h2>
+          <select id="hw-subject" class="input-field" style="margin-bottom:0.75rem;width:100%"><option value="">Materia...</option></select>
+          <div style="border:2px dashed rgba(255,255,255,0.08);border-radius:1rem;padding:1.5rem;text-align:center;position:relative;margin-bottom:0.75rem">
+            <input type="file" id="hw-file" accept=".pdf,.doc,.docx,.zip,.png,.jpg" style="position:absolute;width:100%;height:100%;top:0;left:0;opacity:0;cursor:pointer" onchange="updateFileName(this)">
+            <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">📎 Arrastra o selecciona archivo</span>
+            <div id="file-name-display" style="font-size:0.7rem;color:var(--maroon);margin-top:0.375rem"></div>
+          </div>
+          <button class="btn btn-crimson" onclick="sendHomework()" style="width:100%;justify-content:center">Subir Tarea</button>
+        </div>
+        <div class="card-float" style="padding:1.25rem">
+          <h2 style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.75rem">📋 Historial de Entregas</h2>
+          <div id="homework-history" style="font-size:0.75rem;color:rgba(255,255,255,0.5)">Cargando...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Boletín -->
+    <div class="section-content" id="sec-boletin">
+      <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h2 style="font-size:0.85rem;font-weight:600;color:var(--text)">📊 Rendimiento por Materia</h2>
+          <button class="btn btn-crimson" onclick="generarBoletinPDF()" style="font-size:0.75rem">📄 Descargar Boletín PDF</button>
+        </div>
+        <div style="height:300px"><canvas id="myGradesChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <AIChat />
 </Layout>
 
-<style is:global>
-  :root {
-    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .glass-card-student {
-    background: rgba(255,255,255,0.03);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 1.5rem;
-    transition: all 0.3s ease;
-  }
-  .glass-card-student:hover {
-    background: rgba(255,255,255,0.05);
-    border-color: rgba(255,255,255,0.1);
-  }
-  .shimmer-skeleton-student {
-    background: linear-gradient(90deg, transparent 0%, rgba(128,0,0,0.08) 50%, transparent 100%);
-    background-size: 200% 100%;
-    animation: shimmerDash 2s infinite linear;
-    border-radius: 0.75rem;
-  }
-  @keyframes shimmerDash {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  .noise-overlay {
-    position: fixed; inset: 0; z-index: 1;
-    pointer-events: none; opacity: 0.02;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-    background-repeat: repeat; background-size: 256px 256px;
-  }
-  .fade-in-section {
-    opacity: 0;
-    animation: fadeSlideUp 0.8s var(--ease-out-expo) forwards;
-  }
-  @keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .solar-glow {
-    position: fixed; width: 120vmax; height: 120vmax; left: 50%; top: 50%;
-    transform: translate(-50%,-55%);
-    background: radial-gradient(ellipse 40% 35% at 50% 50%, rgba(253,192,3,0.06) 0%, rgba(128,0,0,0.04) 30%, transparent 60%);
-    animation: pulseSlow 8s ease-in-out infinite;
-    pointer-events: none; z-index: 0;
-  }
-  .solar-ring-bg {
-    position: fixed; width: 90vmin; height: 90vmin; left: 50%; top: 45%;
-    transform: translate(-50%,-50%); border-radius: 50%;
-    background: radial-gradient(circle at 50% 50%, rgba(253,192,3,0.08) 0%, rgba(253,192,3,0.02) 35%, transparent 55%);
-    animation: coronaPulse 6s ease-in-out infinite;
-    pointer-events: none; z-index: 0;
-  }
-  .solar-ring-bg::before {
-    content: ''; position: absolute; inset: -2px; border-radius: 50%;
-    border: 1px solid rgba(253,192,3,0.08);
-    animation: ringRotate 20s linear infinite;
-  }
-  .solar-ring-bg::after {
-    content: ''; position: absolute; inset: -20px; border-radius: 50%;
-    border: 1px dashed rgba(253,192,3,0.04);
-    animation: ringRotate 30s linear infinite reverse;
-  }
-  @keyframes pulseSlow {
-    0%,100% { transform: translate(-50%,-55%) scale(1); opacity: 0.8; }
-    50% { transform: translate(-50%,-55%) scale(1.08); opacity: 1; }
-  }
-  @keyframes coronaPulse {
-    0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
-    50% { transform: translate(-50%,-50%) scale(1.12); opacity: 1; }
-  }
-  @keyframes ringRotate { to { transform: rotate(360deg); } }
-  .orbit-container {
-    position: fixed; left: 50%; top: 45%; width: 70vmin; height: 70vmin;
-    transform: translate(-50%,-50%);
-    animation: ringRotate 40s linear infinite;
-    pointer-events: none; z-index: 0;
-  }
-  .orbit-dot {
-    position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #FDC003; opacity: 0.3;
-  }
-  .orbit-dot:nth-child(1) { top: 0; left: 50%; transform: translate(-50%,-50%); }
-  .orbit-dot:nth-child(2) { top: 50%; right: 0; transform: translate(50%,-50%); }
-  .orbit-dot:nth-child(3) { bottom: 0; left: 50%; transform: translate(-50%,50%); }
-  .orbit-dot:nth-child(4) { top: 50%; left: 0; transform: translate(-50%,-50%); }
-  .orbit-container-2 {
-    position: fixed; left: 50%; top: 45%; width: 55vmin; height: 55vmin;
-    transform: translate(-50%,-50%);
-    animation: ringRotate 25s linear infinite reverse;
-    pointer-events: none; z-index: 0;
-  }
-  .orbit-dot-2 {
-    position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #800000; opacity: 0.5;
-  }
-  .orbit-dot-2:nth-child(1) { top: 0; left: 50%; transform: translate(-50%,-50%); }
-  .orbit-dot-2:nth-child(2) { bottom: 15%; right: 0; transform: translate(50%,50%); }
-  .orbit-dot-2:nth-child(3) { bottom: 0; left: 25%; transform: translate(0,50%); }
-  .glow-orb-maroon {
-    position: fixed; top: 10%; right: 5%; width: 400px; height: 400px;
-    background: rgba(128,0,0,0.05); filter: blur(120px); border-radius: 50%;
-    pointer-events: none;
-  }
-  .glow-orb-amber {
-    position: fixed; bottom: 20%; left: 10%; width: 300px; height: 300px;
-    background: rgba(253,192,3,0.05); filter: blur(100px); border-radius: 50%;
-    pointer-events: none;
-  }
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(128,0,0,0.3); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(128,0,0,0.5); }
-  .ambient-risk-active { box-shadow: inset 0 0 80px rgba(255,0,85,0.15), inset 0 0 160px rgba(255,0,85,0.08); }
-
-  .abp-tab-btn {
-    color: rgba(255,255,255,0.3);
-    border-bottom: 2px solid transparent;
-  }
-  .abp-tab-btn.active {
-    color: #FDC003;
-    border-bottom-color: #FDC003;
-    background: rgba(253,192,3,0.04);
-  }
-  .recurso-tab-btn {
-    color: rgba(255,255,255,0.3);
-    border-bottom: 2px solid transparent;
-  }
-  .recurso-tab-btn.active {
-    color: #34D399;
-    border-bottom-color: #34D399;
-    background: rgba(52,211,153,0.04);
-  }
-
-  [data-theme="alabaster"] #main-container { background: #F5F0EB; }
-  [data-theme="alabaster"] .glass-card-student {
-    background: rgba(255,255,255,0.7);
-    border-color: rgba(0,0,0,0.06);
-  }
-  [data-theme="alabaster"] .glass-card-student:hover {
-    background: rgba(255,255,255,0.85);
-    border-color: rgba(0,0,0,0.1);
-  }
-  [data-theme="alabaster"] .theme-text-primary { color: #1A1A2E; }
-  [data-theme="alabaster"] .theme-text-secondary { color: #4B5563; }
-  [data-theme="alabaster"] .theme-text-tertiary { color: #6B7280; }
-  [data-theme="alabaster"] .theme-text-quaternary { color: #9CA3AF; }
-  [data-theme="alabaster"] .solar-glow,
-  [data-theme="alabaster"] .solar-ring-bg,
-  [data-theme="alabaster"] .orbit-container,
-  [data-theme="alabaster"] .orbit-container-2,
-  [data-theme="alabaster"] .glow-orb-maroon,
-  [data-theme="alabaster"] .glow-orb-amber { opacity: 0; }
-  [data-theme="alabaster"] .grid-bg { opacity: 0.3; }
-  [data-theme="alabaster"] .noise-overlay { opacity: 0.01; }
-  [data-theme="alabaster"] .abp-tab-btn.active { color: #800000; border-bottom-color: #800000; }
-  [data-theme="alabaster"] .recurso-tab-btn.active { color: #059669; border-bottom-color: #059669; }
-
-  .theme-text-primary { color: #F9FAFB; }
-  .theme-text-secondary { color: #D1D5DB; }
-  .theme-text-tertiary { color: #6B7280; }
-  .theme-text-quaternary { color: #4B5563; }
-
-  .font-syne { font-family: 'Syne', sans-serif; }
-</style>
-
-<script define:vars={{ apiUrl, studentId }}>
-  (async function () {
-    var token = localStorage.getItem('access_token')
-    var userId = localStorage.getItem('userId')
-    var name = localStorage.getItem('userName')
-    if (!token || !userId) { window.location.href = '/'; return }
-    if (name) {
-      document.getElementById('student-name').textContent = name
-      document.getElementById('student-initial').textContent = name.charAt(0).toUpperCase()
-    }
-    document.getElementById('student-meta').textContent = 'ID: ' + userId.slice(0, 8) + ' · Panel de rendimiento'
-
-    // ── Theme System ──
-    var currentTheme = localStorage.getItem('vyntra-theme') || 'obsidian'
-    var themeToggleBtn = document.getElementById('theme-toggle-btn')
-    var settingsThemeToggle = document.getElementById('settings-theme-toggle')
-    var themeIconSun = document.getElementById('theme-icon-sun')
-    var themeIconMoon = document.getElementById('theme-icon-moon')
-
-    function applyTheme(theme) {
-      currentTheme = theme
-      document.documentElement.setAttribute('data-theme', theme)
-      localStorage.setItem('vyntra-theme', theme)
-      var isObsidian = theme === 'obsidian'
-      themeIconSun.classList.toggle('hidden', !isObsidian)
-      themeIconMoon.classList.toggle('hidden', isObsidian)
-      if (settingsThemeToggle) settingsThemeToggle.checked = !isObsidian
-    }
-    applyTheme(currentTheme)
-
-    themeToggleBtn.addEventListener('click', function () {
-      applyTheme(currentTheme === 'obsidian' ? 'alabaster' : 'obsidian')
-    })
-    if (settingsThemeToggle) {
-      settingsThemeToggle.addEventListener('change', function () {
-        applyTheme(this.checked ? 'alabaster' : 'obsidian')
-      })
-    }
-
-    // ── Accent Color ──
-    document.querySelectorAll('.accent-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('.accent-btn').forEach(function (b) { b.classList.remove('active'); b.style.borderColor = 'transparent' })
-        this.classList.add('active')
-        this.style.borderColor = 'rgba(255,255,255,0.3)'
-        var accent = this.getAttribute('data-accent')
-        localStorage.setItem('vyntra-accent', accent)
-      })
-    })
-    var savedAccent = localStorage.getItem('vyntra-accent') || 'maroon'
-    document.querySelectorAll('.accent-btn').forEach(function (b) {
-      if (b.getAttribute('data-accent') === savedAccent) {
-        b.classList.add('active')
-        b.style.borderColor = 'rgba(255,255,255,0.3)'
-      }
-    })
-
-    // ── Settings Modal ──
-    var settingsModal = document.getElementById('settings-modal')
-    document.getElementById('settings-toggle-btn').addEventListener('click', function () { settingsModal.classList.remove('hidden') })
-    document.getElementById('settings-close-btn').addEventListener('click', function () { settingsModal.classList.add('hidden') })
-    settingsModal.addEventListener('click', function (e) { if (e.target === settingsModal) this.classList.add('hidden') })
-
-    // ── Password Form ──
-    document.getElementById('password-form').addEventListener('submit', async function (e) {
-      e.preventDefault()
-      var current = document.getElementById('pw-current').value.trim()
-      var newPw = document.getElementById('pw-new').value
-      var confirm = document.getElementById('pw-confirm').value
-      var feedback = document.getElementById('pw-feedback')
-      if (!current || !newPw || !confirm) { feedback.textContent = 'Completa todos los campos'; return }
-      if (newPw !== confirm) { feedback.textContent = 'Las contraseñas no coinciden'; return }
-      if (newPw.length < 6) { feedback.textContent = 'La contraseña debe tener al menos 6 caracteres'; return }
-      feedback.textContent = 'Actualizando...'
-      try {
-        var res = await fetch(apiUrl + '/api/auth/change-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ current_password: current, new_password: newPw }),
-        })
-        if (res.ok) {
-          feedback.textContent = '✓ Contraseña actualizada'
-          feedback.style.color = '#00FF66'
-          document.getElementById('password-form').reset()
-        } else {
-          var err = await res.json().catch(function () { return { detail: 'Error' } })
-          feedback.textContent = '✗ ' + (err.detail || 'Error al actualizar')
-          feedback.style.color = '#FF0055'
-        }
-      } catch (_) {
-        feedback.textContent = '✗ Error de conexión'
-        feedback.style.color = '#FF0055'
-      }
-    })
-
-    // ── PDF Download ──
-    async function downloadPDF() {
-      try {
-        var res = await fetch(apiUrl + '/api/grades/download-pdf?student_id=' + encodeURIComponent(userId), {
-          headers: { 'Authorization': 'Bearer ' + token }
-        })
-        if (!res.ok) { var err = await res.json().catch(function () { return { detail: 'Error al descargar' } }); throw new Error(err.detail || 'Error ' + res.status) }
-        var blob = await res.blob()
-        var url = URL.createObjectURL(blob)
-        var a = document.createElement('a'); a.href = url; a.download = 'boletin_academico.pdf'
-        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
-      } catch (e) { alert('Error: ' + e.message) }
-    }
-
-    // ── Toast helper ──
+<script define:vars={{ apiUrl, wsUrl }}>
+  (function () {
+    try {
+    // ── Toast system ──
+    var toastEl = document.createElement('div')
+    toastEl.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:99999;padding:.75rem 1.25rem;border-radius:var(--radius-lg);font-size:.8rem;font-weight:500;opacity:0;transform:translateY(1rem);transition:all .3s var(--ease-out);pointer-events:auto;max-width:360px;background:var(--card-bg);border:1px solid var(--border);color:var(--text);box-shadow:var(--shadow-lg)'
+    document.body.appendChild(toastEl)
     function showToast(msg, type) {
-      var container = document.getElementById('toast-container')
-      var colors = { success: 'border-emerald-500/30 text-emerald-400', error: 'border-[#FF0055]/30 text-[#FF0055]', info: 'border-amber-500/30 text-amber-400' }
-      var c = colors[type] || colors.info
-      var div = document.createElement('div')
-      div.className = 'flex items-center gap-3 rounded-xl border bg-black/90 backdrop-blur-xl px-5 py-4 shadow-2xl pointer-events-auto animate-slide-up ' + c.split(' ')[0]
-      div.innerHTML = '<span class="text-sm ' + c.split(' ')[1] + '">' + msg + '</span>'
-      container.appendChild(div)
-      setTimeout(function () { div.remove() }, 4000)
+      if (type === 'error') { toastEl.style.borderColor = 'rgba(186,26,26,0.3)'; toastEl.style.color = 'var(--red)' }
+      else if (type === 'success') { toastEl.style.borderColor = 'rgba(52,211,153,0.3)'; toastEl.style.color = 'var(--green)' }
+      else { toastEl.style.borderColor = 'var(--border)'; toastEl.style.color = 'var(--text)' }
+      toastEl.textContent = msg
+      toastEl.style.opacity = '1'; toastEl.style.transform = 'translateY(0)'
+      setTimeout(function(){ toastEl.style.opacity='0'; toastEl.style.transform='translateY(1rem)' }, 4000)
     }
 
-    // ── Load grades ──
-    try {
-      var gRes = await fetch(apiUrl + '/api/grades?student_id=' + encodeURIComponent(userId), { headers: { 'Authorization': 'Bearer ' + token } })
-      if (gRes.ok) { var grades = await gRes.json(); renderGrades(grades) }
-    } catch (_) {}
-    // Load financial
-    var fin
-    try {
-      var fRes = await fetch(apiUrl + '/api/students/' + encodeURIComponent(userId) + '/financial-status', { headers: { 'Authorization': 'Bearer ' + token } })
-      if (fRes.ok) { fin = await fRes.json(); renderFinancial(fin) }
-    } catch (_) {}
-    renderAbpTracker()
-    renderBehaviorLogs()
-    renderSchedule()
-    loadMaterials()
+    var token = localStorage.getItem('access_token')
+    if (!token) { window.location.href = '/login'; return }
+    var studentId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
+    var currentSection = 'inicio'
+    var subjectsCache = null
 
-    // ── Hybrid ABP Hub tabs ──
-    document.querySelectorAll('.abp-tab-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('.abp-tab-btn').forEach(function (b) { b.classList.remove('active') })
-        this.classList.add('active')
-        var tab = this.getAttribute('data-abp-tab')
-        document.getElementById('abp-parciales').classList.toggle('hidden', tab !== 'parciales')
-        document.getElementById('abp-transversal').classList.toggle('hidden', tab !== 'transversal')
+    // ── Helpers ──
+    function apiFetch(path, opts) {
+      var url = apiUrl.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+      var merged = Object.assign({ headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } }, opts || {})
+      if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) merged.body = JSON.stringify(merged.body)
+      return fetch(url, merged).then(function (r) { if (r.status === 401) { localStorage.clear(); window.location.href = '/login' }; return r.json() })
+    }
+
+    // ── Navigation ──
+    document.querySelectorAll('.est-nav-link').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault()
+        var nav = a.getAttribute('data-nav')
+        if (!nav) return
+        currentSection = nav
+        document.querySelectorAll('.est-nav-link').forEach(function (l) { l.classList.remove('active') })
+        a.classList.add('active')
+        document.querySelectorAll('.section-content').forEach(function (s) { s.classList.remove('active') })
+        var sec = document.getElementById('sec-' + nav)
+        if (sec) sec.classList.add('active')
+        if (nav === 'examenes') loadExams()
+        if (nav === 'votaciones') loadCandidates()
+        if (nav === 'aula') { loadSubjects(); loadSubjectResources() }
+        if (nav === 'tareas') { loadSubjects(); loadHomeworkHistory() }
+        if (nav === 'boletin') loadChartData()
+        if (window.innerWidth < 769) document.querySelector('.est-sidebar').classList.remove('open')
       })
     })
 
-    // ── Proyecto Transversal file select ──
-    var transversalFileInput = document.getElementById('abp-transversal-file')
-    document.getElementById('abp-transversal-select-btn').addEventListener('click', function () { transversalFileInput.click() })
-    transversalFileInput.addEventListener('change', function () {
-      if (this.files && this.files[0]) {
-        document.getElementById('abp-transversal-filename').textContent = '✓ ' + this.files[0].name
-        document.getElementById('abp-transversal-filename').classList.remove('hidden')
-        document.getElementById('abp-dropzone').classList.add('border-emerald-500/30', 'bg-emerald-500/[0.02]')
-        showToast('Archivo seleccionado: ' + this.files[0].name, 'success')
-      }
-    })
+    // ── Live Clock + Online Indicator ──
+    function updateClock() { var el = document.getElementById('live-clock'); if (el) el.textContent = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }
+    setInterval(updateClock, 1000); updateClock()
 
-    // ── Recursos tabs ──
-    document.querySelectorAll('.recurso-tab-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('.recurso-tab-btn').forEach(function (b) { b.classList.remove('active') })
-        this.classList.add('active')
-        var tab = this.getAttribute('data-tab')
-        document.getElementById('recurso-docs').classList.toggle('hidden', tab !== 'docs')
-        document.getElementById('recurso-materiales').classList.toggle('hidden', tab !== 'materiales')
-        document.getElementById('recurso-quiz').classList.toggle('hidden', tab !== 'quiz')
-      })
-    })
-
-    // ── Document locker buttons ──
-    document.querySelectorAll('.locker-doc-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var docType = btn.getAttribute('data-doc')
-        if (docType === 'boletin') {
-          if (fin && fin.months_in_arrears >= 2 && !fin.financial_override) { showToast('Acción bloqueada por mora. Regulariza tu situación.', 'error'); return }
-          downloadPDF()
-        } else {
-          showToast('Descarga iniciada: ' + docType, 'info')
-        }
-      })
-    })
-
-    // ── Exam links with financial lock ──
-    document.querySelectorAll('.exam-link-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        if (fin && fin.months_in_arrears >= 2 && !fin.financial_override) { showToast('Exámenes bloqueados por mora. Regulariza tu situación.', 'error'); return }
-        var examId = btn.getAttribute('data-exam-id')
-        localStorage.setItem('active_exam_id', examId)
-        showToast('Ingresando al examen...', 'info')
-      })
-    })
-
-    // ── Financial with targeted lock ──
-    function renderFinancial(fin) {
-      var icon = document.getElementById('fin-icon-container')
-      var label = document.getElementById('fin-status-label')
-      var detail = document.getElementById('fin-status-detail')
-      var monthsEl = document.getElementById('fin-months')
-      var balanceEl = document.getElementById('fin-balance')
-      var lockAlert = document.getElementById('fin-lock-alert')
-      monthsEl.textContent = fin.months_in_arrears || '0'
-      balanceEl.textContent = '$' + ((fin.total_balance || 0).toLocaleString('es-CO'))
-      var isLocked = fin.months_in_arrears >= 2 && !fin.financial_override
-      lockAlert.classList.toggle('hidden', !isLocked)
-      if (isLocked) {
-        icon.className = 'h-14 w-14 rounded-full bg-[#FF0055]/20 flex items-center justify-center shrink-0'
-        icon.innerHTML = '<svg class="h-7 w-7 text-[#FF0055]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>'
-        label.textContent = 'Mora activa'
-        label.className = 'text-sm font-semibold text-[#FF0055]'
-        detail.textContent = 'Algunas funciones restringidas'
-        var mc = document.getElementById('main-container')
-        if (mc) mc.classList.add('ambient-risk-active')
-      } else {
-        icon.className = 'h-14 w-14 rounded-full bg-[#00FF66]/10 flex items-center justify-center shrink-0'
-        icon.innerHTML = '<svg class="h-7 w-7 text-[#00FF66]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
-        label.textContent = 'Al día'
-        label.className = 'text-sm font-semibold text-[#00FF66]'
-        detail.textContent = 'Estado financiero regular'
-      }
-    }
-
-    // ── Grades render ──
-    function renderGrades(grades) {
-      var grid = document.getElementById('metrics-grid')
-      if (!grid) return
-      if (!grades || grades.length === 0) { grid.innerHTML = '<p class="col-span-full text-sm text-gray-500 py-8 text-center">No hay notas registradas</p>'; return }
-      var total = grades.reduce(function (s, g) { return s + g.score }, 0)
-      var avg = total / grades.length
-      var atRisk = grades.filter(function (g) { return g.score < 3.5 })
-      grid.innerHTML = grades.map(function (g) {
-        var name = g.subject_name || g.subject_id || g.subject || '-'
-        var c = g.score >= 4.0 ? 'text-[#00FF66]' : g.score >= 3.5 ? 'text-[#FFE600]' : 'text-[#FF0055]'
-        var bar = g.score >= 4.0 ? 'bg-[#00FF66]' : g.score >= 3.5 ? 'bg-[#FFE600]' : 'bg-[#FF0055]'
-        return '<div class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 transition-all hover:bg-white/[0.06] hover:border-white/[0.1]"><div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-gray-300 truncate">' + name + '</span><span class="text-base font-bold ' + c + '">' + g.score.toFixed(1) + '</span></div><div class="h-1.5 rounded-full bg-white/[0.06] overflow-hidden"><div class="h-full rounded-full ' + bar + ' transition-all duration-1000" style="width:' + (g.score / 5 * 100) + '%"></div></div></div>'
-      }).join('')
-      var display = document.getElementById('avg-score-display')
-      display.textContent = avg.toFixed(1)
-      var col = avg >= 4.0 ? '#00FF66' : avg >= 3.5 ? '#FFE600' : '#FF0055'
-      display.style.color = col
-      var circumference = 97.4
-      var offset = circumference * (1 - avg / 5)
-      var ring = document.getElementById('avg-ring')
-      ring.setAttribute('stroke', col)
-      ring.setAttribute('stroke-dashoffset', offset.toString())
-      var statusEl = document.getElementById('summary-status')
-      if (avg >= 4.0) { statusEl.textContent = 'Sobresaliente'; statusEl.style.color = '#00FF66' }
-      else if (avg >= 3.5) { statusEl.textContent = 'Aceptable'; statusEl.style.color = '#FFE600' }
-      else { statusEl.textContent = 'En Riesgo'; statusEl.style.color = '#FF0055' }
-      document.getElementById('summary-subjects').textContent = grades.length.toString()
-      var riskEl = document.getElementById('summary-risk')
-      riskEl.textContent = atRisk.length > 0 ? atRisk.length + ' área(s)' : 'Ninguna'
-      riskEl.style.color = atRisk.length > 0 ? '#FF0055' : '#00FF66'
-      if (avg < 3.5) document.getElementById('main-container').classList.add('ambient-risk-active')
-    }
-
-    // ── Schedule ──
-    function renderSchedule() {
-      var list = document.getElementById('schedule-list')
-      var days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie']
-      var subjects = ['Investigación Guiada', 'Matemáticas Aplicadas', 'Ciencias Naturales', 'Lenguaje y Literatura', 'Tecnología e Informática']
-      var times = ['7:00 - 8:30', '8:45 - 10:15', '10:30 - 12:00', '13:00 - 14:30', '14:45 - 16:15']
-      var notes = ['Entrega de proyecto ABP', 'Revisión de tareas', 'Laboratorio', 'Clase regular', 'Programación']
-      var icons = ['📝', '📚', '🧪', '📖', '💻']
-      list.innerHTML = '<div class="relative pl-8"><div class="absolute left-[11px] top-2 bottom-2 w-px bg-gradient-to-b from-brand-maroon/40 via-amber-500/20 to-transparent"></div>' +
-        days.map(function (d, i) { return '<div class="relative pb-6"><div class="absolute left-[-18px] top-1.5 h-5 w-5 rounded-full border-2 border-brand-maroon theme-aware-dot flex items-center justify-center"><div class="h-1.5 w-1.5 rounded-full bg-brand-gold"></div></div><div class="' + (i % 2 === 0 ? 'mr-8' : 'ml-8') + '"><div class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 hover:bg-white/[0.06] hover:border-white/[0.1] transition-all"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="text-xs">' + icons[i] + '</span><span class="text-sm font-semibold text-white">' + subjects[i % subjects.length] + '</span></div><span class="text-xs font-bold text-brand-maroon uppercase tracking-wider">' + d + '</span></div><div class="flex items-center justify-between"><span class="text-xs text-gray-500">' + times[i] + '</span><span class="text-xs text-gray-600">' + notes[i] + '</span></div></div></div></div>' }).join('') + '</div>'
-    }
-
-    // ── ABP Tracker ──
-    function renderAbpTracker() {
-      var abpSubjects = ['Investigación Guiada', 'Matemáticas Aplicadas', 'Ciencias Naturales', 'Lenguaje y Literatura', 'Inglés Avanzado', 'Ciencias Sociales', 'Tecnología e Informática', 'Arte y Creatividad', 'Música y Expresión']
-      var progressPct = 65
-      var grid = document.getElementById('abp-subjects-grid')
-      if (!grid) return
-      document.getElementById('abp-progress-pct').textContent = progressPct + '%'
-      document.getElementById('abp-progress-bar').style.width = progressPct + '%'
-      grid.innerHTML = abpSubjects.map(function (s, i) {
-        return '<div class="flex flex-col gap-1 rounded-lg border border-white/[0.06] bg-white/[0.03] p-2.5 hover:bg-white/[0.06] transition-all"><div class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 shrink-0 rounded-full ' + (i < 6 ? 'bg-emerald-500' : 'bg-gray-600') + '"></span><span class="text-[10px] font-medium text-gray-400 truncate flex-1">' + s + '</span>' + (i < 6 ? '<span class="text-[9px] text-emerald-500">✓</span>' : '<span class="text-[9px] text-amber-500">⏳</span>') + '</div><button class="abp-subject-upload-btn text-[9px] text-gray-600 hover:text-amber-400 transition-all text-left mt-1" data-subject="' + s + '">+ Subir entrega</button></div>'
-      }).join('')
-      document.querySelectorAll('.abp-subject-upload-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var subject = this.getAttribute('data-subject')
-          var input = document.createElement('input')
-          input.type = 'file'
-          input.accept = '.pdf,.doc,.docx,.zip,.png,.jpg'
-          input.addEventListener('change', function () {
-            if (this.files && this.files[0]) showToast('Archivo seleccionado para ' + subject + ': ' + this.files[0].name, 'success')
-          })
-          input.click()
-        })
-      })
-    }
-
-    // ── Behavior Logs ──
-    function renderBehaviorLogs() {
-      var container = document.getElementById('behavior-timeline')
-      if (!container) return
-      fetch(apiUrl + '/api/students/' + encodeURIComponent(userId) + '/behavior-logs', { headers: { 'Authorization': 'Bearer ' + token } })
-        .then(function (r) { return r.ok ? r.json() : [] })
-        .then(function (logs) {
-          if (!logs || logs.length === 0) { container.innerHTML = '<div class="flex flex-col items-center py-6 text-center"><svg class="h-8 w-8 text-gray-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg><p class="text-xs text-gray-600">Sin registros de comportamiento</p></div>'; return }
-          var icons = { positive: '🌟', merit: '🏅', disciplinary: '⚠️', observation: '📝' }
-          var colors = { positive: 'border-emerald-500/20 bg-emerald-500/5', merit: 'border-amber-500/20 bg-amber-500/5', disciplinary: 'border-brand-danger/20 bg-brand-danger/5', observation: 'border-blue-500/20 bg-blue-500/5' }
-          var dotColors = { positive: 'bg-emerald-500', merit: 'bg-amber-500', disciplinary: 'bg-brand-danger', observation: 'bg-blue-500' }
-          container.innerHTML = '<div class="relative pl-6"><div class="absolute left-[7px] top-2 bottom-2 w-px bg-white/[0.06]"></div>' +
-            logs.map(function (log) { return '<div class="relative pb-4 last:pb-0"><div class="absolute left-[-14px] top-1.5 h-2.5 w-2.5 rounded-full ' + (dotColors[log.log_type] || dotColors.observation) + ' ring-2 ring-[#040405]"></div><div class="rounded-lg border ' + (colors[log.log_type] || colors.observation) + ' px-3 py-2.5"><div class="flex items-center justify-between mb-1"><span class="text-xs font-semibold text-gray-300">' + (icons[log.log_type] || '📝') + ' ' + (log.log_type === 'positive' ? 'Positivo' : log.log_type === 'merit' ? 'Mérito' : log.log_type === 'disciplinary' ? 'Disciplinario' : 'Observación') + '</span><span class="text-[10px] text-gray-600">' + (log.created_at ? log.created_at.slice(0, 10) : '') + '</span></div><p class="text-xs text-gray-500">' + (log.description || '') + '</p></div></div>' }).join('') + '</div>'
-        }).catch(function () { container.innerHTML = '<p class="text-xs text-gray-600 text-center py-4">No se pudieron cargar los registros</p>' })
-    }
-
-    // ── Materials from Cloudinary ──
-    function loadMaterials() {
-      var grid = document.getElementById('materials-grid')
-      if (!grid) return
-      // In production, fetch from /api/materials
-      var mockMaterials = [
-        { title: 'Resumen: Matemáticas', summary: 'Ecuaciones cuadráticas, factorización y teorema de Pitágoras aplicado a proyectos ABP.', url: '#' },
-        { title: 'Guía: Investigación', summary: 'Metodología científica, formulación de hipótesis y recolección de datos.', url: '#' },
-      ]
-      if (mockMaterials.length === 0) { grid.innerHTML = '<p class="col-span-full text-xs text-gray-600 text-center py-8">No hay materiales disponibles</p>'; return }
-      grid.innerHTML = mockMaterials.map(function (m) {
-        return '<div class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 hover:bg-white/[0.06] transition-all"><p class="text-xs font-semibold text-white mb-1 truncate">' + m.title + '</p><p class="text-[10px] text-gray-500 leading-relaxed line-clamp-3">' + m.summary + '</p><a href="' + m.url + '" class="text-[10px] text-amber-400 hover:text-amber-300 mt-1.5 inline-block">Ver completo →</a></div>'
-      }).join('')
-    }
-
-    // ── AI Skill Quiz ──
-    var quizState = { subject: '', questions: [], currentIdx: 0, score: 0, answered: false }
-
-    document.getElementById('quiz-start-btn').addEventListener('click', async function () {
-      var subject = document.getElementById('quiz-subject-select').value
-      if (!subject) { showToast('Selecciona una materia primero', 'error'); return }
-      quizState.subject = subject
-      quizState.score = 0
-      quizState.currentIdx = 0
-      quizState.answered = false
-      var btn = this
-      btn.disabled = true
-      btn.innerHTML = '<svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Generando...'
-      try {
-        var res = await fetch(apiUrl + '/api/ai/student-tutor', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({
-            message: 'Genera un quiz de 3 a 5 preguntas de opción múltiple sobre la materia "' + subject + '" para un estudiante de grado 11. Devuelve SOLO un array JSON con objetos: {"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct": 0} donde correct es el índice de la respuesta correcta (0-3). No incluyas explicación, solo el JSON.',
-            context: '',
-          }),
-        })
-        if (!res.ok) throw new Error('Error del asistente')
-        var reader = res.body.getReader()
-        var decoder = new TextDecoder()
-        var buffer = ''
-        var fullText = ''
-        while (true) {
-          var result = await reader.read()
-          if (result.done) break
-          buffer += decoder.decode(result.value, { stream: true })
-          var lines = buffer.split('\n')
-          buffer = lines.pop() || ''
-          for (var i = 0; i < lines.length; i++) {
-            var line = lines[i]
-            if (line.startsWith('data: ')) {
-              var data = line.slice(6)
-              if (data === '[DONE]' || data === 'data: [DONE]') continue
-              try { var parsed = JSON.parse(data); if (parsed.token) fullText += parsed.token } catch (_) {}
-            }
-          }
-        }
-        var jsonMatch = fullText.match(/\[[\s\S]*?\]/)
-        var questions = jsonMatch ? JSON.parse(jsonMatch[0]) : null
-        if (!questions || !Array.isArray(questions) || questions.length < 2) throw new Error('No se pudieron generar preguntas')
-        quizState.questions = questions
-        showQuizQuestion()
-      } catch (e) {
-        showToast('Error al generar quiz: ' + e.message, 'error')
-        btn.disabled = false
-        btn.innerHTML = '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Iniciar Desafío'
-        return
-      }
-      btn.disabled = false
-      btn.innerHTML = '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Iniciar Desafío'
-      document.getElementById('quiz-setup').classList.add('hidden')
-      document.getElementById('quiz-active').classList.remove('hidden')
-      document.getElementById('quiz-results').classList.add('hidden')
-    })
-
-    function showQuizQuestion() {
-      var qs = quizState.questions
-      var idx = quizState.currentIdx
-      if (idx >= qs.length) { showQuizResults(); return }
-      var q = qs[idx]
-      document.getElementById('quiz-subject-label').textContent = quizState.subject
-      document.getElementById('quiz-progress').textContent = 'Pregunta ' + (idx + 1) + ' de ' + qs.length
-      document.getElementById('quiz-question').textContent = q.question
-      var optionsDiv = document.getElementById('quiz-options')
-      optionsDiv.innerHTML = q.options.map(function (o, i) {
-        return '<label class="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 cursor-pointer hover:bg-white/[0.06] transition-all quiz-option" data-idx="' + i + '"><input type="radio" name="quiz-answer" value="' + i + '" class="sr-only" /><span class="h-4 w-4 rounded-full border-2 border-white/[0.15] flex items-center justify-center shrink-0"><span class="h-2 w-2 rounded-full hidden bg-brand-maroon"></span></span><span class="text-sm theme-text-secondary">' + o + '</span></label>'
-      }).join('')
-      quizState.answered = false
-      document.getElementById('quiz-submit-btn').classList.remove('hidden')
-      document.getElementById('quiz-next-btn').classList.add('hidden')
-      document.getElementById('quiz-options').querySelectorAll('input[type="radio"]').forEach(function (r) {
-        r.addEventListener('change', function () {
-          document.querySelectorAll('.quiz-option').forEach(function (l) { l.querySelector('span span').classList.add('hidden'); l.querySelector('span').style.borderColor = 'rgba(255,255,255,0.15)' })
-          var label = this.closest('.quiz-option')
-          label.querySelector('span').style.borderColor = '#800000'
-          label.querySelector('span span').classList.remove('hidden')
-        })
-      })
-    }
-
-    document.getElementById('quiz-submit-btn').addEventListener('click', function () {
-      if (quizState.answered) return
-      var selected = document.querySelector('input[name="quiz-answer"]:checked')
-      if (!selected) { showToast('Selecciona una respuesta', 'error'); return }
-      var q = quizState.questions[quizState.currentIdx]
-      var answerIdx = parseInt(selected.value)
-      var isCorrect = answerIdx === q.correct
-      quizState.answered = true
-      if (isCorrect) quizState.score++
-      document.querySelectorAll('.quiz-option').forEach(function (label, i) {
-        var idx = parseInt(label.getAttribute('data-idx'))
-        if (idx === q.correct) { label.style.borderColor = '#00FF66'; label.querySelector('span').style.borderColor = '#00FF66'; label.querySelector('span span').classList.remove('hidden'); label.querySelector('span span').style.background = '#00FF66' }
-        else if (idx === answerIdx && !isCorrect) { label.style.borderColor = '#FF0055'; label.querySelector('span').style.borderColor = '#FF0055' }
-      })
-      document.querySelectorAll('input[name="quiz-answer"]').forEach(function (r) { r.disabled = true })
-      this.classList.add('hidden')
-      var nextBtn = document.getElementById('quiz-next-btn')
-      nextBtn.classList.remove('hidden')
-      nextBtn.textContent = quizState.currentIdx + 1 >= quizState.questions.length ? 'Ver resultados' : 'Siguiente'
-    })
-
-    document.getElementById('quiz-next-btn').addEventListener('click', function () {
-      quizState.currentIdx++
-      document.querySelectorAll('input[name="quiz-answer"]').forEach(function (r) { r.disabled = false; r.checked = false })
-      document.querySelectorAll('.quiz-option').forEach(function (l) { l.style.borderColor = 'rgba(255,255,255,0.06)'; l.querySelector('span').style.borderColor = 'rgba(255,255,255,0.15)'; l.querySelector('span span').style.background = ''; l.querySelector('span span').classList.add('hidden') })
-      showQuizQuestion()
-    })
-
-    function showQuizResults() {
-      document.getElementById('quiz-active').classList.add('hidden')
-      document.getElementById('quiz-results').classList.remove('hidden')
-      var total = quizState.questions.length
-      var scorePct = Math.round(quizState.score / total * 100)
-      var badge = scorePct >= 80 ? { label: 'Oro', icon: '🥇', emoji: '🏆' } : scorePct >= 50 ? { label: 'Plata', icon: '🥈', emoji: '⭐' } : { label: 'Bronce', icon: '🥉', emoji: '💪' }
-      document.getElementById('quiz-results-icon').textContent = badge.emoji
-      document.getElementById('quiz-results-score').textContent = quizState.score + '/' + total + ' (' + scorePct + '%)'
-      document.getElementById('quiz-results-badge').textContent = 'Insignia: ' + badge.label + ' ' + badge.icon
-      localStorage.setItem('vyntra-skill-badge', badge.label)
-      showToast('¡' + badge.label + '! Has obtenido la insignia ' + badge.label + '.', 'success')
-    }
-
-    document.getElementById('quiz-retry-btn').addEventListener('click', function () {
-      document.getElementById('quiz-results').classList.add('hidden')
-      document.getElementById('quiz-setup').classList.remove('hidden')
-      document.getElementById('quiz-badge').classList.remove('hidden')
-      document.getElementById('quiz-badge-label').textContent = localStorage.getItem('vyntra-skill-badge') || '—'
-    })
-
-    // ── Telemetry: Headless Outage Detection ──
-    ;(function setupTelemetry() {
-      var offlineStart = null
-      var isFrozen = false
-      var pendingOutage = null
-      var freezeOverlay = document.getElementById('telemetry-freeze-overlay')
-      var connDot = document.getElementById('conn-dot')
-      var connText = document.getElementById('conn-text')
-      var outageSubmittedKey = 'vyntra-outage-pending-' + userId
-      var examSnapshotKey = 'vyntra-exam-snapshot'
-
-      function freezeUI() {
-        if (isFrozen) return
-        isFrozen = true
-        freezeOverlay.classList.remove('hidden')
-        connDot.className = 'h-2 w-2 rounded-full bg-[#FF0055] animate-pulse'
-        connText.textContent = 'Desconectado'
-      }
-
-      function unfreezeUI() {
-        isFrozen = false
-        freezeOverlay.classList.add('hidden')
-        connDot.className = 'h-2 w-2 rounded-full bg-emerald-500 animate-pulse'
-        connText.textContent = 'Conectado'
-      }
-
-      async function submitOutageReport() {
-        var examId = localStorage.getItem('active_exam_id') || 'unknown'
-        var snapshot = localStorage.getItem(examSnapshotKey)
-        var payload = {
-          student_id: userId,
-          exam_id: examId,
-          incident_type: 'network_loss',
-          description: 'Conexión perdida por más de 12 segundos durante el examen. Reanudación automática.',
-        }
-        if (snapshot) payload.snapshot = snapshot
-        try {
-          var res = await fetch(apiUrl + '/api/students/report-outage', {
+    function updateOnlineStatus() {
+      var dot = document.getElementById('online-dot'); var txt = document.getElementById('online-text')
+      if (!dot || !txt) return
+      if (navigator.onLine) { dot.className = 'online-dot online'; txt.textContent = 'En línea' }
+      else {
+        dot.className = 'online-dot offline'; txt.textContent = 'Sin conexión'
+        // Save exam progress on disconnect (exam resilience)
+        if (isExamActive && currentExam) {
+          saveExamProgress()
+          apiFetch('/api/exam/handle-disconnect', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify(payload),
+            body: { student_id: studentId, exam_id: currentExam.id, incident_type: 'network_loss', severity: 'low', strikes: strikes }
+          }).catch(function () {})
+        }
+      }
+    }
+    window.addEventListener('online', updateOnlineStatus); window.addEventListener('offline', updateOnlineStatus); updateOnlineStatus()
+
+    // ── Notices ──
+    function loadNotices() {
+      apiFetch('/api/notices').then(function (data) {
+        var el = document.getElementById('notices-list')
+        if (!Array.isArray(data) || data.length === 0) { el.innerHTML = '<span style="color:rgba(255,255,255,0.3)">Sin avisos recientes.</span>'; return }
+        el.innerHTML = data.slice(0, 3).map(function (n) {
+          var hasFile = n.archivo_url && n.archivo_url !== ''
+          return '<div style="padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04)"><strong style="display:block;font-size:0.75rem;color:rgba(255,255,255,0.8)">' + (n.titulo || '') + '</strong><span style="font-size:0.65rem;color:rgba(255,255,255,0.35)">' + (n.fecha || '') + '</span>' +
+            (hasFile ? (n.archivo_url.match(/\.pdf$/i) ? '<a href="' + n.archivo_url + '" target="_blank" style="display:inline-block;font-size:0.65rem;color:var(--maroon);margin-top:0.25rem">📄 Ver PDF</a>' : '<br><img src="' + n.archivo_url + '" class="notice-image" onclick="openLightbox(\'' + n.archivo_url + '\')" style="max-width:100%;max-height:120px;border-radius:0.5rem;margin-top:0.375rem;cursor:zoom-in;object-fit:cover">') : '') + '</div>'
+        }).join('')
+      }).catch(function () { showToast('Error al cargar estadísticas', 'error') })
+    }
+
+    // ── Exams ──
+    var currentExam = null; var strikes = 0; var isExamActive = false; var isInitializingExam = false; var timerInterval = null; var tiempoRestante = 0; var autoSaveInterval = null
+
+    function loadExams() {
+      var el = document.getElementById('available-exams')
+      apiFetch('/api/student/exams').then(function (data) {
+        if (!Array.isArray(data) || data.length === 0) { el.innerHTML = '<span style="color:rgba(255,255,255,0.3)">No hay exámenes disponibles.</span>'; return }
+        el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.75rem">' + data.map(function (e) {
+          return '<div class="exam-card" onclick="abrirExamen(\'' + e.id + '\')"><strong style="font-size:0.8125rem;color:#fff">' + (e.title || 'Examen') + '</strong><div style="display:flex;gap:0.75rem;margin-top:0.5rem;font-size:0.65rem;color:rgba(255,255,255,0.35)"><span>' + (e.duration_minutes || '?') + ' min</span><span>' + (e.questions ? e.questions.length : 0) + ' preg</span></div></div>'
+        }).join('') + '</div>'
+      }).catch(function () { showToast('Error al cargar exámenes', 'error'); el.innerHTML = '<span style="color:var(--red);font-size:0.75rem">Error al cargar exámenes</span>' })
+    }
+
+    window.abrirExamen = function (examId) {
+      if (!studentId) return
+      apiFetch('/api/student/exam/' + examId).then(function (exam) {
+        if (!exam || !exam.questions) { alert('Examen no encontrado'); return }
+        currentExam = exam; isInitializingExam = true; strikes = 0
+        document.getElementById('exam-modal-title').textContent = exam.title || 'Examen'
+        document.getElementById('strike-badge').style.display = 'none'
+
+        // Check for existing progress (exam resilience)
+        apiFetch('/api/exam/progress/' + studentId + '/' + examId).then(function (progress) {
+          if (progress && progress.answers && Object.keys(progress.answers).length > 0) {
+            restoreExamProgress(progress)
+          }
+        }).catch(function () {})
+
+        var html = ''
+        exam.questions.forEach(function (q, qi) {
+          html += '<div class="exam-question-card"><div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem"><span style="width:24px;height:24px;border-radius:50%;background:rgba(253,192,3,0.15);color:#FDC003;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem">' + (qi + 1) + '</span><strong style="font-size:0.8125rem;color:rgba(255,255,255,0.9)">' + (q.question_text || '') + '</strong></div>'
+          var opts = q.options || ['A', 'B', 'C', 'D']
+          opts.forEach(function (o, oi) {
+            var optText = typeof o === 'string' ? o : (o.text || o.value || 'Opción ' + String.fromCharCode(65 + oi))
+            html += '<label class="exam-option"><input type="radio" name="p' + qi + '" value="' + oi + '" style="display:none"><span class="opt-label" style="flex:1">' + optText + '</span></label>'
           })
-          if (res.ok) {
-            localStorage.removeItem(outageSubmittedKey)
-            localStorage.removeItem(examSnapshotKey)
-            pendingOutage = null
-            showToast('Evaluación protegida. Puedes continuar.', 'success')
-            return true
-          }
-        } catch (_) {}
-        return false
-      }
-
-      // Save exam snapshot periodically when exam is active
-      function saveExamSnapshot() {
-        if (localStorage.getItem('active_exam_id')) {
-          var snapshot = { savedAt: Date.now(), userId: userId }
-          localStorage.setItem(examSnapshotKey, JSON.stringify(snapshot))
-        }
-      }
-
-      window.addEventListener('offline', function () {
-        offlineStart = Date.now()
-        connDot.className = 'h-2 w-2 rounded-full bg-amber-500 animate-pulse'
-        connText.textContent = 'Verificando...'
-        // Start checking offline duration
-        var checkInterval = setInterval(function () {
-          if (navigator.onLine) { clearInterval(checkInterval); return }
-          if (offlineStart && (Date.now() - offlineStart >= 12000)) {
-            clearInterval(checkInterval)
-            if (localStorage.getItem('active_exam_id')) {
-              saveExamSnapshot()
-              freezeUI()
-              pendingOutage = true
-              localStorage.setItem(outageSubmittedKey, 'true')
-            }
-          }
-        }, 1000)
-      })
-
-      window.addEventListener('online', async function () {
-        offlineStart = null
-        if (pendingOutage || localStorage.getItem(outageSubmittedKey)) {
-          var submitted = await submitOutageReport()
-          if (submitted) unfreezeUI()
-          else {
-            // Silent retry loop
-            var retries = 0
-            var retryInterval = setInterval(async function () {
-              retries++
-              var ok = await submitOutageReport()
-              if (ok || retries > 10) { clearInterval(retryInterval); if (ok) unfreezeUI() }
-            }, 3000)
-          }
-        } else {
-          unfreezeUI()
-        }
-      })
-
-      // Heartbeat every 5s
-      setInterval(async function () {
-        saveExamSnapshot()
-        try {
-          var hRes = await fetch(apiUrl + '/api/health', { method: 'HEAD', cache: 'no-cache', signal: AbortSignal.timeout(5000) })
-          if (hRes.ok || hRes.status === 204) {
-            if (!navigator.onLine) return
-            if (localStorage.getItem(outageSubmittedKey) && isFrozen) {
-              var ok = await submitOutageReport()
-              if (ok) unfreezeUI()
-            }
-            if (!isFrozen) {
-              connDot.className = 'h-2 w-2 rounded-full bg-emerald-500 animate-pulse'
-              connText.textContent = 'Conectado'
-            }
-          } else { throw new Error('not ok') }
-        } catch (_) {
-          if (navigator.onLine && !isFrozen) {
-            connDot.className = 'h-2 w-2 rounded-full bg-amber-500 animate-pulse'
-            connText.textContent = 'Latencia alta'
-          }
-        }
-      }, 5000)
-
-      // Check for pending outage from previous session
-      if (localStorage.getItem(outageSubmittedKey)) {
-        pendingOutage = true
-        submitOutageReport().then(function (ok) {
-          if (ok) { localStorage.removeItem(outageSubmittedKey); unfreezeUI() }
+          html += '</div>'
         })
+        document.getElementById('examen-preguntas-render').innerHTML = html
+        document.getElementById('exam-modal').classList.add('open')
+        document.body.style.overflow = 'hidden'
+        activarPantallaCompleta()
+        iniciarCronometro(exam.duration_minutes || 60)
+        setTimeout(function () { isInitializingExam = false; isExamActive = true }, 2500)
+
+        // Auto-save every 30 seconds (exam resilience)
+        if (autoSaveInterval) clearInterval(autoSaveInterval)
+        autoSaveInterval = setInterval(function () {
+          if (!isExamActive || !currentExam) return
+          saveExamProgress()
+        }, 30000)
+
+        setupSecurityListeners()
+      }).catch(function () { showToast('Error al abrir el examen', 'error') })
+    }
+
+    function restoreExamProgress(progress) {
+      if (!progress.answers || !currentExam) return
+      currentExam.questions.forEach(function (q, qi) {
+        var savedAnswer = progress.answers[String(qi)]
+        if (savedAnswer !== undefined && savedAnswer !== null && savedAnswer >= 0) {
+          var radio = document.querySelector('input[name="p' + qi + '"][value="' + savedAnswer + '"]')
+          if (radio) radio.checked = true
+        }
+      })
+      if (progress.time_elapsed_seconds && progress.time_elapsed_seconds > 0) {
+        tiempoRestante = Math.max(10, (currentExam.duration_minutes || 60) * 60 - progress.time_elapsed_seconds)
       }
-    })()
+      showToast('Progreso restaurado', 'info')
+    }
+
+    function saveExamProgress() {
+      if (!currentExam || !currentExam.questions) return
+      var answers = {}
+      var initialDuration = (currentExam.duration_minutes || 60) * 60
+      currentExam.questions.forEach(function (q, qi) {
+        var selected = document.querySelector('input[name="p' + qi + '"]:checked')
+        if (selected) answers[String(qi)] = parseInt(selected.value)
+      })
+      apiFetch('/api/exam/save-progress', {
+        method: 'POST',
+        body: {
+          student_id: studentId,
+          exam_id: currentExam.id,
+          answers: answers,
+          current_question_index: 0,
+          time_elapsed_seconds: initialDuration - tiempoRestante,
+        }
+      }).catch(function () {})
+    }
+
+    function iniciarCronometro(minutos) {
+      tiempoRestante = Math.max(minutos * 60, 10)
+      if (timerInterval) clearInterval(timerInterval)
+      timerInterval = setInterval(function () {
+        tiempoRestante--
+        var m = Math.floor(tiempoRestante / 60); var s = tiempoRestante % 60
+        var display = document.getElementById('timer-display')
+        display.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0')
+        display.className = 'timer-display' + (tiempoRestante <= 60 ? ' warning' : '')
+        if (tiempoRestante <= 0) { clearInterval(timerInterval); finalizarExamen(true, 'TIEMPO AGOTADO') }
+      }, 1000)
+    }
+
+    var examSubmitting = false
+    window.finalizarExamen = function (auto, motivo) {
+      if (examSubmitting) return
+      if (!auto && !confirm('¿Enviar respuestas ahora?')) return
+      examSubmitting = true
+      if (timerInterval) clearInterval(timerInterval)
+      isExamActive = false; isInitializingExam = true
+      if (!currentExam || !currentExam.questions) { cerrarModalExamen(); examSubmitting = false; return }
+      var answers = []
+      currentExam.questions.forEach(function (q, qi) {
+        var selected = document.querySelector('input[name="p' + qi + '"]:checked')
+        answers.push(selected ? parseInt(selected.value) : -1)
+      })
+      apiFetch('/api/student/submit-exam', { method: 'POST', body: { exam_id: currentExam.id, student_id: studentId, answers: answers } }).then(function (res) {
+        alert(motivo ? 'Examen finalizado: ' + motivo : 'Examen enviado. Calificación: ' + (res.grade || '—'))
+        cerrarModalExamen(); loadExams(); loadGrades(); examSubmitting = false
+      }).catch(function (e) { showToast('Error al enviar: ' + (e.message || 'desconocido'), 'error'); cerrarModalExamen(); examSubmitting = false })
+    }
+
+    window.intentarSalirManual = function () {
+      if (confirm('¿Salir del examen? Las respuestas se enviarán automáticamente.')) finalizarExamen(true, 'SALIDA VOLUNTARIA')
+    }
+
+    function activarPantallaCompleta() {
+      var el = document.documentElement
+      if (el.requestFullscreen) el.requestFullscreen()
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+      else if (el.msRequestFullscreen) el.msRequestFullscreen()
+    }
+
+    function setupSecurityListeners() {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      document.removeEventListener('fullscreenchange', onFullscreenChange)
+      document.addEventListener('visibilitychange', onVisibilityChange)
+      document.addEventListener('fullscreenchange', onFullscreenChange)
+    }
+
+    function onVisibilityChange() {
+      if (!isExamActive || isInitializingExam) return
+      if (document.hidden) sumarStrikes(1, 'Cambio de pestaña')
+    }
+
+    function onFullscreenChange() {
+      if (!isExamActive || isInitializingExam || !currentExam) return
+      if (!document.fullscreenElement) sumarStrikes(1, 'Salió de pantalla completa')
+    }
+
+    window.cerrarModalExamen = function () {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      document.removeEventListener('fullscreenchange', onFullscreenChange)
+      if (timerInterval) clearInterval(timerInterval)
+      if (autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null }
+      isExamActive = false; currentExam = null
+      if (document.fullscreenElement) document.exitFullscreen()
+      document.getElementById('exam-modal').classList.remove('open')
+      document.body.style.overflow = ''
+    }
+
+    function sumarStrikes(cant, motivo) {
+      if (!currentExam) return
+      strikes += cant
+      document.getElementById('strike-badge').style.display = 'inline-flex'
+      document.getElementById('strike-val').textContent = strikes
+      apiFetch('/api/exams/report-incident', { method: 'POST', body: { student_id: studentId, exam_id: currentExam.id || currentExam._id, incident_type: motivo, severity: strikes >= 3 ? 'high' : 'low', strikes: strikes } }).catch(function () {})
+      if (strikes >= 5) { alert('⛔ Has superado el límite de infracciones de seguridad.'); finalizarExamen(true, 'Múltiples infracciones de seguridad') }
+    }
+
+    // ── Voting ──
+    function loadCandidates() {
+      var el = document.getElementById('candidates-list')
+      apiFetch('/api/admin/candidates').then(function (data) {
+        if (!Array.isArray(data) || data.length === 0) { el.innerHTML = '<span style="color:rgba(255,255,255,0.3);grid-column:1/-1;text-align:center">No hay candidatos registrados.</span>'; return }
+        el.innerHTML = data.map(function (c) {
+          var defaultPhoto = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="36" fill="%23800000"/><text x="36" y="44" text-anchor="middle" fill="%23fff" font-size="24" font-family="sans-serif">' + (c.name ? c.name.charAt(0) : '?') + '</text></svg>')
+          return '<div class="candidate-card"><img src="' + (c.photo_url || c.photoUrl || defaultPhoto) + '" alt="" onerror="this.src=\'' + defaultPhoto + '\'" loading="lazy"><strong style="font-size:0.8125rem;color:#fff;display:block">' + (c.name || '') + '</strong><span style="font-size:0.65rem;color:rgba(255,255,255,0.35);display:block;margin-bottom:0.75rem">' + (c.position || '') + '</span><button class="btn btn-crimson" onclick="votar(\'' + (c.id || c._id) + '\')" style="width:100%;justify-content:center;font-size:0.75rem">Votar</button></div>'
+        }).join('')
+      }).catch(function () { showToast('Error al cargar candidatos', 'error'); el.innerHTML = '<span style="color:var(--text-tertiary);grid-column:1/-1;text-align:center">🔒 Votaciones cerradas</span>' })
+    }
+
+    window.votar = function (candidateId) {
+      if (!confirm('¿Confirmas tu voto? Esta acción es irreversible.')) return
+      apiFetch('/api/admin/student/cast-vote', { method: 'POST', body: { student_id: studentId, candidate_id: candidateId } }).then(function (r) {
+        alert('✓ Voto registrado correctamente'); loadCandidates()
+      }).catch(function (e) { showToast('Error: ' + (e.detail || 'Ya has votado o el enlace falló'), 'error') })
+    }
+
+    // ── Aula Virtual ──
+    function loadSubjects() {
+      if (subjectsCache) { populateSubjectSelector(); return }
+      apiFetch('/api/subjects').then(function (data) {
+        subjectsCache = Array.isArray(data) ? data : []
+        populateSubjectSelector()
+      }).catch(function () {})
+    }
+
+    function populateSubjectSelector() {
+      var sel = document.getElementById('subject-selector')
+      if (!sel || !subjectsCache) return
+      sel.innerHTML = '<option value="">Seleccionar materia...</option>' + subjectsCache.map(function (s) { return '<option value="' + (s.id || s.name) + '">' + (s.name || '') + '</option>' }).join('')
+    }
+
+    function loadSubjectResources() {
+      var sel = document.getElementById('subject-selector')
+      var container = document.getElementById('subject-resources')
+      if (!sel || !container) return
+      var subjectId = sel.value
+      if (!subjectId) { container.innerHTML = '<span style="color:rgba(255,255,255,0.3)">Selecciona una materia para ver sus recursos.</span>'; return }
+      var subject = (subjectsCache || []).find(function (s) { return (s.id || s.name) === subjectId })
+      var html = ''
+      if (subject && subject.tutor_ai) html += '<a href="' + subject.tutor_ai + '" target="_blank" class="btn btn-ghost" style="display:inline-flex;align-items:center;gap:0.375rem;margin-bottom:0.75rem;font-size:0.75rem">🤖 Tutor IA →</a>'
+      var grade; try { grade = localStorage.getItem('userGrade') || '' } catch(e) { grade = '' }
+      var subjectName = subject ? subject.name : subjectId
+      apiFetch('/api/teacher/my-files/' + encodeURIComponent(grade) + '/' + encodeURIComponent(subjectName)).then(function (guides) {
+        if (Array.isArray(guides) && guides.length > 0) {
+          html += '<h3 style="font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:0.5rem">📖 Guías</h3>'
+          html += guides.map(function (g) {
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="font-size:0.75rem">' + (g.title || g.filename || 'Guía') + '</span><a href="' + (g.url || '#') + '" target="_blank" class="btn btn-ghost" style="font-size:0.65rem;padding:0.25rem 0.75rem">VER</a></div>'
+          }).join('')
+        } else { html += '<span style="color:rgba(255,255,255,0.3);font-size:0.75rem">Sin guías disponibles.</span>' }
+        container.innerHTML = html
+      }).catch(function () { showToast('Error al cargar guías', 'error'); container.innerHTML = '<span style="color:var(--text-tertiary);font-size:0.75rem">Error al cargar guías</span>' })
+    }
+
+    document.addEventListener('change', function (e) {
+      if (e.target.id === 'subject-selector') loadSubjectResources()
+    })
+
+    // ── Homework ──
+    window.updateFileName = function (input) {
+      var el = document.getElementById('file-name-display')
+      if (input.files && input.files[0]) el.textContent = '📄 ' + input.files[0].name
+      else el.textContent = ''
+    }
+
+    window.sendHomework = function () {
+      var sel = document.getElementById('hw-subject')
+      var fileInput = document.getElementById('hw-file')
+      var grade; try { grade = localStorage.getItem('userGrade') || '' } catch(e) { grade = '' }
+      if (!sel.value || !fileInput.files[0]) { showToast('Selecciona una materia y un archivo.', 'error'); return }
+      var fd = new FormData()
+      fd.append('student_id', studentId); fd.append('grade', grade); fd.append('subject', sel.value); fd.append('file', fileInput.files[0])
+      fetch(apiUrl + '/api/student/upload-homework', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd }).then(function (r) {
+        if (!r.ok) throw new Error('Error ' + r.status)
+        return r.json()
+      }).then(function () {
+        alert('✓ Tarea subida correctamente')
+        fileInput.value = ''; document.getElementById('file-name-display').textContent = ''
+        loadHomeworkHistory()
+      }).catch(function (e) { showToast('Error: ' + (e.message || 'desconocido'), 'error') })
+    }
+
+    function loadHomeworkHistory() {
+      var el = document.getElementById('homework-history')
+      apiFetch('/api/student/deliveries/' + encodeURIComponent(studentId)).then(function (data) {
+        if (!Array.isArray(data) || data.length === 0) { el.innerHTML = '<span style="color:rgba(255,255,255,0.3)">Sin entregas aún.</span>'; return }
+        el.innerHTML = data.slice(0, 10).map(function (d) {
+          var dateStr = d.created_at ? new Date(d.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }) : d.date || ''
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="font-size:0.75rem">' + (d.subject || '') + '</span><span style="font-size:0.65rem;color:rgba(255,255,255,0.35)">' + dateStr + '</span></div>'
+        }).join('')
+      }).catch(function () { showToast('Error al cargar historial', 'error'); el.innerHTML = '<span style="color:var(--text-tertiary)">Error al cargar historial</span>' })
+    }
+
+    // ── Grades (Inicio) ──
+    function loadGrades() {
+      if (!studentId) return
+      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function (data) {
+        var grades = Array.isArray(data) ? data : []
+        var subjectMap = {}
+        grades.forEach(function (g) {
+          var sid = g.subject_id || g.subject_name || 'General'
+          if (!subjectMap[sid]) subjectMap[sid] = []
+          subjectMap[sid].push(parseFloat(g.score) || 0)
+        })
+        var labels = Object.keys(subjectMap)
+        var values = labels.map(function (sid) {
+          var vals = subjectMap[sid]
+          return vals.reduce(function (a, b) { return a + b }, 0) / vals.length
+        })
+
+        // Average
+        var overallAvg = values.length ? values.reduce(function (a, b) { return a + b }, 0) / values.length : 0
+        var avgEl = document.getElementById('avg-score-display')
+        if (avgEl) avgEl.textContent = overallAvg ? overallAvg.toFixed(1) : '--'
+
+        // Metrics grid
+        var metricsEl = document.getElementById('metrics-grid')
+        if (metricsEl) {
+          var atRisk = values.filter(function (v) { return v < 3.5 }).length
+          var passing = values.filter(function (v) { return v >= 3.5 }).length
+          metricsEl.innerHTML =
+            '<div class="stat-card" style="padding:0.5rem;text-align:center"><span class="stat-value" style="font-size:1.2rem">' + labels.length + '</span><span class="stat-label" style="font-size:0.55rem">Materias</span></div>' +
+            '<div class="stat-card" style="padding:0.5rem;text-align:center"><span class="stat-value" style="font-size:1.2rem;color:var(--green)">' + passing + '</span><span class="stat-label" style="font-size:0.55rem">Aprobadas</span></div>' +
+            '<div class="stat-card" style="padding:0.5rem;text-align:center"><span class="stat-value" style="font-size:1.2rem;color:var(--red)">' + atRisk + '</span><span class="stat-label" style="font-size:0.55rem">En Riesgo</span></div>'
+        }
+
+        // Grades grid
+        var gridEl = document.getElementById('grades-grid')
+        if (gridEl) {
+          gridEl.innerHTML = labels.map(function (sid, i) {
+            var v = values[i]
+            var color = v >= 4 ? 'var(--green)' : v >= 3.5 ? 'var(--gold)' : 'var(--red)'
+            var gradeColor = v >= 4 ? '#34d399' : v >= 3.5 ? '#fdc003' : '#ba1a1a'
+            return '<div class="card-float" style="padding:0.75rem;display:flex;justify-content:space-between;align-items:center">' +
+              '<span style="font-size:0.75rem;color:var(--text-secondary)">' + sid.substring(0, 20) + '</span>' +
+              '<span style="font-family:var(--font-display);font-weight:700;font-size:1.1rem;color:' + gradeColor + '">' + v.toFixed(1) + '</span></div>'
+          }).join('') || '<span style="color:rgba(255,255,255,0.3);font-size:0.75rem">Sin calificaciones</span>'
+        }
+      }).catch(function () { showToast('Error al cargar calificaciones', 'error') })
+    }
+
+    // ── Chart.js (Boletín) ──
+    var performanceChart = null
+
+    function loadChartData() {
+      if (!studentId) return
+      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function (data) {
+        var grades = Array.isArray(data) ? data : []
+        var subjectMap = {}
+        grades.forEach(function (g) {
+          var sid = g.subject_id || g.subject_name || 'General'
+          if (!subjectMap[sid]) subjectMap[sid] = []
+          subjectMap[sid].push(parseFloat(g.score) || 0)
+        })
+        var labels = []; var values = []
+        Object.keys(subjectMap).forEach(function (sid) {
+          var vals = subjectMap[sid]
+          labels.push(sid.substring(0, 18))
+          values.push(vals.reduce(function (a, b) { return a + b }, 0) / vals.length)
+        })
+        renderChart(labels, values)
+      }).catch(function () {})
+    }
+
+    function renderChart(labels, values) {
+      var ctx = document.getElementById('myGradesChart')
+      if (!ctx) return
+      if (performanceChart) performanceChart.destroy()
+      performanceChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: labels, datasets: [{ label: 'Promedio', data: values, backgroundColor: values.map(function (v) { return v >= 4 ? 'rgba(52,211,153,0.7)' : v >= 3 ? 'rgba(253,192,3,0.7)' : 'rgba(186,26,26,0.7)' }), borderColor: values.map(function (v) { return v >= 4 ? '#34D399' : v >= 3 ? '#FDC003' : '#BA1A1A' }), borderWidth: 2, borderRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 5, ticks: { color: 'rgba(255,255,255,0.3)', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { ticks: { color: 'rgba(255,255,255,0.5)', maxRotation: 30, font: { size: 10 } }, grid: { display: false } } } }
+      })
+    }
+
+    // ── PDF Bulletin ──
+    window.generarBoletinPDF = function () {
+      if (typeof html2pdf === 'undefined') { loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js', function () { generarBoletinPDF() }); return }
+      var studentName = document.getElementById('student-name').textContent || 'Estudiante'
+      var chartCanvas = document.getElementById('myGradesChart')
+      var chartImg = ''
+      if (chartCanvas && performanceChart) { chartImg = chartCanvas.toDataURL('image/png') }
+      var gradeData = []
+      if (performanceChart && performanceChart.data) {
+        performanceChart.data.labels.forEach(function (l, i) { gradeData.push({ subject: l, grade: performanceChart.data.datasets[0].data[i] }) })
+      }
+      var el = document.createElement('div')
+      el.style.cssText = 'padding:30px;font-family:Arial,sans-serif;color:#333;max-width:800px;margin:auto'
+      el.innerHTML = '<div style="text-align:center;margin-bottom:20px;border-bottom:3px solid #800000;padding-bottom:15px"><h1 style="color:#800000;margin:0;font-size:22px">Colegio Técnico Ciudad del Sol</h1><p style="font-size:14px;color:#666;margin:5px 0 0">Vyntra Academic — Boletín de Calificaciones</p></div>' +
+        '<p style="font-size:14px"><strong>Estudiante:</strong> ' + studentName + '</p>' +
+        '<table style="width:100%;border-collapse:collapse;margin-top:15px"><thead><tr style="background:#800000;color:#fff"><th style="padding:8px;text-align:left;font-size:13px">Materia</th><th style="padding:8px;text-align:center;font-size:13px">Nota</th><th style="padding:8px;text-align:center;font-size:13px">Estado</th></tr></thead><tbody>' +
+        gradeData.map(function (g) {
+          var status = g.grade >= 4 ? '✅ Sobresaliente' : g.grade >= 3 ? '⚠️ Aceptable' : '❌ En Riesgo'
+          return '<tr style="border-bottom:1px solid #eee"><td style="padding:8px;font-size:13px">' + g.subject + '</td><td style="padding:8px;text-align:center;font-size:13px;font-weight:700">' + g.grade.toFixed(1) + '</td><td style="padding:8px;text-align:center;font-size:12px">' + status + '</td></tr>'
+        }).join('') +
+        '</tbody></table>' +
+        (chartImg ? '<div style="margin-top:20px;text-align:center"><img src="' + chartImg + '" style="max-width:100%;height:auto;max-height:250px"></div>' : '') +
+        '<p style="margin-top:20px;font-size:11px;color:#999;text-align:center">Generado el ' + new Date().toLocaleString('es-CO') + ' · Vyntra Academic</p>'
+      document.body.appendChild(el)
+      html2pdf().set({ margin: 10, filename: 'Boletin_' + studentName.replace(/\s+/g, '_') + '.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(el).save().then(function () { document.body.removeChild(el) })
+    }
+
+    // ── Initial Load ──
+    function init() {
+      var name = localStorage.getItem('userName') || 'Estudiante'
+      document.getElementById('student-name').textContent = name + (localStorage.getItem('userGrade') ? ' · ' + localStorage.getItem('userGrade') : '')
+      document.getElementById('student-meta').textContent = localStorage.getItem('is_paid') === 'true' || !localStorage.getItem('is_paid') ? 'Al día · Rendimiento académico' : '⚠️ En mora'
+      loadGrades(); loadNotices(); loadSubjects()
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init)
+    else init()
+    } catch(e) {}
   })()
 </script>

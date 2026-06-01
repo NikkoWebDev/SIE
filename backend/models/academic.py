@@ -45,9 +45,10 @@ class GradeSubmission(BaseModel):
 
 class SubjectCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=80)
-    grade: str = Field(..., min_length=1, max_length=10)
-    gem_tutor_url: str = Field(default="")
-    gem_planner_url: str = Field(default="")
+    grade: str = Field(default="", max_length=10)
+    is_abp: bool = Field(default=False)
+    tutor_ai: str = Field(default="", max_length=500)
+    planner_ai: str = Field(default="", max_length=500)
 
     model_config = {"extra": "forbid"}
 

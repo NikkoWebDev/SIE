@@ -1,8 +1,10 @@
 import logging
+import time
+from collections import defaultdict
 from typing import Any
 
 import bcrypt
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from supabase import Client
 
@@ -12,6 +14,20 @@ from models import LoginRequest, UserCreate, UserLogin
 
 logger = logging.getLogger("siee.auth")
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+# ── Rate limiter for login ──
+_login_attempts: dict[str, list[float]] = defaultdict(list)
+LOGIN_RATE_LIMIT = 10  # max attempts per window
+LOGIN_RATE_WINDOW = 300  # 5 minutes
+
+
+def _check_login_rate_limit(ip: str) -> bool:
+    now = time.time()
+    _login_attempts[ip] = [t for t in _login_attempts[ip] if now - t < LOGIN_RATE_WINDOW]
+    if len(_login_attempts[ip]) >= LOGIN_RATE_LIMIT:
+        return False
+    _login_attempts[ip].append(now)
+    return True
 
 
 def _hash_password(plain: str) -> str:
@@ -76,7 +92,11 @@ async def register(data: UserCreate) -> JSONResponse:
 
 
 @router.post("/login")
-async def login(data: UserLogin) -> JSONResponse:
+async def login(data: UserLogin, request: Request) -> JSONResponse:
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_login_rate_limit(client_ip):
+        logger.warning("rate limit exceeded for login from %s", client_ip)
+        raise HTTPException(status_code=429, detail="Demasiados intentos. Intenta de nuevo en 5 minutos.")
     db: Client = next(get_db())
     res = _safe_query(
         db,
@@ -117,7 +137,11 @@ async def login(data: UserLogin) -> JSONResponse:
 
 
 @router.post("/login-legacy")
-async def login_legacy(data: LoginRequest) -> JSONResponse:
+async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_login_rate_limit(client_ip):
+        logger.warning("rate limit exceeded for login-legacy from %s", client_ip)
+        raise HTTPException(status_code=429, detail="Demasiados intentos. Intenta de nuevo en 5 minutos.")
     db: Client = next(get_db())
     res = _safe_query(
         db,
@@ -139,7 +163,9 @@ async def login_legacy(data: LoginRequest) -> JSONResponse:
         }
         token = encode_jwt(claims)
         return JSONResponse(content={
+            "access_token": token,
             "token": token,
+            "token_type": "bearer",
             "expires_in_hours": TOKEN_EXPIRY_HOURS,
             "usuario": {
                 "profile_id": profile["id"],

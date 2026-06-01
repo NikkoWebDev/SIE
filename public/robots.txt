@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /docente
+Disallow: /estudiante
+Disallow: /api/
+
+Sitemap: https://colegiociudaddelsol.edu.co/sitemap.xml

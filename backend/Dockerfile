@@ -14,7 +14,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN useradd -m -u 1001 vyntra && chown -R vyntra:vyntra /app
+USER vyntra
+
 EXPOSE 10000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:10000/api/health')" || exit 1
 
 CMD uvicorn main:app \
     --host 0.0.0.0 \

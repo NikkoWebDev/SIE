@@ -14,6 +14,7 @@ from models.auth import (
 from models.schemas import (
     BehaviorLogEntry,
     CandidateCreate,
+    ClassMaterialSchema,
     ExamCreate,
     ExamProgressSchema,
     ExamResultResponse,
@@ -43,6 +44,7 @@ from models.schemas import (
 __all__ = [
     "BehaviorLogEntry",
     "CandidateCreate",
+    "ClassMaterialSchema",
     "FinancialToggleSchema",
     "SubjectCreate",
     "TeacherAssignment",

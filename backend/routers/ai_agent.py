@@ -12,7 +12,7 @@ from typing import Any, AsyncGenerator
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from supabase import Client
 
 from config.database import get_db
@@ -93,8 +93,14 @@ ROLE_ENDPOINT: dict[str, str] = {
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(..., min_length=1, max_length=4000)
+    message: str = Field(default="", max_length=4000)
     context: str = Field(default="", max_length=8000)
+
+    @model_validator(mode="after")
+    def ensure_message(self) -> "ChatRequest":
+        if not self.message or not self.message.strip():
+            self.message = "Consulta académica general"
+        return self
 
 
 in_memory_history: dict[str, list[dict[str, str]]] = OrderedDict()
@@ -189,6 +195,11 @@ def _get_available_for_role(role: str) -> list[dict[str, str]]:
             "description": "Obtiene información de una materia por nombre",
             "parameters": {"subject_name": {"type": "string", "description": "Nombre exacto de la materia"}},
         },
+        {
+            "name": "get_subject_materials",
+            "description": "Obtiene materiales educativos y guías de una materia",
+            "parameters": {"subject_name": {"type": "string", "description": "Nombre exacto de la materia"}, "grade": {"type": "string", "description": "Curso (ej: 11-A)"}},
+        },
     ]
     if role == "admin":
         tools.append({
@@ -220,8 +231,8 @@ async def _tool_get_student_grades_summary(db: Client, args: dict[str, Any], use
         all_sub = db.table("subjects").select("id, name").execute()
         for s in all_sub.data:
             subjects_map[s["id"]] = s.get("name", s["id"])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("subjects fetch error in get_student_grades_summary: %s", e)
     subject_details = []
     for g in grades:
         sub_name = subjects_map.get(g.get("subject_id", ""), g.get("subject_id", ""))
@@ -338,6 +349,30 @@ async def _tool_get_all_students_financial(db: Client, args: dict[str, Any], use
     return json.dumps({"total": len(students), "paid": paid, "unpaid": unpaid, "students": students}, ensure_ascii=False)
 
 
+async def _tool_get_subject_materials(db: Client, args: dict[str, Any], user_id: str) -> str:
+    subject_name = args.get("subject_name", "")
+    grade = args.get("grade", "")
+    if not subject_name:
+        return "Indica el nombre de la materia."
+    result = db.table("subjects").select("*").eq("name", subject_name).execute()
+    if not result.data:
+        return f"No se encontró la materia '{subject_name}'."
+    sub = result.data[0]
+    sub_id = sub.get("id")
+    material_result = db.table("class_materials").select("*").eq("subject_id", sub_id).execute()
+    materials = material_result.data or []
+    guides_result = db.table("guides").select("*").eq("subject", subject_name).execute()
+    if grade:
+        guides_result = db.table("guides").select("*").eq("grade", grade).eq("subject", subject_name).execute()
+    guides = guides_result.data or []
+    return json.dumps({
+        "subject": {"name": sub.get("name"), "is_abp": sub.get("is_abp"), "tutor_ai": sub.get("tutor_ai", ""), "planner_ai": sub.get("planner_ai", "")},
+        "materials": [{"title": m.get("file_type", "material"), "url": m.get("file_url", "")} for m in materials],
+        "guides": [{"title": g.get("title", g.get("filename", "Guía")), "url": g.get("url", "")} for g in guides],
+        "total_materials": len(materials) + len(guides),
+    }, ensure_ascii=False)
+
+
 TOOL_FUNCTIONS = {
     "get_student_grades_summary": _tool_get_student_grades_summary,
     "get_financial_status": _tool_get_financial_status,
@@ -346,6 +381,7 @@ TOOL_FUNCTIONS = {
     "get_subject_info": _tool_get_subject_info,
     "get_admin_stats": _tool_get_admin_stats,
     "get_all_students_financial": _tool_get_all_students_financial,
+    "get_subject_materials": _tool_get_subject_materials,
 }
 
 
@@ -624,6 +660,6 @@ async def clear_conversation(role: str = "student", user_id: str = Depends(auth_
         existing = db.table("conversations").select("id").eq("user_id", user_id).eq("role", role).order("created_at", desc=True).limit(1).execute()
         if existing.data:
             db.table("conversations").update({"messages": []}).eq("id", existing.data[0]["id"]).execute()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("clear_conversation db error: %s", e)
     return {"status": "cleared"}

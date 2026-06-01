@@ -1,43 +1,45 @@
 ---
-const titulo = Astro.props.titulo || 'C sol · SIE Comunidad Soleísta'
-const descripcion = 'Sistema de Información Estudiantil del Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá, Colombia'
+const { title, description, image, url } = Astro.props
+
+const siteTitle = title || 'Vyntra Academic'
+const siteDesc = description || 'Plataforma académica del Colegio Técnico Ciudad del Sol — Sogamoso, Boyacá, Colombia'
+const siteImage = image || 'https://vyntraacademic.netlify.app/og-image.png'
+const siteUrl = url || 'https://vyntraacademic.netlify.app'
 ---
-<title>{titulo}</title>
-<meta name="description" content={descripcion} />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta charset="utf-8" />
-<meta name="theme-color" content="#800000" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&family=Sora:wght@300..700&display=swap" rel="stylesheet" />
-<meta property="og:title" content={titulo} />
-<meta property="og:description" content={descripcion} />
+
+<!-- Open Graph -->
 <meta property="og:type" content="website" />
+<meta property="og:title" content={siteTitle} />
+<meta property="og:description" content={siteDesc} />
+<meta property="og:image" content={siteImage} />
+<meta property="og:url" content={siteUrl} />
 <meta property="og:locale" content="es_CO" />
+<meta property="og:site_name" content="Vyntra Academic" />
+
+<!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={siteTitle} />
+<meta name="twitter:description" content={siteDesc} />
+<meta name="twitter:image" content={siteImage} />
+
+<!-- Schema.org School -->
 <script type="application/ld+json" set:html={JSON.stringify({
   "@context": "https://schema.org",
   "@type": "School",
   "name": "Colegio Técnico Ciudad del Sol",
-  "alternateName": "C sol",
+  "url": "https://colegiociudaddelsol.edu.co",
+  "description": "Institución educativa técnica en Sogamoso, Boyacá, Colombia",
   "address": {
     "@type": "PostalAddress",
     "addressLocality": "Sogamoso",
     "addressRegion": "Boyacá",
     "addressCountry": "CO"
   },
-  "telephone": "+57-8-7700000",
-  "email": "contacto@colegiociudaddelsol.edu.co",
-  "url": "https://colegiociudaddelsol.edu.co",
-  "areaServed": "Sogamoso",
-  "description": "Institución educativa técnica en Sogamoso, Boyacá, Colombia. Metodología ABP y formación integral.",
-  "foundingDate": "2000",
-  "numberOfStudents": "1200",
-  "academicSession": "2026",
-  "teaches": [
-    "Educación Básica Secundaria",
-    "Educación Media Técnica",
-    "Formación en Proyectos Transversales ABP"
-  ]
 })} />
+
+<!-- Canonical -->
+<link rel="canonical" href={siteUrl} />
+
+<!-- Additional meta -->
+<meta name="application-name" content="Vyntra Academic" />
+<meta name="theme-color" content="#800000" />

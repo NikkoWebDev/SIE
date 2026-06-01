@@ -17,7 +17,9 @@ router = APIRouter(prefix="/api", tags=["subjects"])
 @router.get("/subjects")
 async def list_subjects(grade: Optional[str] = Query(None)) -> JSONResponse:
     db: Client = next(get_db())
-    query = db.table("subjects").select("id, name, is_abp, created_at")
+    query = db.table("subjects").select("id, name, is_abp, grade, tutor_ai, planner_ai, description, created_at")
+    if grade:
+        query = query.eq("grade", grade)
     result = query.order("name").execute()
     return JSONResponse(content=result.data)
 

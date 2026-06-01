@@ -25,8 +25,8 @@ class EcosystemSocketManager:
         if ws:
             try:
                 await ws.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("ws close error for %s: %s", user_id, e)
         logger.debug("ws- %s (total=%d)", user_id, len(self.active_connections))
 
     async def send(self, user_id: str, payload: dict[str, Any]) -> bool:

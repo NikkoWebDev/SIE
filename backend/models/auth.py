@@ -38,6 +38,7 @@ class UserCreate(BaseModel):
     fullname: str = Field(..., min_length=3, max_length=120)
     password: str = Field(..., min_length=4, max_length=128)
     role: UserRole = Field(default=UserRole.STUDENT)
+    grade: str = Field(default="", max_length=10)
     model_config = {"extra": "forbid"}
 
 

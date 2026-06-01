@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from supabase import Client
 
@@ -107,9 +107,13 @@ async def submit_exam(data: ExamSubmit, user_id: str = Depends(auth_dependency))
         "created_at": now,
     }).execute()
 
+    subject_name = exam.get("subject", "")
+    subject_lookup = db.table("subjects").select("id").eq("name", subject_name).execute()
+    resolved_subject_id = subject_lookup.data[0]["id"] if subject_lookup.data else ""
+
     db.table("grades").upsert({
         "student_id": data.student_id,
-        "subject_id": exam.get("subject", ""),
+        "subject_id": resolved_subject_id,
         "project_id": f"exam_{data.exam_id[:8]}",
         "score": final_grade,
         "observations": f"Nota automática: {exam.get('title', 'Examen')}",
@@ -117,6 +121,27 @@ async def submit_exam(data: ExamSubmit, user_id: str = Depends(auth_dependency))
         "teacher_id": user_id,
         "course_id": exam.get("grade", ""),
     }, on_conflict="student_id, subject_id, project_id").execute()
+
+    if final_grade < 3.5:
+        profile = db.table("profiles").select("fullname").eq("id", data.student_id).execute()
+        student_name = profile.data[0].get("fullname", "") if profile.data else ""
+        risk_doc = {
+            "student_id": data.student_id,
+            "alert_type": "exam_risk",
+            "severity": "high" if final_grade < 2.5 else "medium",
+            "avg_score": final_grade,
+            "reason": f"Examen reprobado ({final_grade}) en {exam.get('title', '')}",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        db.table("risk_alerts").insert(risk_doc).execute()
+        await ws_manager.broadcast({
+            "type": "RISK_ALERT",
+            "student_id": data.student_id,
+            "student_name": student_name,
+            "avg_score": final_grade,
+            "subject": exam.get("title", ""),
+            "severity": risk_doc["severity"],
+        })
 
     return JSONResponse(content={
         "grade": final_grade,
@@ -210,3 +235,17 @@ async def handle_disconnect(data: IncidentReport, user_id: str = Depends(auth_de
         "created_at": doc["created_at"],
     })
     return JSONResponse(content={"status": "disconnect_logged", "can_resume": True})
+
+
+@router.get("/risk-alerts")
+async def list_risk_alerts(
+    student_id: str = Query("", description="Filter by student"),
+    days: int = Query(30, description="Look back days"),
+    user_id: str = Depends(auth_dependency),
+) -> JSONResponse:
+    db: Client = next(get_db())
+    query = db.table("risk_alerts").select("*").order("created_at", desc=True).limit(100)
+    if student_id:
+        query = query.eq("student_id", student_id)
+    result = query.execute()
+    return JSONResponse(content=result.data)

@@ -2,24 +2,23 @@
 export interface Props {
   role?: 'student' | 'teacher' | 'admin'
 }
-
 const { role = 'student' } = Astro.props as Props
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 
 const ROLE_CONFIG: Record<string, Record<string, string>> = {
   student: {
-    accent: 'brand-maroon',
-    accentLight: 'amber',
+    accent: 'var(--maroon)',
+    accentLight: '#fdc003',
     endpoint: '/api/ai/student-tutor',
     avatar: 'V',
     title: 'Tutor IA · VYNTRA',
-    subtitle: 'Asistente académico del Colegio Ciudad del Sol',
+    subtitle: 'Asistente académico del sistema VYNTRA',
     welcome: '¡Hola! Soy el <strong>Tutor VYNTRA</strong>, tu asistente académico. Puedo ayudarte a entender tus materias ABP, recordarte tareas y resolver dudas. ¿En qué te ayudo hoy?',
     userName: 'Estudiante',
   },
   teacher: {
-    accent: 'brand-green',
-    accentLight: 'green',
+    accent: '#34d399',
+    accentLight: '#34d399',
     endpoint: '/api/ai/teacher-tutor',
     avatar: 'D',
     title: 'Asistente Docente · VYNTRA',
@@ -28,8 +27,8 @@ const ROLE_CONFIG: Record<string, Record<string, string>> = {
     userName: 'Docente',
   },
   admin: {
-    accent: 'brand-gold',
-    accentLight: 'amber',
+    accent: '#fdc003',
+    accentLight: '#fdc003',
     endpoint: '/api/ai/admin-assistant',
     avatar: 'A',
     title: 'Asistente Administrativo · VYNTRA',
@@ -41,68 +40,75 @@ const ROLE_CONFIG: Record<string, Record<string, string>> = {
 const cfg = ROLE_CONFIG[role]
 ---
 
-<div id="ai-chat-root" class="fixed bottom-6 right-6 z-50" data-api-url={apiUrl} data-role={role} data-endpoint={cfg.endpoint}>
+<div id="ai-chat-root" class="fixed bottom-6 right-6 z-50" style="bottom:max(1.5rem,env(safe-area-inset-bottom,1.5rem));--chat-accent:{cfg.accent};--chat-accent-light:{cfg.accentLight}" data-api-url={apiUrl} data-role={role} data-endpoint={cfg.endpoint}>
+  <style>
+    #ai-chat-root { --chat-accent: {cfg.accent}; --chat-accent-light: {cfg.accentLight}; }
+  </style>
   <button id="ai-chat-toggle"
-    class="flex h-14 w-14 items-center justify-center rounded-full bg-{cfg.accent} text-white shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
+    style="background:var(--chat-accent);width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;box-shadow:0 8px 32px rgba(0,0,0,.3);transition:all .3s ease;border:none;cursor:pointer"
     aria-label="Abrir asistente IA">
     <svg id="chat-icon-open" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
     <svg id="chat-icon-close" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
   </button>
 
   <div id="ai-chat-panel"
-    class="absolute bottom-16 right-0 w-[380px] sm:w-[440px] h-[560px] rounded-2xl border border-white/10 bg-black/90 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden origin-bottom-right transition-all duration-300 opacity-0 scale-95 pointer-events-none">
+    class="absolute bottom-16 right-0 w-[calc(100vw-2rem)] sm:w-[380px] md:w-[440px] h-[60vh] sm:h-[520px] md:h-[560px] rounded-2xl shadow-2xl flex flex-col overflow-hidden origin-bottom-right transition-all duration-300 opacity-0 scale-95 pointer-events-none"
+    style="border:1px solid var(--border);background:var(--card-bg);backdrop-filter:blur(32px)">
     <!-- Header -->
-    <div class="flex items-center gap-3 border-b border-white/10 bg-gradient-to-r from-{cfg.accent} to-{cfg.accent}/90 px-5 py-4 shrink-0">
-      <div class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10">
-        <svg class="h-5 w-5 text-{cfg.accentLight}-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+    <div class="flex items-center gap-3 px-5 py-4 shrink-0" style="border-bottom:1px solid var(--border);background:var(--chat-accent)">
+      <div class="flex h-9 w-9 items-center justify-center rounded-full" style="background:rgba(255,255,255,.15)">
+        <svg class="h-5 w-5" style="color:white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
       </div>
       <div class="flex-1 min-w-0">
-        <h3 class="text-sm font-semibold text-white" id="chat-title">{cfg.title}</h3>
-        <p class="text-xs text-{cfg.accentLight}-300/70 truncate">{cfg.subtitle}</p>
+        <h3 class="text-sm font-semibold" style="color:white">{cfg.title}</h3>
+        <p class="text-xs" style="color:rgba(255,255,255,.7)">{cfg.subtitle}</p>
       </div>
       <div class="flex items-center gap-1">
-        <button id="chat-clear-btn" class="p-1.5 rounded-lg hover:bg-white/10 transition-all opacity-50 hover:opacity-100" title="Limpiar conversación">
-          <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        <button id="chat-clear-btn" class="p-1.5 rounded-lg" style="color:rgba(255,255,255,.5);background:transparent;border:none;cursor:pointer;transition:all .2s" title="Limpiar conversación">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </button>
-        <span class="flex items-center gap-1.5 text-[10px] text-{cfg.accentLight}-400">
-          <span class="h-1.5 w-1.5 rounded-full bg-{cfg.accentLight}-400 animate-pulse"></span>
+        <span class="flex items-center gap-1.5 text-[10px]" style="color:rgba(255,255,255,.6)">
+          <span class="h-1.5 w-1.5 rounded-full" style="background:var(--chat-accent-light);animation:pulse 2s ease-in-out infinite"></span>
           En línea
         </span>
       </div>
     </div>
 
     <!-- Messages -->
-    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm bg-gray-950"></div>
+    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm" style="background:var(--bg);color:var(--text)"></div>
 
     <!-- Typing -->
     <div id="chat-typing" class="hidden px-4 pb-2">
       <div class="flex items-start gap-3">
-        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-{cfg.accentLight}-500/20 text-xs font-bold text-{cfg.accentLight}-400">{cfg.avatar}</div>
-        <div class="rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold" style="background:var(--chat-accent);color:white">{cfg.avatar}</div>
+        <div class="rounded-2xl px-4 py-3" style="background:var(--bg-secondary);border:1px solid var(--border)">
           <div class="flex gap-1.5">
-            <span class="h-2 w-2 rounded-full bg-{cfg.accentLight}-400/60 animate-bounce" style="animation-delay:0ms"></span>
-            <span class="h-2 w-2 rounded-full bg-{cfg.accentLight}-400/60 animate-bounce" style="animation-delay:150ms"></span>
-            <span class="h-2 w-2 rounded-full bg-{cfg.accentLight}-400/60 animate-bounce" style="animation-delay:300ms"></span>
+            <span class="h-2 w-2 rounded-full animate-bounce" style="background:var(--text-tertiary);animation-delay:0ms"></span>
+            <span class="h-2 w-2 rounded-full animate-bounce" style="background:var(--text-tertiary);animation-delay:150ms"></span>
+            <span class="h-2 w-2 rounded-full animate-bounce" style="background:var(--text-tertiary);animation-delay:300ms"></span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Input -->
-    <div class="border-t border-white/10 bg-black/50 px-4 py-3 shrink-0">
+    <div class="px-4 py-3 shrink-0" style="border-top:1px solid var(--border);background:var(--bg)">
       <form id="chat-form" class="flex gap-2">
         <input
           id="chat-input"
           type="text"
           placeholder="Escribe tu consulta..."
-          class="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-{cfg.accent}/40 focus:border-{cfg.accent}/60 transition-all"
+          class="input-apple"
+          style="flex:1"
         />
         <button
           id="chat-send"
           type="submit"
-          class="flex items-center justify-center rounded-xl bg-{cfg.accent} px-4 py-2.5 text-white transition-all hover:bg-{cfg.accent}/80 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          class="btn-apple"
+          style="background:var(--chat-accent);color:white;padding:.6rem 1rem;border-radius:var(--radius-md);border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center"
         >
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          <svg class="h-5 w-5" id="chat-send-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          <span id="chat-send-spinner" style="display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite"></span>
         </button>
       </form>
     </div>
@@ -110,41 +116,38 @@ const cfg = ROLE_CONFIG[role]
 </div>
 
 <style is:global>
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   .chat-msg { animation: slideUp 0.3s ease-out both; }
-  .chat-suggestion-chip {
-    transition: all 0.2s ease;
-  }
-  .chat-suggestion-chip:hover {
-    transform: translateY(-1px);
-  }
-  #chat-messages h3 { font-size: 0.875rem; font-weight: 700; color: #e5e7eb; margin: 0.75rem 0 0.375rem; }
-  #chat-messages h4 { font-size: 0.8125rem; font-weight: 700; color: #e5e7eb; margin: 0.5rem 0 0.25rem; }
+  #chat-messages h3 { font-size: 0.875rem; font-weight: 700; color: var(--text); margin: 0.75rem 0 0.375rem; }
+  #chat-messages h4 { font-size: 0.8125rem; font-weight: 700; color: var(--text); margin: 0.5rem 0 0.25rem; }
   #chat-messages ul, #chat-messages ol { margin: 0.375rem 0; padding-left: 1.25rem; }
   #chat-messages li { margin: 0.125rem 0; }
-  #chat-messages code { font-size: 0.75rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; }
-  #chat-messages pre { margin: 0.5rem 0; padding: 0.75rem; border-radius: 0.5rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); overflow-x: auto; }
+  #chat-messages code { font-size: 0.75rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; background: var(--bg-tertiary); color: var(--text); }
+  #chat-messages pre { margin: 0.5rem 0; padding: 0.75rem; border-radius: 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border); overflow-x: auto; }
   #chat-messages pre code { background: none; padding: 0; }
-  #chat-messages blockquote { border-left: 2px solid rgba(255,255,255,0.15); margin: 0.5rem 0; padding: 0.25rem 0.75rem; color: #9ca3af; font-style: italic; }
+  #chat-messages blockquote { border-left: 2px solid var(--border); margin: 0.5rem 0; padding: 0.25rem 0.75rem; color: var(--text-secondary); font-style: italic; }
   #chat-messages table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-size: 0.75rem; }
-  #chat-messages th, #chat-messages td { border: 1px solid rgba(255,255,255,0.08); padding: 0.375rem 0.5rem; text-align: left; }
-  #chat-messages th { background: rgba(255,255,255,0.04); font-weight: 700; color: #e5e7eb; }
-  #chat-messages a { color: #60a5fa; text-decoration: underline; }
+  #chat-messages th, #chat-messages td { border: 1px solid var(--border); padding: 0.375rem 0.5rem; text-align: left; color: var(--text); }
+  #chat-messages th { background: var(--bg-tertiary); font-weight: 700; }
+  #chat-messages a { color: var(--chat-accent); text-decoration: underline; }
+  #chat-send:hover { filter: brightness(1.1); }
+  #chat-send:active { transform: scale(0.97); }
 </style>
 
 <script define:vars={{ apiUrl, role }}>
   (function () {
-    var cfg = {
-      student: { endpoint: '/api/ai/student-tutor', avatar: 'V', welcome: '¡Hola! Soy el <strong>Tutor VYNTRA</strong>, tu asistente académico. Puedo ayudarte a entender tus materias ABP, recordarte tareas y resolver dudas. ¿En qué te ayudo hoy?', accent: 'brand-maroon', accentLight: 'amber', userName: 'Estudiante' },
-      teacher: { endpoint: '/api/ai/teacher-tutor', avatar: 'D', welcome: 'Bienvenido, docente. Soy el <strong>Asistente VYNTRA</strong>. Puedo ayudarte a analizar el rendimiento de tus estudiantes, identificar alertas tempranas y obtener recomendaciones pedagógicas. ¿En qué puedo ayudarte hoy?', accent: 'brand-green', accentLight: 'green', userName: 'Docente' },
-      admin: { endpoint: '/api/ai/admin-assistant', avatar: 'A', welcome: 'Bienvenido. Soy el <strong>Asistente Administrativo VYNTRA</strong>. Puedo ayudarte con el análisis financiero del colegio, reportes de morosidad, estados de pago y toma de decisiones estratégicas. ¿En qué puedo ayudarte hoy?', accent: 'brand-gold', accentLight: 'amber', userName: 'Administrador' },
-    }
-    var rc = cfg[role] || cfg.student
-
     var root = document.getElementById('ai-chat-root')
+    var cs = getComputedStyle(root)
+    var accent = cs.getPropertyValue('--chat-accent').trim()
+    var accentLight = cs.getPropertyValue('--chat-accent-light').trim()
+
+    var configs = {
+      student: { endpoint: '/api/ai/student-tutor', avatar: 'V', welcome: '¡Hola! Soy el <strong>Tutor VYNTRA</strong>, tu asistente académico. Puedo ayudarte a entender tus materias ABP, recordarte tareas y resolver dudas. ¿En qué te ayudo hoy?', userName: 'Estudiante' },
+      teacher: { endpoint: '/api/ai/teacher-tutor', avatar: 'D', welcome: 'Bienvenido, docente. Soy el <strong>Asistente VYNTRA</strong>. Puedo ayudarte a analizar el rendimiento de tus estudiantes, identificar alertas tempranas y obtener recomendaciones pedagógicas. ¿En qué puedo ayudarte hoy?', userName: 'Docente' },
+      admin: { endpoint: '/api/ai/admin-assistant', avatar: 'A', welcome: 'Bienvenido. Soy el <strong>Asistente Administrativo VYNTRA</strong>. Puedo ayudarte con el análisis financiero del colegio, reportes de morosidad, estados de pago y toma de decisiones estratégicas. ¿En qué puedo ayudarte hoy?', userName: 'Administrador' },
+    }
+    var rc = configs[role] || configs.student
+
     var toggle = document.getElementById('ai-chat-toggle')
     var panel = document.getElementById('ai-chat-panel')
     var chatIcon = document.getElementById('chat-icon-open')
@@ -158,16 +161,16 @@ const cfg = ROLE_CONFIG[role]
 
     var isOpen = false
     var storageKey = 'vyntra-chat-' + role
-    var token = localStorage.getItem('access_token')
-    var userId = localStorage.getItem('userId')
-    var userName = localStorage.getItem('userName') || rc.userName
+    var token; var userId; var userName
+    try { token = localStorage.getItem('access_token') } catch(e) {}
+    try { userId = localStorage.getItem('userId') } catch(e) {}
+    try { userName = localStorage.getItem('userName') || rc.userName } catch(e) { userName = rc.userName }
 
     var suggestions = {
       student: ['¿Cómo mejorar mi promedio?', 'Explica el proyecto ABP', '¿Qué materias tengo en riesgo?', '¿Cómo organizar mi tiempo?'],
       teacher: ['¿Cuántos estudiantes en riesgo?', 'Resumen de calificaciones', 'Sugerencias pedagógicas ABP', 'Análisis de incidentes'],
       admin: ['Reporte financiero general', 'Estudiantes en mora', 'Estadísticas del sistema', 'Recomendaciones estratégicas'],
     }
-
     var currentSuggestions = suggestions[role] || suggestions.student
 
     toggle.addEventListener('click', function () {
@@ -199,20 +202,18 @@ const cfg = ROLE_CONFIG[role]
 
     function renderMarkdown(text) {
       var html = escapeHtml(text)
-      // Headings (### then ## then #)
       html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>')
       html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>')
       html = html.replace(/^# (.+)$/gm, '<h3>$1</h3>')
-      // Bold / Italic
-      html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-' + rc.accentLight + '-300">$1</strong>')
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color:'+accentLight+'">$1</strong>')
       html = html.replace(/\*(.+?)\*/g, '<em>$1</em>')
-      // Inline code
-      html = html.replace(/`([^`]+)`/g, '<code class="bg-' + rc.accent + '/20 text-' + rc.accentLight + '-300 px-1 py-0.5 rounded text-xs font-mono">$1</code>')
-      // Links
-      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-      // Blockquotes
+      html = html.replace(/`([^`]+)`/g, '<code style="background:var(--bg-tertiary);color:var(--text);padding:.125rem .375rem;border-radius:.25rem;font-size:.75rem">$1</code>')
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, text, url) {
+        var safeUrl = url
+        if (!/^https?:\/\//i.test(safeUrl)) safeUrl = '#'
+        return '<a href="' + safeUrl + '" target="_blank" rel="noopener">' + text + '</a>'
+      })
       html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-      // Tables: simple approach
       html = html.replace(/^((?:\|[^\n]+\|\n?)+)/gm, function (match) {
         var rows = match.trim().split('\n')
         var inHeader = true
@@ -233,31 +234,13 @@ const cfg = ROLE_CONFIG[role]
         tbl += '</table>'
         return tbl
       })
-      // Lists (ordered then unordered)
-      var listCounter = 0
       html = html.replace(/^(\d+)\. (.+)$/gm, function (m, num, content) {
-        if (listCounter === 0) { listCounter = parseInt(num); return '<ol start="' + num + '"><li>' + content + '</li>' }
-        var expected = listCounter + 1
-        listCounter = parseInt(num)
-        return '<li>' + content + '</li>'
+        return '<ol start="' + num + '"><li>' + content + '</li>'
       })
-      html = html.replace(/<\/li>\s*<ol/g, '<\/ol><ol')
       html = html.replace(/^[-*] (.+)$/gm, '<li>$1</li>')
-      html = html.replace(/(<li>.*?<\/li>)/gs, function (m) {
-        if (m.indexOf('<ol') === -1 && m.indexOf('</ol>') === -1) {
-          return '<ul>' + m + '</ul>'
-        }
-        return m
-      })
-      // Fix nested ul/ol — simple cleanup
-      html = html.replace(/<\/ul>\s*<ul>/g, '')
-      html = html.replace(/<\/ol>\s*<ol>/g, '')
-      // Line breaks (preserve paragraphs)
       html = html.replace(/\n/g, '<br>')
-      // Clean double <br> from block elements
       html = html.replace(/<\/(h3|h4|blockquote|table|pre|ul|ol|li|th|td)><br>/g, '</$1>')
       html = html.replace(/<br><\/(h3|h4|blockquote|table|pre|ul|ol)/g, '</$1>')
-      html = html.replace(/<br><br><\/li>/g, '</li>')
       return html
     }
 
@@ -265,21 +248,20 @@ const cfg = ROLE_CONFIG[role]
       var div = document.createElement('div')
       div.className = 'flex items-start gap-3 chat-msg'
       var avatar = document.createElement('div')
-      avatar.className = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-' + rc.accentLight + '-500/20 text-xs font-bold text-' + rc.accentLight + '-400'
+      avatar.style.cssText = 'width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;background:'+accent+';color:white;flex-shrink:0'
       avatar.textContent = rc.avatar
       var bubble = document.createElement('div')
-      bubble.className = 'rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-4 py-3 text-gray-300 leading-relaxed'
+      bubble.style.cssText = 'border-radius:16px;border-top-left-radius:4px;padding:.75rem 1rem;line-height:1.6;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text)'
       bubble.innerHTML = rc.welcome
       div.appendChild(avatar)
       div.appendChild(bubble)
       messages.appendChild(div)
-      // Suggestions
       var chipsDiv = document.createElement('div')
       chipsDiv.className = 'flex flex-wrap gap-2 mt-3 mb-2'
       chipsDiv.id = 'suggestion-chips'
       currentSuggestions.forEach(function (text) {
         var chip = document.createElement('button')
-        chip.className = 'chat-suggestion-chip text-xs px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-gray-400 hover:bg-white/[0.06] hover:border-' + rc.accentLight + '-500/30 hover:text-' + rc.accentLight + '-300 transition-all'
+        chip.style.cssText = 'font-size:.75rem;padding:.35rem .75rem;border-radius:999px;border:1px solid var(--border);background:var(--bg-tertiary);color:var(--text-secondary);cursor:pointer;transition:all .2s'
         chip.textContent = text
         chip.addEventListener('click', function () {
           input.value = text
@@ -300,12 +282,14 @@ const cfg = ROLE_CONFIG[role]
         var text = el.getAttribute('data-msg-text')
         if (roleAttr && text) msgs.push({ role: roleAttr, content: text })
       }
+      if (msgs.length > 50) msgs = msgs.slice(-50)
       localStorage.setItem(storageKey, JSON.stringify(msgs))
     }
 
     function loadMessages() {
       messages.innerHTML = ''
-      var saved = localStorage.getItem(storageKey)
+      var saved
+      try { saved = localStorage.getItem(storageKey) } catch(e) {}
       if (saved) {
         try {
           var msgs = JSON.parse(saved)
@@ -316,14 +300,14 @@ const cfg = ROLE_CONFIG[role]
               div.setAttribute('data-msg-role', m.role)
               div.setAttribute('data-msg-text', m.content)
               var avatar = document.createElement('div')
-              avatar.className = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ' +
-                (m.role === 'user' ? 'bg-' + rc.accent + ' text-white' : 'bg-' + rc.accentLight + '-500/20 text-' + rc.accentLight + '-400')
+              avatar.style.cssText = 'width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;' +
+                (m.role === 'user' ? 'background:'+accent+';color:white' : 'background:var(--bg-tertiary);color:var(--text)')
               avatar.textContent = m.role === 'user' ? (userName.charAt(0).toUpperCase()) : rc.avatar
               var bubble = document.createElement('div')
-              bubble.className = 'rounded-2xl px-4 py-3 leading-relaxed max-w-[85%] ' +
+              bubble.style.cssText = 'border-radius:16px;padding:.75rem 1rem;line-height:1.6;max-width:85%;' +
                 (m.role === 'user'
-                  ? 'rounded-tr-sm bg-' + rc.accent + ' text-white'
-                  : 'rounded-tl-sm bg-white/5 border border-white/10 text-gray-300')
+                  ? 'background:'+accent+';color:white;border-top-right-radius:4px'
+                  : 'background:var(--bg-secondary);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px')
               if (m.role === 'user') bubble.textContent = m.content
               else bubble.innerHTML = renderMarkdown(m.content)
               div.appendChild(avatar)
@@ -339,28 +323,25 @@ const cfg = ROLE_CONFIG[role]
     }
 
     function addMessage(content, msgRole) {
-      var texts = content
       var div = document.createElement('div')
       div.className = 'flex items-start gap-3 chat-msg ' + (msgRole === 'user' ? 'flex-row-reverse' : '')
       div.setAttribute('data-msg-role', msgRole)
-      div.setAttribute('data-msg-text', texts)
+      div.setAttribute('data-msg-text', content)
       var avatar = document.createElement('div')
-      avatar.className = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ' +
-        (msgRole === 'user' ? 'bg-' + rc.accent + ' text-white' : 'bg-' + rc.accentLight + '-500/20 text-' + rc.accentLight + '-400')
+      avatar.style.cssText = 'width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;' +
+        (msgRole === 'user' ? 'background:'+accent+';color:white' : 'background:var(--bg-tertiary);color:var(--text)')
       avatar.textContent = msgRole === 'user' ? (userName.charAt(0).toUpperCase()) : rc.avatar
       var bubble = document.createElement('div')
-      bubble.className = 'rounded-2xl px-4 py-3 leading-relaxed max-w-[85%] ' +
+      bubble.style.cssText = 'border-radius:16px;padding:.75rem 1rem;line-height:1.6;max-width:85%;' +
         (msgRole === 'user'
-          ? 'rounded-tr-sm bg-' + rc.accent + ' text-white'
-          : 'rounded-tl-sm bg-white/5 border border-white/10 text-gray-300')
-      if (msgRole === 'user') bubble.textContent = texts
-      else bubble.innerHTML = renderMarkdown(texts)
+          ? 'background:'+accent+';color:white;border-top-right-radius:4px'
+          : 'background:var(--bg-secondary);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px')
+      if (msgRole === 'user') bubble.textContent = content
+      else bubble.innerHTML = renderMarkdown(content)
       div.appendChild(avatar)
       div.appendChild(bubble)
-      // Remove suggestions chips if present
       var chips = document.getElementById('suggestion-chips')
       if (chips) chips.remove()
-      // Remove old welcome if we have user messages
       if (msgRole === 'user') {
         var firstMsg = messages.querySelector('[data-msg-role]')
         if (!firstMsg) {
@@ -378,10 +359,10 @@ const cfg = ROLE_CONFIG[role]
       var div = document.createElement('div')
       div.className = 'flex items-start gap-3 chat-msg'
       var avatar = document.createElement('div')
-      avatar.className = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-' + rc.accentLight + '-500/20 text-xs font-bold text-' + rc.accentLight + '-400'
+      avatar.style.cssText = 'width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;background:var(--bg-tertiary);color:var(--text);flex-shrink:0'
       avatar.textContent = rc.avatar
       var bubbleContainer = document.createElement('div')
-      bubbleContainer.className = 'rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-4 py-3 text-gray-300 leading-relaxed'
+      bubbleContainer.style.cssText = 'border-radius:16px;border-top-left-radius:4px;padding:.75rem 1rem;line-height:1.6;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text)'
       bubbleContainer.id = 'streaming-bubble'
       div.appendChild(avatar)
       div.appendChild(bubbleContainer)
@@ -392,12 +373,9 @@ const cfg = ROLE_CONFIG[role]
 
     async function buildContext() {
       var ctx = 'Nombre del usuario: ' + userName + '. '
-      var endpoint = rc.endpoint
       try {
         if (role === 'student') {
-          var gRes = await fetch(apiUrl + '/api/grades?student_id=' + encodeURIComponent(userId), {
-            headers: { 'Authorization': 'Bearer ' + token }
-          })
+          var gRes = await fetch(apiUrl + '/api/grades?student_id=' + encodeURIComponent(userId), { headers: { 'Authorization': 'Bearer ' + token } })
           if (gRes.ok) {
             var grades = await gRes.json()
             if (grades && grades.length > 0) {
@@ -407,43 +385,27 @@ const cfg = ROLE_CONFIG[role]
               if (atRisk.length > 0) ctx += 'Materias en riesgo: ' + atRisk.length + '. '
             }
           }
-          var fRes = await fetch(apiUrl + '/api/students/' + encodeURIComponent(userId) + '/financial-status', {
-            headers: { 'Authorization': 'Bearer ' + token }
-          })
-          if (fRes.ok) {
-            var fin = await fRes.json()
-            ctx += 'Estado financiero: ' + (fin.is_blocked ? 'Mora activa' : 'Al día') + '. '
-          }
+          var fRes = await fetch(apiUrl + '/api/students/' + encodeURIComponent(userId) + '/financial-status', { headers: { 'Authorization': 'Bearer ' + token } })
+          if (fRes.ok) { var fin = await fRes.json(); ctx += 'Estado financiero: ' + (fin.is_blocked ? 'Mora activa' : 'Al día') + '. ' }
         } else if (role === 'teacher') {
-          var gRes2 = await fetch(apiUrl + '/api/grades?teacher_id=' + encodeURIComponent(userId), {
-            headers: { 'Authorization': 'Bearer ' + token }
-          })
-          if (gRes2.ok) {
-            var tGrades = await gRes2.json()
-            if (tGrades && tGrades.length > 0) ctx += 'Ha registrado ' + tGrades.length + ' calificaciones recientemente. '
-          }
-          var riskRes = await fetch(apiUrl + '/api/students/risk', {
-            headers: { 'Authorization': 'Bearer ' + token }
-          })
-          if (riskRes.ok) {
-            var riskData = await riskRes.json()
-            if (riskData && riskData.length > 0) ctx += 'Estudiantes en riesgo académico: ' + riskData.length + '. '
-          }
+          var gRes2 = await fetch(apiUrl + '/api/grades?teacher_id=' + encodeURIComponent(userId), { headers: { 'Authorization': 'Bearer ' + token } })
+          if (gRes2.ok) { var tGrades = await gRes2.json(); if (tGrades && tGrades.length > 0) ctx += 'Ha registrado ' + tGrades.length + ' calificaciones recientemente. ' }
+          var riskRes = await fetch(apiUrl + '/api/students/risk', { headers: { 'Authorization': 'Bearer ' + token } })
+          if (riskRes.ok) { var riskData = await riskRes.json(); if (riskData && riskData.length > 0) ctx += 'Estudiantes en riesgo académico: ' + riskData.length + '. ' }
         } else if (role === 'admin') {
-          var statsRes = await fetch(apiUrl + '/api/admin/stats', {
-            headers: { 'Authorization': 'Bearer ' + token }
-          })
-          if (statsRes.ok) {
-            var stats = await statsRes.json()
-            if (stats) {
-              ctx += 'Total estudiantes: ' + (stats.total_students || '?') + '. '
-              ctx += 'Al día: ' + (stats.paid || stats.al_dia || '?') + '. '
-              ctx += 'En mora: ' + (stats.unpaid || stats.en_mora || '?') + '. '
-            }
-          }
+          var statsRes = await fetch(apiUrl + '/api/admin/stats', { headers: { 'Authorization': 'Bearer ' + token } })
+          if (statsRes.ok) { var stats = await statsRes.json(); if (stats) { ctx += 'Total estudiantes: ' + (stats.total_students || '?') + '. '; ctx += 'Al día: ' + (stats.paid || stats.al_dia || '?') + '. '; ctx += 'En mora: ' + (stats.unpaid || stats.en_mora || '?') + '. ' } }
         }
       } catch (_) {}
       return ctx
+    }
+
+    var sendIcon = document.getElementById('chat-send-icon')
+    var sendSpinner = document.getElementById('chat-send-spinner')
+    function setSending(v) {
+      sendBtn.disabled = v
+      if (sendIcon) sendIcon.style.display = v ? 'none' : ''
+      if (sendSpinner) sendSpinner.style.display = v ? '' : 'none'
     }
 
     form.addEventListener('submit', async function (e) {
@@ -451,7 +413,7 @@ const cfg = ROLE_CONFIG[role]
       var text = input.value.trim()
       if (!text) return
       input.value = ''
-      sendBtn.disabled = true
+      setSending(true)
       addMessage(text, 'user')
       typing.classList.remove('hidden')
       scrollToBottom()
@@ -467,8 +429,8 @@ const cfg = ROLE_CONFIG[role]
           body: JSON.stringify({ message: text, context: context }),
         })
         if (!res.ok) {
-          bubble.innerHTML = '<span class="text-brand-danger">Error al conectar con el asistente.</span>'
-          sendBtn.disabled = false
+          bubble.innerHTML = '<span style="color:var(--red)">Error al conectar con el asistente.</span>'
+          setSending(false)
           return
         }
         var reader = res.body.getReader()
@@ -493,13 +455,12 @@ const cfg = ROLE_CONFIG[role]
                   bubble.innerHTML = renderMarkdown(fullText)
                   scrollToBottom()
                 } else if (parsed.error) {
-                  bubble.innerHTML = '<span class="text-brand-danger">' + parsed.error + '</span>'
+                  bubble.innerHTML = '<span style="color:var(--red)">' + parsed.error + '</span>'
                 }
               } catch (_) {}
             }
           }
         }
-        // Update saved messages with full text
         if (fullText) {
           var lastEl = bubble.closest('.chat-msg')
           if (lastEl) {
@@ -508,12 +469,12 @@ const cfg = ROLE_CONFIG[role]
             saveMessages()
           }
         } else {
-          bubble.innerHTML = '<span class="text-gray-500">El asistente no generó respuesta. Intenta reformular tu consulta.</span>'
+          bubble.innerHTML = '<span style="color:var(--text-tertiary)">El asistente no generó respuesta. Intenta reformular tu consulta.</span>'
         }
       } catch (_) {
-        bubble.innerHTML = '<span class="text-brand-danger">Error de conexión. Verifica tu red e intenta de nuevo.</span>'
+        bubble.innerHTML = '<span style="color:var(--red)">Error de conexión. Verifica tu red e intenta de nuevo.</span>'
       }
-      sendBtn.disabled = false
+      setSending(false)
     })
   })()
 </script>

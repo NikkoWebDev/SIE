@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from supabase import Client
@@ -9,6 +10,7 @@ from config.database import get_db
 from dependencies import auth_dependency, financial_guard, is_financial_locked_path
 from models import StudentUpdate, StudentMetadataSchema, grade_status, OutageReport
 
+logger = logging.getLogger("siee.students")
 router = APIRouter(prefix="/api", tags=["students"])
 
 
@@ -268,5 +270,45 @@ async def get_behavior_logs(student_id: str, user_id: str = Depends(auth_depende
                 "created_at": str(r.get("created_at", "")),
             })
         return JSONResponse(content=logs)
-    except Exception:
+    except Exception as e:
+        logger.warning("behavior logs fetch error: %s", e)
+        return JSONResponse(content=[])
+
+
+@router.get("/students/{student_id}/materials")
+async def get_student_materials(student_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+    db: Client = next(get_db())
+    try:
+        meta = db.table("student_metadata").select("course_id").eq("profile_id", student_id).execute()
+        if not meta.data or not meta.data[0].get("course_id"):
+            return JSONResponse(content=[])
+        course_id = meta.data[0]["course_id"]
+        course = db.table("courses").select("name").eq("id", course_id).execute()
+        if not course.data:
+            return JSONResponse(content=[])
+        grade_id = course.data[0]["name"]
+
+        mats = db.table("class_materials").select("*").eq("grade_id", grade_id).order("created_at", desc=True).execute()
+        subject_ids = {m["subject_id"] for m in mats.data if m.get("subject_id")}
+        subjects_map = {}
+        if subject_ids:
+            subs = db.table("subjects").select("id, name").in_("id", list(subject_ids)).execute()
+            for s in subs.data:
+                subjects_map[s["id"]] = s.get("name", "")
+
+        materials = []
+        for m in mats.data:
+            materials.append({
+                "id": m.get("id"),
+                "subject_id": m.get("subject_id", ""),
+                "subject_name": subjects_map.get(m.get("subject_id", ""), ""),
+                "grade_id": m.get("grade_id", ""),
+                "file_url": m.get("file_url", ""),
+                "file_type": m.get("file_type", "md"),
+                "uploaded_by": m.get("uploaded_by", ""),
+                "created_at": str(m.get("created_at", "")),
+            })
+        return JSONResponse(content=materials)
+    except Exception as e:
+        logger.warning("student materials fetch error: %s", e)
         return JSONResponse(content=[])

@@ -1,457 +1,249 @@
 ---
-import SEOHead from '@components/SEOHead.astro'
-const baseUrl = (import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.com').replace(/\/+$/, '')
+import '../styles/theme.css'
+const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
 ---
 
 <!doctype html>
-<html lang="es-CO" class="dark scroll-smooth">
-  <head>
-    <SEOHead titulo="Portal de Acceso Soleísta · C sol SIE" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script is:inline>
-      (function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&family=Sora:wght@300..700&display=swap" rel="stylesheet">
-  </head>
-  <body class="font-sans antialiased bg-[#040405] text-white overflow-hidden" style="font-family:'Sora',sans-serif">
-    <div id="login-error-toast" class="fixed top-6 right-6 z-[100] hidden" role="alert" aria-live="assertive">
-      <div class="flex items-center gap-4 rounded-xl border border-brand-danger/50 bg-black/80 backdrop-blur-xl px-5 py-4 shadow-2xl toast-entrance">
-        <div>
-          <p class="text-sm font-semibold text-brand-danger">Error de Autenticación</p>
-          <p id="toast-msg" class="text-xs text-gray-400">Verifique sus credenciales soleístas</p>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>VYNTRA · Acceso</title>
+  <meta name="description" content="Inicia sesión en VYNTRA Academic" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://colegiociudaddelsol.edu.co/login" />
+  <meta property="og:title" content="VYNTRA · Acceso" />
+  <meta property="og:description" content="Inicia sesión en VYNTRA Academic" />
+  <meta property="og:url" content="https://colegiociudaddelsol.edu.co/login" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    import * as Sentry from '@sentry/browser'
+    var dsn = import.meta.env.PUBLIC_SENTRY_DSN || ''
+    if (dsn) { Sentry.init({ dsn, environment: import.meta.env.PUBLIC_ENV || 'development', tracesSampleRate: 0.25 }) }
+  </script>
+  <script is:inline>
+    (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
+  </script>
+</head>
+<body>
+  <div class="noise-fixed"></div>
+  <main style="display:flex;min-height:100vh;width:100%">
+    <!-- LEFT: Brand panel (hidden mobile) -->
+    <section style="display:none" class="login-brand">
+      <div class="grid-dots" style="position:absolute;inset:0"></div>
+      <div class="hero-orb"></div>
+      <div style="position:relative;z-index:2;padding:4rem">
+        <div style="width:56px;height:56px;border-radius:var(--radius-lg);background:var(--maroon);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem;margin-bottom:3rem">V</div>
+        <span class="badge badge-maroon" style="margin-bottom:1rem">Portal VYNTRA v5.0</span>
+        <h1 style="font-family:var(--font-display);font-weight:800;font-size:clamp(2.5rem,4vw,3.5rem);line-height:.9;letter-spacing:-.03em;color:var(--text);margin-bottom:.5rem">
+          <span style="color:var(--maroon)">VYNTRA</span><br/>Academic
+        </h1>
+        <p style="font-size:clamp(.9rem,1.5vw,1.1rem);color:var(--text-secondary);letter-spacing:.15em;text-transform:uppercase;font-weight:500;margin-bottom:1.5rem">Ciencia · Tecnología · Futuro</p>
+        <p style="color:var(--text-tertiary);font-size:.85rem;line-height:1.6;max-width:380px;margin-bottom:3rem">Plataforma Educativa VYNTRA — Tecnología al servicio de la educación en Sogamoso, Boyacá.</p>
+        <div style="display:flex;align-items:center;gap:1rem">
+          <div style="width:40px;height:2px;background:var(--maroon);border-radius:1px"></div>
+          <span style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text-tertiary)">Tecnología Educativa</span>
         </div>
-        <button id="toast-close" class="ml-2 text-gray-500 hover:text-white transition-colors" aria-label="Cerrar">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
       </div>
-    </div>
+      <div style="position:absolute;bottom:2rem;left:4rem;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.2em;color:var(--text-tertiary);opacity:.5">v5.0 // vyntra_engine_active // academic_portal</div>
+    </section>
 
-    <main class="flex h-screen w-full">
-      <!-- LEFT: Solar / Brand Panel (45%) -->
-      <section class="hidden lg:flex lg:w-[45%] bg-black relative overflow-hidden flex-col justify-center px-16">
-        <div class="noise-overlay"></div>
-        <!-- solar corona -->
-        <div class="solar-ring"></div>
-        <div class="solar-ring-2"></div>
-        <!-- orbiting particles -->
-        <div class="orbit-container">
-          <div class="orbit-dot"></div>
-          <div class="orbit-dot"></div>
-          <div class="orbit-dot"></div>
-          <div class="orbit-dot"></div>
-        </div>
-        <div class="orbit-container-2">
-          <div class="orbit-dot-2"></div>
-          <div class="orbit-dot-2"></div>
-          <div class="orbit-dot-2"></div>
-        </div>
-        <!-- hero glow -->
-        <div class="hero-glow"></div>
-        <!-- grid bg -->
-        <div class="absolute inset-0" style="background-image:linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 60% at 50% 45%,black 20%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 45%,black 20%,transparent 70%)"></div>
-        <div class="relative z-10">
-          <div class="mb-14">
-            <div class="w-20 h-20 mb-6 rounded-full bg-brand-gold/10 border border-brand-gold/20 flex items-center justify-center text-3xl font-extrabold text-brand-gold shadow-2xl" style="font-family:'Syne',sans-serif">C</div>
-          </div>
-          <div class="space-y-2 fade-slide-up" style="animation-delay:0.15s">
-            <span class="inline-flex items-center gap-2 rounded-full border border-brand-gold/20 bg-brand-gold/[0.04] px-4 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-brand-gold mb-4">
-              <span class="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse"></span>
-              Portal Soleísta v3.0
-            </span>
-          </div>
-          <h1 class="text-5xl md:text-7xl font-extrabold tracking-tighter text-white mb-4 leading-[0.9] mt-4 fade-slide-up" style="animation-delay:0.3s;font-family:'Syne',sans-serif">
-            Comunidad<br/>
-            <span class="text-brand-maroon">Soleísta</span>
-          </h1>
-          <p class="text-xl md:text-2xl font-medium text-gray-500 tracking-[0.15em] uppercase fade-slide-up" style="animation-delay:0.45s;font-family:'Syne',sans-serif">
-            Ciencia · Técnica · Sol
-          </p>
-          <p class="mt-6 text-base text-gray-600 max-w-md leading-relaxed fade-slide-up" style="animation-delay:0.6s">
-            Sistema de Información Estudiantil del Colegio Técnico Ciudad del Sol, Sogamoso, Boyacá.
-          </p>
-          <div class="mt-12 flex items-center gap-4 fade-slide-up" style="animation-delay:0.75s">
-            <div class="h-[2px] w-12 bg-brand-maroon"></div>
-            <span class="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">Excelencia Académica</span>
-          </div>
-        </div>
-        <div class="absolute bottom-12 left-16 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-gray-700 fade-slide-up" style="animation-delay:0.9s;font-family:'Syne',sans-serif">
-          v3.0.4 // core_engine_active // institucional_portal
-        </div>
-      </section>
+    <!-- RIGHT: Login panel -->
+    <section class="login-panel">
+      <div class="glow-orb-maroon"></div>
+      <div class="glow-orb-gold"></div>
 
-      <!-- RIGHT: Login Panel (55%) -->
-      <section class="w-full lg:w-[55%] bg-[#040405] flex items-center justify-center p-6 sm:p-12 relative">
-        <div class="noise-overlay"></div>
-        <div class="absolute top-[20%] -right-[10%] w-[300px] h-[300px] bg-brand-maroon/10 blur-[100px] rounded-full pointer-events-none"></div>
-        <div class="absolute bottom-[10%] -left-[5%] w-[200px] h-[200px] bg-brand-gold/5 blur-[80px] rounded-full pointer-events-none"></div>
-        <div class="w-full max-w-md relative z-10">
-          <!-- Mobile brand -->
-          <div class="lg:hidden text-center mb-10 fade-slide-up" style="animation-delay:0.1s">
-            <div class="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-brand-gold/10 border border-brand-gold/20 mb-3">
-              <span class="text-2xl font-extrabold text-brand-gold" style="font-family:'Syne',sans-serif">C</span>
-            </div>
-            <h1 class="text-2xl font-bold text-white" style="font-family:'Syne',sans-serif">Solara Academic</h1>
+      <div style="width:100%;max-width:400px;position:relative;z-index:2">
+        <!-- Mobile brand -->
+        <div class="show-mobile" style="text-align:center;margin-bottom:2rem">
+          <div style="width:48px;height:48px;border-radius:var(--radius-md);background:var(--maroon);color:white;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;margin-bottom:.75rem">V</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:1.3rem;color:var(--text)">VYNTRA Academic</div>
+        </div>
+
+        <div class="card-float" style="padding:2rem">
+          <div style="text-align:center;margin-bottom:1.5rem">
+            <h2 style="font-family:var(--font-display);font-weight:700;font-size:1.5rem;color:var(--text);margin-bottom:.25rem">Iniciar Sesión</h2>
+            <p style="color:var(--text-tertiary);font-size:.8rem">Bienvenido a VYNTRA</p>
           </div>
-          <!-- Glass card -->
-          <div class="glass-panel fade-slide-up" style="animation-delay:0.2s">
-            <div class="mb-6 text-center">
-              <h2 class="text-3xl font-bold text-white mb-2" style="font-family:'Syne',sans-serif">Iniciar Sesión</h2>
-              <p class="text-sm text-gray-500">Bienvenido al ecosistema académico</p>
+
+          <!-- Segmented control -->
+          <div class="segmented-control" id="tab-container">
+            <div class="segmented-slider" id="tab-slider" style="left:4px"></div>
+            <button id="tab-estudiante" class="tab-btn-segment" style="color:var(--text)" data-tab="estudiante">Estudiante</button>
+            <button id="tab-personal" class="tab-btn-segment" style="color:var(--text-tertiary)" data-tab="personal">Personal</button>
+          </div>
+
+          <!-- Form -->
+          <form id="login-form" style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem" novalidate>
+            <div style="display:flex;flex-direction:column;gap:.35rem">
+              <label for="doc-id" class="label-caps">Identificación Institucional</label>
+              <div style="position:relative">
+                <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                <input id="doc-id" type="text" inputmode="numeric" autocomplete="username" placeholder="ID-000000" required class="input-apple" style="padding-left:2.75rem" />
+              </div>
             </div>
-            <!-- Segmented control -->
-            <div class="segmented-control">
-              <div id="tab-slider" class="segmented-slider" style="left:4px"></div>
-              <button id="tab-estudiante" class="flex-1 relative z-10 text-sm font-semibold text-white transition-colors" data-login-tab="estudiante">Estudiante</button>
-              <button id="tab-personal" class="flex-1 relative z-10 text-sm font-semibold text-gray-500 transition-colors" data-login-tab="personal">Personal</button>
+            <div id="password-group" style="display:flex;flex-direction:column;gap:.35rem;transition:all .35s var(--ease-out);overflow:hidden;max-height:100px;opacity:1">
+              <label for="password" class="label-caps">Contraseña</label>
+              <div style="position:relative">
+                <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" class="input-apple" style="padding-left:2.75rem" />
+              </div>
             </div>
-            <!-- Form -->
-            <form id="login-form" class="space-y-5 mt-8" novalidate>
-              <div class="space-y-2">
-                <label for="doc-id" class="label-caps">Identificación Institucional</label>
-                <div class="relative">
-                  <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
-                  <input id="doc-id" type="text" inputmode="numeric" autocomplete="username" placeholder="ID-000000" required class="input-glass" />
-                </div>
-              </div>
-              <div id="password-group" class="space-y-2 transition-all duration-500 overflow-hidden" style="max-height:120px;opacity:1;pointer-events:auto">
-                <label for="password" class="label-caps">Contraseña</label>
-                <div class="relative">
-                  <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                  <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" class="input-glass" />
-                </div>
-              </div>
-              <div class="flex justify-end">
-                <a href="#" class="text-xs font-semibold tracking-wide text-brand-gold hover:underline opacity-70 hover:opacity-100 transition-opacity">¿Problemas de acceso?</a>
-              </div>
-              <button id="login-submit" type="submit" class="submit-btn group">
-                <span id="submit-text">Ingresar al Portal</span>
-                <svg id="submit-spinner" class="hidden h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <svg class="btn-arrow h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-              </button>
-              <div id="login-error" class="rounded-xl bg-brand-danger/10 border border-brand-danger/30 px-4 py-3 text-sm text-brand-danger font-medium text-center min-h-[2.75rem] flex items-center justify-center empty:hidden" role="alert" aria-live="polite"></div>
-            </form>
-            <div class="mt-6 pt-6 border-t border-white/[0.06] flex flex-col items-center gap-3">
-              <p class="text-[11px] text-gray-600">Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</p>
-              <div class="flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-brand-green animate-pulse"></span>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-gray-600">Servidores en línea</span>
-              </div>
+            <div style="display:flex;justify-content:flex-end">
+              <span class="forgot-link">¿Problemas de acceso?</span>
+            </div>
+            <button id="login-submit" type="submit" class="btn-apple btn-primary" style="width:100%;height:3rem;font-size:.85rem">
+              <span id="submit-text">Ingresar al Portal</span>
+              <svg id="submit-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            </button>
+            <div id="login-error" style="border-radius:var(--radius-md);border:1px solid rgba(186,26,26,.15);background:rgba(186,26,26,.04);padding:.65rem .85rem;font-size:.8rem;color:var(--red);text-align:center;display:none" role="alert"></div>
+          </form>
+
+          <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:.5rem">
+            <p style="font-size:.65rem;color:var(--text-tertiary)">VYNTRA Academic · Sogamoso, Boyacá</p>
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <span class="pulse-dot"></span>
+              <span style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary)">Servidores en línea</span>
             </div>
           </div>
         </div>
-      </section>
-    </main>
-  </body>
-</html>
+      </div>
+    </section>
+  </main>
 
-<style is:global>
-  :root {
-    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .noise-overlay {
-    position: fixed; inset: 0; z-index: 9999;
-    pointer-events: none; opacity: 0.025;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-    background-repeat: repeat; background-size: 256px 256px;
-  }
-  .glass-panel {
-    background: rgba(23,23,23,0.2);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 2rem;
-    padding: 2rem 2.5rem;
-    box-shadow: 0 8px 32px 0 rgba(0,0,0,0.8);
-  }
-  .input-glass {
-    width: 100%;
-    height: 3.5rem;
-    padding-left: 3rem;
-    padding-right: 1rem;
-    border-radius: 0.75rem;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: white;
-    font-size: 0.95rem;
-    outline: none;
-    transition: all 0.3s var(--ease-spring);
-  }
-  .input-glass::placeholder { color: rgba(255,255,255,0.15); }
-  .input-glass:focus {
-    border-color: #FDC003;
-    box-shadow: 0 0 15px rgba(253,192,3,0.2);
-    background: rgba(0,0,0,0.5);
-  }
-  .input-glass:focus + .input-icon,
-  .input-glass:focus ~ .input-icon { color: #FDC003; }
-  .input-icon {
-    position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
-    height: 1.25rem; width: 1.25rem; color: rgba(255,255,255,0.25);
-    transition: color 0.3s ease;
-  }
-  .label-caps {
-    display: block; margin-left: 0.25rem;
-    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.05em; color: rgba(255,255,255,0.5);
-  }
-  .segmented-control {
-    position: relative;
-    display: flex;
-    height: 3rem;
-    border-radius: 9999px;
-    background: rgba(255,255,255,0.05);
-    padding: 4px;
-  }
-  .segmented-slider {
-    position: absolute; top: 4px; bottom: 4px;
-    width: calc(50% - 4px);
-    background: #800000;
-    border-radius: 9999px;
-    transition: left 0.4s var(--ease-spring);
-    z-index: 0;
-  }
-  .segmented-control button {
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 9999px; cursor: pointer; border: none;
-    background: none; font-family: inherit;
-  }
-  .submit-btn {
-    position: relative; width: 100%; height: 3.5rem;
-    border-radius: 0.75rem; background: #800000; color: white;
-    font-weight: 700; font-size: 0.9rem;
-    text-transform: uppercase; letter-spacing: 0.05em;
-    border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-    transition: all 0.2s var(--ease-spring);
-    overflow: hidden;
-  }
-  .submit-btn:hover { background: rgba(128,0,0,0.85); }
-  .submit-btn:active { transform: scale(0.98); }
-  .submit-btn:hover .btn-arrow { transform: translateX(4px); }
-  .btn-arrow { transition: transform 0.3s ease; }
-  .toast-entrance { animation: slideInRight 0.4s var(--ease-spring) forwards; }
-  @keyframes slideInRight {
-    from { transform: translateX(120%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  /* Solar corona (left panel) */
-  .solar-ring {
-    position: absolute; width: 90vmin; height: 90vmin; left: 50%; top: 45%;
-    transform: translate(-50%,-50%);
-    border-radius: 50%;
-    background: radial-gradient(circle at 50% 50%, rgba(253,192,3,0.08) 0%, rgba(253,192,3,0.02) 35%, transparent 55%);
-    animation: coronaPulse 6s ease-in-out infinite;
-  }
-  .solar-ring::before {
-    content: ''; position: absolute; inset: -2px; border-radius: 50%;
-    border: 1px solid rgba(253,192,3,0.08);
-    animation: ringRotate 20s linear infinite;
-  }
-  .solar-ring::after {
-    content: ''; position: absolute; inset: -20px; border-radius: 50%;
-    border: 1px dashed rgba(253,192,3,0.04);
-    animation: ringRotate 30s linear infinite reverse;
-  }
-  .solar-ring-2 {
-    position: absolute; width: 60vmin; height: 60vmin; left: 50%; top: 45%;
-    transform: translate(-50%,-50%);
-    border-radius: 50%;
-    background: radial-gradient(circle at 50% 50%, rgba(128,0,0,0.06) 0%, transparent 50%);
-  }
-  .hero-glow {
-    position: absolute; width: 120vmax; height: 120vmax; left: 50%; top: 50%;
-    transform: translate(-50%,-55%);
-    background: radial-gradient(ellipse 40% 35% at 50% 50%, rgba(253,192,3,0.06) 0%, rgba(128,0,0,0.04) 30%, transparent 60%);
-    animation: pulseSlow 8s ease-in-out infinite;
-  }
-  @keyframes pulseSlow {
-    0%,100% { transform: translate(-50%,-55%) scale(1); opacity: 0.8; }
-    50% { transform: translate(-50%,-55%) scale(1.08); opacity: 1; }
-  }
-  @keyframes coronaPulse {
-    0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
-    50% { transform: translate(-50%,-50%) scale(1.12); opacity: 1; }
-  }
-  @keyframes ringRotate { to { transform: rotate(360deg); } }
-  .orbit-container {
-    position: absolute; left: 50%; top: 45%; width: 70vmin; height: 70vmin;
-    transform: translate(-50%,-50%);
-    animation: ringRotate 40s linear infinite;
-  }
-  .orbit-dot {
-    position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #FDC003; opacity: 0.3;
-  }
-  .orbit-dot:nth-child(1) { top: 0; left: 50%; transform: translate(-50%,-50%); }
-  .orbit-dot:nth-child(2) { top: 50%; right: 0; transform: translate(50%,-50%); }
-  .orbit-dot:nth-child(3) { bottom: 0; left: 50%; transform: translate(-50%,50%); }
-  .orbit-dot:nth-child(4) { top: 50%; left: 0; transform: translate(-50%,-50%); }
-  .orbit-container-2 {
-    position: absolute; left: 50%; top: 45%; width: 55vmin; height: 55vmin;
-    transform: translate(-50%,-50%);
-    animation: ringRotate 25s linear infinite reverse;
-  }
-  .orbit-dot-2 {
-    position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #800000; opacity: 0.5;
-  }
-  .orbit-dot-2:nth-child(1) { top: 0; left: 50%; transform: translate(-50%,-50%); }
-  .orbit-dot-2:nth-child(2) { bottom: 15%; right: 0; transform: translate(50%,50%); }
-  .orbit-dot-2:nth-child(3) { bottom: 0; left: 25%; transform: translate(0,50%); }
-  /* Fade slide up */
-  .fade-slide-up {
-    animation: fadeSlideUp 1s var(--ease-out-expo) both;
-  }
-  @keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
+  <style>
+    .login-brand{width:45%;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+    @media(min-width:1024px){.login-brand{display:flex}}
+    .login-panel{width:100%;display:flex;align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden;background:var(--bg-secondary)}
+    @media(min-width:1024px){.login-panel{width:55%}}
+    .hero-orb{position:absolute;width:50vmin;height:50vmin;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(128,0,0,.06) 0%,rgba(253,192,3,.03) 30%,transparent 60%)}
+    .glow-orb-maroon{position:absolute;top:20%;right:-10%;width:300px;height:300px;border-radius:50%;background:var(--glow-maroon);filter:blur(100px);pointer-events:none}
+    .glow-orb-gold{position:absolute;bottom:10%;left:-5%;width:200px;height:200px;border-radius:50%;background:var(--glow-gold);filter:blur(80px);pointer-events:none}
+    .segmented-control{position:relative;display:flex;height:2.5rem;border-radius:var(--radius-full);background:var(--input-bg);padding:4px}
+    .segmented-slider{position:absolute;top:4px;bottom:4px;width:calc(50% - 4px);background:var(--maroon);border-radius:var(--radius-full);transition:left .4s cubic-bezier(.34,1.56,.64,1);z-index:0}
+    .tab-btn-segment{flex:1;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);cursor:pointer;border:none;background:none;font-size:.8rem;font-weight:600;font-family:inherit;transition:color .3s ease}
+    .input-icon{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);width:1.1rem;height:1.1rem;color:var(--text-tertiary);transition:color .3s ease;pointer-events:none}
+    .label-caps{display:block;margin-left:.15rem;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-tertiary)}
+    .forgot-link{font-size:.7rem;font-weight:600;color:var(--maroon);opacity:.6;transition:opacity .2s ease}
+    .forgot-link:hover{opacity:1}
+    .hidden{display:none!important}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .animate-spin{animation:spin .7s linear infinite}
+    @media(max-width:480px){.login-panel{padding:1rem}}
+    @media(max-width:380px){.login-panel{padding:.75rem}.card-float{padding:1.25rem!important}}
+  </style>
 
-<script>
-  (function () {
-    var tabEst = document.getElementById('tab-estudiante')
-    var tabPer = document.getElementById('tab-personal')
-    var slider = document.getElementById('tab-slider')
-    var passwordGroup = document.getElementById('password-group')
-    var passwordInput = document.getElementById('password')
-    var form = document.getElementById('login-form')
-    var docInput = document.getElementById('doc-id')
-    var submitBtn = document.getElementById('login-submit')
-    var submitText = document.getElementById('submit-text')
-    var submitSpinner = document.getElementById('submit-spinner')
-    var errorDiv = document.getElementById('login-error')
-    var toast = document.getElementById('login-error-toast')
-    var toastMsg = document.getElementById('toast-msg')
-    var toastClose = document.getElementById('toast-close')
-    var currentTab = 'estudiante'
-    var endpoint = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '') + '/api/auth/login'
+  <script define:vars={{ baseUrl }}>
+    (function () {
+      var tabEst = document.getElementById('tab-estudiante')
+      var tabPer = document.getElementById('tab-personal')
+      var slider = document.getElementById('tab-slider')
+      var passwordGroup = document.getElementById('password-group')
+      var passwordInput = document.getElementById('password')
+      var form = document.getElementById('login-form')
+      var docInput = document.getElementById('doc-id')
+      var submitBtn = document.getElementById('login-submit')
+      var submitText = document.getElementById('submit-text')
+      var submitSpinner = document.getElementById('submit-spinner')
+      var errorDiv = document.getElementById('login-error')
+      var currentTab = 'estudiante'
+      var endpoint = baseUrl + '/api/auth/login'
 
-    ;(function wakeUp() {
-      try {
-        var pingUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
-        fetch(pingUrl + '/api/health', { method: 'GET', priority: 'low' }).catch(function(){})
-      } catch(e) {}
+      ;(function wakeUp() {
+        try { fetch(baseUrl + '/api/health', { method:'GET', priority:'low' }).catch(function(){}) } catch(e){}
+      })()
+
+      function setTab(tab) {
+        currentTab = tab
+        slider.style.left = tab === 'estudiante' ? '4px' : 'calc(50% + 4px)'
+        passwordGroup.style.maxHeight = '100px'
+        passwordGroup.style.opacity = '1'
+        passwordInput.required = true
+        tabEst.style.color = tab === 'estudiante' ? 'var(--text)' : 'var(--text-tertiary)'
+        tabPer.style.color = tab === 'personal' ? 'var(--text)' : 'var(--text-tertiary)'
+      }
+      tabEst.addEventListener('click', function () { setTab('estudiante') })
+      tabPer.addEventListener('click', function () { setTab('personal') })
+
+      function setupInputGlow(input) {
+        var icon = input.parentElement.querySelector('.input-icon')
+        if (!icon) return
+        input.addEventListener('focus', function () { icon.style.color = 'var(--maroon)' })
+        input.addEventListener('blur', function () { icon.style.color = '' })
+      }
+      setupInputGlow(docInput)
+      setupInputGlow(passwordInput)
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault()
+        errorDiv.style.display = 'none'
+        errorDiv.textContent = ''
+        submitText.textContent = 'Validando...'
+        submitSpinner.classList.remove('hidden')
+        submitBtn.disabled = true
+
+        var docId = docInput.value.trim()
+        var password = passwordInput.value
+
+        if (!docId) { showError('Ingresa tu identificación institucional.'); return }
+        if (!password) { showError('Ingresa tu contraseña.'); return }
+
+        var controller = new AbortController()
+        var timeoutId = setTimeout(function () { controller.abort() }, 25000)
+
+        try {
+          var res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login_credential: docId, password: password }),
+            signal: controller.signal,
+          })
+          clearTimeout(timeoutId)
+          if (!res.ok) {
+            var errData
+            try { errData = await res.json() } catch(e) { errData = {} }
+            if (res.status === 401) throw new Error('Credenciales inválidas.')
+            throw new Error(errData.mensaje || errData.detail || errData.error || 'Error de autenticación.')
+          }
+          var data = await res.json()
+          var token = data.access_token || data.token || ''
+          var usuario = data.usuario || {}
+          var role = (usuario.rol || data.rol || currentTab).toUpperCase()
+          localStorage.setItem('access_token', token)
+          localStorage.setItem('userRole', role)
+          localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
+          localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || docId)
+          localStorage.setItem('profile_id', usuario.profile_id || '')
+          localStorage.setItem('is_paid', String(data.is_paid !== false))
+          if (data.grado || data.grade) localStorage.setItem('userGrade', data.grado || data.grade)
+          if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
+          submitText.textContent = '¡Bienvenido!'
+          var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }
+          window.location.href = map[role] || '/dashboard'
+        } catch (err) {
+          clearTimeout(timeoutId)
+          if (err.name === 'AbortError') showError('El servidor está iniciando. Reintenta en unos segundos.')
+          else showError(err.message || 'Error de conexión.')
+        }
+
+        function showError(msg) {
+          errorDiv.textContent = msg
+          errorDiv.style.display = 'block'
+          submitText.textContent = 'Ingresar al Portal'
+          submitSpinner.classList.add('hidden')
+          submitBtn.disabled = false
+        }
+      })
     })()
-
-    function setTab(tab) {
-      currentTab = tab
-      slider.style.left = tab === 'estudiante' ? '4px' : 'calc(50% + 4px)'
-      passwordGroup.style.maxHeight = '120px'
-      passwordGroup.style.opacity = '1'
-      passwordGroup.style.pointerEvents = 'auto'
-      passwordInput.required = true
-      tabEst.className = 'flex-1 relative z-10 text-sm font-semibold ' + (tab === 'estudiante' ? 'text-white' : 'text-gray-500') + ' transition-colors'
-      tabPer.className = 'flex-1 relative z-10 text-sm font-semibold ' + (tab === 'personal' ? 'text-white' : 'text-gray-500') + ' transition-colors'
-    }
-    tabEst.addEventListener('click', function () { setTab('estudiante') })
-    tabPer.addEventListener('click', function () { setTab('personal') })
-
-    // --- Toast ---
-    function showError(msg) {
-      toastMsg.textContent = msg || 'Verifique sus credenciales soleístas'
-      toast.classList.remove('hidden')
-      setTimeout(function () { toast.classList.add('hidden') }, 5000)
-    }
-    toastClose.addEventListener('click', function () { toast.classList.add('hidden') })
-
-    // --- Input icon glow ---
-    function setupInputGlow(input) {
-      var icon = input.parentElement.querySelector('.input-icon')
-      if (!icon) return
-      input.addEventListener('focus', function () { icon.style.color = '#FDC003' })
-      input.addEventListener('blur', function () { icon.style.color = '' })
-    }
-    setupInputGlow(docInput)
-    setupInputGlow(passwordInput)
-
-    // --- Submit ---
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault()
-      errorDiv.textContent = ''
-      submitText.textContent = 'Validando...'
-      submitSpinner.classList.remove('hidden')
-      submitBtn.disabled = true
-
-      var docId = docInput.value.trim()
-      var password = passwordInput.value
-
-      if (!docId) {
-        errorDiv.textContent = 'Ingresa tu identificación institucional.'
-        submitText.textContent = 'Ingresar al Portal'
-        submitSpinner.classList.add('hidden')
-        submitBtn.disabled = false
-        return
-      }
-
-      if (!password) {
-        errorDiv.textContent = 'Ingresa tu contraseña.'
-        submitText.textContent = 'Ingresar al Portal'
-        submitSpinner.classList.add('hidden')
-        submitBtn.disabled = false
-        return
-      }
-
-      var payload = { login_credential: docId, password: password }
-
-      var controller = new AbortController()
-      var timeoutId = setTimeout(function () { controller.abort() }, 25000)
-
-      try {
-        var res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        })
-        clearTimeout(timeoutId)
-
-        if (!res.ok) {
-          var errData
-          try { errData = await res.json() } catch (e) { errData = {} }
-          if (res.status === 401) throw new Error('Credenciales inválidas. Verifica tus datos.')
-          throw new Error(errData.mensaje || errData.detail || errData.error || 'Error de autenticación.')
-        }
-
-        var data = await res.json()
-        var token = data.access_token || data.token || ''
-        var usuario = data.usuario || {}
-        var role = (usuario.rol || data.rol || currentTab).toUpperCase()
-
-        localStorage.setItem('access_token', token)
-        localStorage.setItem('userRole', role)
-        localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
-        localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || docId)
-        localStorage.setItem('profile_id', usuario.profile_id || '')
-        localStorage.setItem('is_paid', String(data.is_paid !== false))
-        if (data.grado || data.grade) localStorage.setItem('userGrade', data.grado || data.grade)
-        if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
-
-        submitText.textContent = '¡Bienvenido!'
-
-        var redirectMap = {
-          'ADMIN': '/admin',
-          'RECTOR': '/admin',
-          'PROFESOR': '/docente',
-          'DOCENTE': '/docente',
-          'ESTUDIANTE': '/estudiante',
-          'STUDENT': '/estudiante',
-          'TEACHER': '/docente',
-        }
-        window.location.href = redirectMap[role] || '/dashboard'
-      } catch (err) {
-        clearTimeout(timeoutId)
-        if (err.name === 'AbortError') {
-          errorDiv.textContent = '❌ El servidor está iniciando. Reintenta en unos segundos.'
-        } else {
-          errorDiv.textContent = '❌ ' + (err.message || 'Error de conexión.')
-        }
-        submitText.textContent = 'Ingresar al Portal'
-        submitSpinner.classList.add('hidden')
-        submitBtn.disabled = false
-      }
-    })
-  })()
-</script>
+  </script>
+</body>
+</html>

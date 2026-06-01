@@ -1,591 +1,576 @@
 ---
-import SEOHead from '@components/SEOHead.astro'
-import WsRiskAlert from '@components/WsRiskAlert.astro'
-import AIChat from '@components/AIChat.astro'
-const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://sie-8agt.onrender.com'
+import '../styles/theme.css'
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
+const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11°'] as const
 ---
 <!doctype html>
 <html lang="es-CO">
-  <head>
-    <SEOHead titulo="Panel de Administración · C sol SIE" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&family=Sora:wght@300..700&display=swap" rel="stylesheet">
-    <style>
-      :root {
-        --alabaster: #F5F0EB; --crimson: #800000; --crimson-dark: #5C0000;
-        --gold: #FDC003; --gold-light: #FEF1C0; --charcoal: #1A1A2E;
-        --slate: #6B7280; --border-light: rgba(0,0,0,0.06);
-        --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
-        --shadow-hover: 0 4px 12px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.06);
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>VYNTRA · Administración</title>
+  <meta name="description" content="Panel de administración VYNTRA — Gestión de estudiantes, docentes, materias y comunicados" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://colegiociudaddelsol.edu.co/admin" />
+  <meta property="og:title" content="VYNTRA · Administración" />
+  <meta property="og:description" content="Panel de administración VYNTRA Academic" />
+  <meta property="og:url" content="https://colegiociudaddelsol.edu.co/admin" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer crossorigin="anonymous"></script>
+  <script is:inline>
+    (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
+  </script>
+  <style>
+    .admin-body{display:flex;min-height:100vh}
+    .admin-main{margin-left:240px;flex:1;display:flex;flex-direction:column}
+    .t-section{display:none}.t-section.active{display:block}
+    .stats-grid-custom{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+    .filter-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+    .filter-row input,.filter-row select{flex:1;min-width:140px}
+    .admin-table{width:100%;border-collapse:collapse;font-size:.8rem}
+    .admin-table th{text-align:left;padding:.6rem .75rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border)}
+    .admin-table td{padding:.6rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
+    .admin-table tr:hover td{background:var(--bg-tertiary)}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;justify-content:center;align-items:center;backdrop-filter:blur(8px)}
+    .modal-overlay.active{display:flex}
+    .modal-footer{display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
+    @media(max-width:768px){.admin-sidebar{transform:translateX(-100%)}.admin-sidebar.open{transform:translateX(0)}.admin-main{margin-left:0}}
+    @media(max-width:768px){.admin-table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch}.admin-table{min-width:600px}}
+    @media(max-width:768px){.modal-overlay.active{align-items:flex-end}.modal-overlay.active>div{margin-top:auto;border-radius:var(--radius-xl) var(--radius-xl) 0 0;max-height:85vh;overflow-y:auto}}
+    @media(max-width:480px){.admin-main .content-area{padding:.75rem!important}.filter-row{flex-direction:column}.filter-row input,.filter-row select{min-width:0;width:100%}}
+    @media(max-width:380px){.admin-stats-grid{grid-template-columns:repeat(2,1fr)!important}}
+  </style>
+</head>
+<body>
+  <div class="noise-fixed"></div>
+
+  <!-- Loading -->
+  <div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;justify-content:center;align-items:center;backdrop-filter:blur(10px)">
+    <div style="text-align:center;color:var(--gold)"><div class="spinner" style="margin:0 auto .75rem"></div><span style="font-family:var(--font-display);font-weight:700;font-size:.9rem">CARGANDO</span></div>
+  </div>
+  <div id="toast" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;padding:.75rem 1.25rem;border-radius:var(--radius-lg);font-size:.8rem;font-weight:500;opacity:0;transform:translateY(1rem);transition:all .3s var(--ease-out);pointer-events:none;background:var(--card-bg);border:1px solid var(--border);color:var(--text);box-shadow:var(--shadow-lg)"></div>
+
+  <div class="admin-body">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar sidebar open" id="admin-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">V</div>
+        <span class="sidebar-brand">VYNTRA</span>
+        <small style="font-size:.55rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;margin-left:auto">Academic</small>
+      </div>
+      <nav class="sidebar-nav">
+        <div style="padding:0 .75rem;margin-bottom:.35rem;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary)">General</div>
+        {[['inicio','Dashboard','M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],['estudiantes','Estudiantes','M4.26 10.147a60.44 60.44 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 0h-1.5m1.5 0v-3.375c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125V15M18 15a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 0h-1.5m1.5 0v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V15'],['docentes','Docentes','M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155'],['materias','Materias e IA','M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25'],['avisos','Avisos','M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38a.468.468 0 0 1-.625-.183 17.973 17.973 0 0 1-1.526-3.696M10.34 15.84A17.894 17.894 0 0 0 12 12m0 0c.736-2.26 2.292-4.09 4.312-5.244a16.59 16.59 0 0 0-1.05-1.916M12 12a17.94 17.94 0 0 1 5.594-3.18m0 0A17.9 17.9 0 0 1 21 12m-3.406-5.18a17.943 17.943 0 0 1 1.684 4.263M21 12a17.924 17.924 0 0 1-3.406 5.18M21 12h-5.25'],['elecciones','Elecciones','M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z']].map(n => (
+          <a href="#" class="sidebar-link" data-nav-section={n[0]} onclick="showSection('{n[0]}')">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={n[2]}/></svg>
+            {n[1]}
+          </a>
+        ))}
+      </nav>
+      <div class="admin-sidebar-footer" style="border-top:1px solid var(--border);padding:.75rem">
+        <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem .65rem;border-radius:var(--radius-md);background:var(--maroon-subtle)">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--maroon);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem" id="sidebar-avatar">A</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.7rem;font-weight:600;color:var(--text)" id="sidebar-name">Admin</div>
+            <div style="font-size:.6rem;color:var(--text-tertiary)">Administrador</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-main">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <button class="show-mobile" onclick="document.getElementById('admin-sidebar').classList.toggle('open')" style="padding:.35rem;color:var(--text-secondary);background:none;border:none;cursor:pointer">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div>
+            <h1 style="font-family:var(--font-display);font-size:.95rem;font-weight:700;color:var(--text)" id="page-title">Panel de Administración</h1>
+            <p style="font-size:.65rem;color:var(--text-tertiary);margin-top:.05rem" id="page-subtitle">Vista general del sistema</p>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <button class="btn-apple btn-ghost" style="padding:.35rem .65rem;font-size:.7rem" onclick="logout()">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>
+            Salir
+          </button>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <!-- DASHBOARD -->
+        <section id="sec-inicio" class="t-section active">
+          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.35rem">Panel de Control</h2>
+            <p style="font-size:.8rem;color:var(--text-secondary)">Bienvenido al Sistema Integral Educativo. Estado actual de la institución:</p>
+          </div>
+          <div class="stats-grid-custom">
+            {['stat-mora','En Mora','stat-estudiantes','Estudiantes','stat-docentes','Docentes','stat-avisos','Avisos'].map((_,i) => i%2===0 ? null : (
+              <div class="card-float stat-card">
+                <span class="stat-value" id={['stat-mora','stat-estudiantes','stat-docentes','stat-avisos'][i/2-0.5]}>0</span>
+                <span class="stat-label">{_}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <!-- ESTUDIANTES -->
+        <section id="sec-estudiantes" class="t-section">
+          <div class="card-float" style="padding:1.25rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
+              <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text)">Gestión de Alumnado</h2>
+              <button class="btn-apple btn-primary" style="padding:.45rem .85rem;font-size:.7rem" onclick="openModal('estudiante')">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                Matricular Estudiante
+              </button>
+            </div>
+            <div class="filter-row" style="margin-top:1rem">
+              <input type="text" class="input-apple" id="search-student" placeholder="Buscar por nombre o documento..." oninput="filterStudents()">
+              <select class="input-apple" id="filter-grade" onchange="filterStudents()"><option value="">Todos los grados</option></select>
+              <select class="input-apple" id="filter-payment" onchange="filterStudents()">
+                <option value="">Todos los estados</option><option value="paid">Al día</option><option value="debt">En mora</option>
+              </select>
+              <button class="btn-apple btn-secondary" style="padding:.45rem .85rem;font-size:.7rem" onclick="exportCSV()">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                Exportar CSV
+              </button>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="admin-table"><thead><tr><th>Documento</th><th>Nombre</th><th>Grado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="students-list"></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- DOCENTES -->
+        <section id="sec-docentes" class="t-section">
+          <div class="card-float" style="padding:1.25rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
+              <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text)">Cuerpo Docente</h2>
+              <button class="btn-apple btn-primary" style="padding:.45rem .85rem;font-size:.7rem" onclick="openModal('docente')">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                Registrar Docente
+              </button>
+            </div>
+            <div style="overflow-x:auto;margin-top:1rem">
+              <table class="admin-table"><thead><tr><th>Docente</th><th>ID Usuario</th><th>Carga Académica</th><th>Acciones</th></tr></thead><tbody id="teachers-list"></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- MATERIAS -->
+        <section id="sec-materias" class="t-section">
+          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Configuración de Materias e IA</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+              <input type="text" class="input-apple" id="new-subject-input" placeholder="Nombre de la materia (Ej: Física)">
+              <select class="input-apple" id="new-subject-grade"></select>
+              <input type="text" class="input-apple" id="subject-tutor-link" placeholder="Link Agente IA Tutor">
+              <input type="text" class="input-apple" id="subject-planner-link" placeholder="Link Agente IA Planeador">
+            </div>
+            <button class="btn-apple btn-primary" style="width:100%" onclick="addSubject()">Crear Materia</button>
+          </div>
+          <div class="card-float" style="padding:1.25rem">
+            <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Materias Existentes</h3>
+            <div id="admin-subjects-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem"></div>
+          </div>
+        </section>
+
+        <!-- AVISOS -->
+        <section id="sec-avisos" class="t-section">
+          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem;text-align:center">Publicar Comunicado Oficial</h2>
+            <input type="text" class="input-apple" id="notice-title" placeholder="Título del aviso" style="margin-bottom:.75rem">
+            <textarea class="input-apple" id="notice-content" placeholder="Escriba el contenido del aviso aquí..." rows="4" style="margin-bottom:.75rem;resize:vertical"></textarea>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:.75rem">
+              <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;justify-content:center">
+                <input type="file" id="notice-file" accept="image/*,application/pdf" style="font-size:.75rem;color:var(--text);padding:.35rem 0">
+                <span id="file-name-display" style="font-size:.7rem;font-weight:600;color:var(--maroon)">SUBIR IMAGEN O PDF</span>
+              </div>
+              <div id="notice-preview-container" style="width:100%;max-width:400px"></div>
+              <button class="btn-apple btn-primary" onclick="publishNotice()" style="width:100%;max-width:400px;font-size:.8rem">PUBLICAR AHORA</button>
+            </div>
+          </div>
+          <div id="admin-notices-list"></div>
+        </section>
+
+        <!-- ELECCIONES -->
+        <section id="sec-elecciones" class="t-section">
+          <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:1.25rem">
+            <div class="card-float" style="padding:1.25rem">
+              <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Nuevo Candidato</h3>
+              <input type="text" class="input-apple" id="cand-name" placeholder="Nombre completo" style="margin-bottom:.75rem">
+              <label style="font-size:.65rem;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.35rem">FOTO PERFIL:</label>
+              <input type="file" id="cand-photo" accept="image/*" style="margin-bottom:1rem;font-size:.75rem;color:var(--text)">
+              <button class="btn-apple btn-primary" onclick="addCandidate()" style="width:100%;font-size:.8rem">Postular</button>
+              <hr style="margin:1rem 0;border:none;border-top:1px solid var(--border)">
+              <button class="btn-apple btn-ghost" onclick="resetElection()" style="width:100%;font-size:.75rem;color:var(--red)">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"/></svg>
+                REINICIAR TODO EL CONTEO
+              </button>
+            </div>
+            <div class="card-float" style="padding:1.25rem">
+              <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Resultados en Tiempo Real</h3>
+              <div style="height:300px"><canvas id="electionResultsChart"></canvas></div>
+            </div>
+          </div>
+          <div id="candidates-management-list" style="margin-top:1rem"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL -->
+  <div id="admin-modal" class="modal-overlay">
+    <div class="card-float modal-content" style="padding:1.5rem;max-width:520px;width:90%">
+      <h2 id="modal-title" style="font-family:var(--font-display);font-weight:700;font-size:.95rem;color:var(--maroon);margin-bottom:1rem">Formulario</h2>
+      <form id="admin-form" style="display:flex;flex-direction:column;gap:.75rem"></form>
+      <div class="modal-footer">
+        <button class="btn-apple btn-secondary" style="padding:.45rem .85rem;font-size:.75rem" onclick="closeModal()">Cancelar</button>
+        <button class="btn-apple btn-primary" style="padding:.45rem .85rem;font-size:.75rem" onclick="saveForm()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <script define:vars={{ apiUrl, GRADOS }}>
+    window.API_URL = apiUrl;
+    window.GRADOS = GRADOS;
+    window.GRADOS_HTML = GRADOS.map(function(g){return '<option value="'+g+'">'+g+'</option>'}).join('');
+    var cache = {stats:null,students:null,teachers:null,notices:null,subjects:null};
+    var electionChart = null;
+    var activeRequests = 0;
+    var lastFiltered = null;
+    var modalType = '';
+
+    function toast(msg, type) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = '';
+      t.style.opacity = '1'; t.style.transform = 'translateY(0)';
+      if (type==='error') { t.style.background = 'rgba(186,26,26,0.1)'; t.style.borderColor = 'rgba(186,26,26,0.3)'; t.style.color = 'var(--red)'; }
+      else if (type==='success') { t.style.background = 'rgba(52,211,153,0.1)'; t.style.borderColor = 'rgba(52,211,153,0.3)'; t.style.color = 'var(--green)'; }
+      else { t.style.background = 'var(--card-bg)'; t.style.borderColor = 'var(--border)'; t.style.color = 'var(--text)'; }
+      setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateY(1rem)'; }, 3000);
+    }
+
+    function toggleLoading(show) {
+      var el = document.getElementById('loading-overlay');
+      show ? (activeRequests++, el.style.display='flex') : (activeRequests--, activeRequests<=0 && (activeRequests=0, el.style.display='none'));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var role; try { role = localStorage.getItem('userRole') } catch(e) {}
+      if (!role || (role!=='admin' && role!=='rector')) { window.location.href = '/'; return; }
+      var name; try { name = localStorage.getItem('userName') || 'Admin' } catch(e) { name = 'Admin' }
+      document.getElementById('sidebar-name').textContent = name;
+      document.getElementById('sidebar-avatar').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('new-subject-grade').innerHTML = window.GRADOS_HTML;
+      document.getElementById('filter-grade').innerHTML = '<option value="">Todos los grados</option>' + window.GRADOS_HTML;
+      loadAllData();
+      showSection('inicio');
+    });
+
+    function loadAllData() {
+      toggleLoading(true);
+      Promise.all([
+        fetch(window.API_URL + '/api/admin/stats').then(function(r){return r.json()}),
+        fetch(window.API_URL + '/api/admin/students').then(function(r){return r.json()}),
+        fetch(window.API_URL + '/api/admin/teachers').then(function(r){return r.json()}),
+        fetch(window.API_URL + '/api/notices').then(function(r){return r.json()}),
+        fetch(window.API_URL + '/api/subjects').then(function(r){return r.json()})
+      ]).then(function(results) {
+        cache = {stats:results[0],students:results[1],teachers:results[2],notices:results[3],subjects:results[4]};
+        renderAll();
+        toggleLoading(false);
+      }).catch(function(e) {
+        console.error(e);
+        toast('Error al cargar datos del servidor', 'error');
+        toggleLoading(false);
+      });
+    }
+
+    function renderAll() {
+      renderDashboard(cache.stats);
+      renderStudents(cache.students);
+      renderTeachers(cache.teachers);
+      renderNotices(cache.notices);
+      renderSubjects(cache.subjects);
+    }
+
+    function showSection(id) {
+      document.querySelectorAll('.t-section').forEach(function(s){s.classList.remove('active')});
+      var sec = document.getElementById('sec-'+id);
+      if (sec) sec.classList.add('active');
+      document.querySelectorAll('.sidebar-link').forEach(function(a){a.classList.remove('active')});
+      var links = document.querySelectorAll('.sidebar-link');
+      var titles = {inicio:'Panel de Administración',estudiantes:'Gestión de Alumnado',docentes:'Cuerpo Docente',materias:'Materias e IA',avisos:'Comunicados',elecciones:'Elecciones Escolares'};
+      var subs = {inicio:'Vista general del sistema',estudiantes:'Matricular, filtrar y exportar',docentes:'Registrar y asignar materias',materias:'Configurar materias y enlaces IA',avisos:'Publicar y gestionar avisos',elecciones:'Candidatos y resultados'};
+      document.getElementById('page-title').textContent = titles[id] || 'Administración';
+      document.getElementById('page-subtitle').textContent = subs[id] || '';
+      links.forEach(function(a){ if (a.getAttribute('data-nav-section')===id) a.classList.add('active'); });
+      if (id === 'elecciones') setTimeout(loadElectionChart, 100);
+    }
+
+    function logout() { localStorage.clear(); window.location.href = '/'; }
+
+    function renderDashboard(d) {
+      if (!d) return;
+      document.getElementById('stat-mora').textContent = d.mora||0;
+      document.getElementById('stat-estudiantes').textContent = d.total_students||0;
+      document.getElementById('stat-docentes').textContent = d.total_teachers||0;
+      document.getElementById('stat-avisos').textContent = d.total_notices||0;
+    }
+
+    function renderStudents(data) {
+      var tbody = document.getElementById('students-list');
+      if (!tbody||!data) return;
+      var sorted = (data||[]).slice().sort(function(a,b){return (a.is_paid===b.is_paid)?0:a.is_paid?1:-1});
+      tbody.innerHTML = sorted.map(function(s){
+        var isPaid = s.is_paid!==false;
+        return '<tr><td><code style="font-size:.7rem">'+(s.document_id||s._id?.slice(0,8))+'</code></td>'+
+          '<td><strong style="font-size:.8rem">'+(s.fullname||s.nombre)+'</strong></td>'+
+          '<td><strong style="font-size:.8rem;color:var(--text-secondary)">'+(s.grade||s.grado||'-')+'</strong></td>'+
+          '<td><span class="badge '+(isPaid?'badge-green':'badge-red')+'">'+(isPaid?'AL DÍA':'EN MORA')+'</span></td>'+
+          '<td style="display:flex;gap:.35rem">'+
+          '<button class="btn-apple btn-ghost" style="padding:.25rem .5rem;font-size:.65rem" onclick="togglePayment(\''+s._id+'\','+isPaid+')" title="Cambiar estado">'+
+          '<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></button>'+
+          '<button class="btn-apple btn-ghost" style="padding:.25rem .5rem;font-size:.65rem;color:var(--red)" onclick="deleteStudent(\''+s._id+'\')" title="Eliminar">✕</button></td></tr>';
+      }).join('');
+      lastFiltered = data;
+    }
+
+    function filterStudents() {
+      if (!cache.students) return;
+      var term = document.getElementById('search-student').value.toLowerCase();
+      var grade = document.getElementById('filter-grade').value;
+      var payment = document.getElementById('filter-payment').value;
+      var filtered = cache.students.filter(function(s){
+        var name = (s.fullname||s.nombre||'').toLowerCase();
+        var doc = (s.document_id||'').toLowerCase();
+        var g = s.grade||s.grado||'';
+        if (term && !name.includes(term) && !doc.includes(term)) return false;
+        if (grade && g!==grade) return false;
+        if (payment==='paid' && s.is_paid===false) return false;
+        if (payment==='debt' && s.is_paid!==false) return false;
+        return true;
+      });
+      renderStudents(filtered);
+    }
+
+    function exportCSV() {
+      var data = lastFiltered||cache.students;
+      if (!data||!data.length) { toast('No hay datos para exportar','error'); return; }
+      var csv = '\uFEFFDocumento,Nombre,Grado,Estado\n';
+      data.forEach(function(s){csv+=(s.document_id||'')+',"'+s.fullname+'",'+(s.grade||'')+','+(s.is_paid?'Al dia':'Mora')+'\n'});
+      var blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      var a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='Reporte_Estudiantes.csv'; a.click();
+      toast('CSV exportado exitosamente','success');
+    }
+
+    function renderTeachers(data) {
+      var tbody = document.getElementById('teachers-list');
+      if (!tbody) return;
+      if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:1.25rem;color:var(--text-tertiary);font-size:.8rem">No hay docentes registrados</td></tr>'; return; }
+      tbody.innerHTML = data.map(function(t){
+        return '<tr><td><div style="display:flex;align-items:center;gap:.5rem">'+
+          '<div style="width:28px;height:28px;border-radius:50%;background:var(--maroon);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem">'+(t.fullname||'?').charAt(0)+'</div>'+
+          '<div><strong style="font-size:.8rem">'+t.fullname+'</strong>'+(t.is_director?'<br><small style="color:#b8860b;font-size:.65rem">★ Director: '+t.director_grade+'</small>':'')+'</div></div></td>'+
+          '<td><code style="font-size:.7rem">'+t.document_id+'</code></td>'+
+          '<td><div style="display:flex;flex-wrap:wrap;gap:.25rem">'+
+          ((t.subjects||[]).map(function(s){return '<span class="badge badge-maroon" style="font-size:.55rem">'+s.name+'</span>'}).join('')||'<small style="color:var(--text-tertiary);font-size:.7rem">Sin materias</small>')+'</div></td>'+
+          '<td style="display:flex;gap:.35rem">'+
+          '<button class="btn-apple btn-ghost" style="padding:.25rem .5rem;font-size:.65rem" onclick="openSubjectAssign(\''+t.document_id+'\',\''+t.fullname+'\')" title="Asignar materia">📚</button>'+
+          '<button class="btn-apple btn-ghost" style="padding:.25rem .5rem;font-size:.65rem;color:var(--red)" onclick="deleteTeacher(\''+t.document_id+'\')" title="Eliminar">✕</button></td></tr>';
+      }).join('');
+    }
+
+    function renderSubjects(data) {
+      var grid = document.getElementById('admin-subjects-grid');
+      if (!grid) return;
+      grid.innerHTML = (data||[]).map(function(sub){
+        return '<div class="card-float" style="padding:1rem;border-left:3px solid var(--gold)">'+
+          '<div style="display:flex;justify-content:space-between;align-items:start">'+
+          '<div><h4 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text)">'+sub.name+'</h4><small style="color:var(--text-tertiary);font-size:.65rem">'+sub.grade+'-</small></div>'+
+          '<button class="btn-apple btn-ghost" style="padding:.15rem .35rem;font-size:.6rem;color:var(--red)" onclick="deleteSubject(\''+sub.id+'\')">✕</button></div>'+
+          (sub.tutor_ai?'<div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap"><a class="badge badge-gold" href="'+sub.tutor_ai+'" target="_blank" style="text-decoration:none">🤖 Tutor IA</a></div>':'')+
+          (sub.planner_ai?'<a class="badge badge-gold" href="'+sub.planner_ai+'" target="_blank" style="text-decoration:none;margin-top:.25rem">📋 Planeador IA</a>':'')+'</div>';
+      }).join('') || '<p style="color:var(--text-tertiary);text-align:center;padding:1rem;font-size:.8rem">No hay materias registradas</p>';
+    }
+
+    function renderNotices(data) {
+      var list = document.getElementById('admin-notices-list');
+      if (!list) return;
+      list.innerHTML = (data||[]).map(function(n){
+        var isPDF = n.archivo_url && n.archivo_url.toLowerCase().endsWith('.pdf');
+        return '<div class="card-float" style="padding:1rem;margin-bottom:.75rem;border-left:4px solid var(--gold)">'+
+          '<div style="display:flex;justify-content:space-between;color:var(--text-tertiary);font-size:.7rem;margin-bottom:.5rem">'+
+          '<span><strong style="color:var(--text);font-size:.8rem">'+(n.titulo||'Sin título')+'</strong> · '+(n.fecha?new Date(n.fecha).toLocaleDateString('es-CO'):'')+'</span>'+
+          '<button class="btn-apple btn-ghost" style="padding:.15rem .35rem;font-size:.6rem;color:var(--red)" onclick="deleteNotice(\''+n.id+'\')">✕</button></div>'+
+          '<p style="font-size:.8rem;color:var(--text-secondary);line-height:1.6;white-space:pre-wrap">'+(n.contenido||'')+'</p>'+
+          (n.archivo_url?(isPDF?'<div style="margin-top:.5rem;padding:.5rem;background:var(--maroon-subtle);border-radius:var(--radius-md);display:flex;align-items:center;gap:.5rem;font-size:.75rem"><span>📄</span><a href="'+n.archivo_url+'" target="_blank" style="color:var(--maroon)">Ver Documento PDF</a></div>':'<img src="'+n.archivo_url+'" style="max-width:100%;max-height:200px;border-radius:var(--radius-md);margin-top:.5rem;cursor:pointer" onclick="window.open(this.src)">'):'')+'</div>';
+      }).join('') || '<div class="card-float" style="padding:1rem;text-align:center;color:var(--text-tertiary);font-size:.8rem">No hay avisos publicados</div>';
+    }
+
+    async function loadElectionChart() {
+      try {
+        var res = await fetch(window.API_URL + '/api/admin/candidates');
+        var data = await res.json();
+        var container = document.getElementById('candidates-management-list');
+        if (container) {
+          container.innerHTML = (data||[]).map(function(c){
+            return '<div class="card-float" style="display:flex;align-items:center;gap:.75rem;padding:.75rem;margin-bottom:.5rem">'+
+              '<img src="'+(c.photo_url||'')+'" style="width:2.25rem;height:2.25rem;border-radius:50%;object-fit:cover;background:var(--bg-tertiary)" onerror="this.style.display=\'none\'">'+
+              '<div style="flex:1"><strong style="font-size:.8rem">'+c.name+'</strong> · <span style="color:var(--text-tertiary);font-size:.7rem">'+c.votes+' votos</span></div>'+
+              '<button class="btn-apple btn-ghost" style="padding:.15rem .35rem;font-size:.6rem;color:var(--red)" onclick="deleteCandidate(\''+c.id+'\')">✕</button></div>';
+          }).join('') || '<p style="color:var(--text-tertiary);text-align:center;padding:.75rem;font-size:.8rem">No hay candidatos</p>';
+        }
+        renderElectionChart(data||[]);
+      } catch(e){console.error(e)}
+    }
+
+    function renderElectionChart(data) {
+      if (typeof Chart === 'undefined') { setTimeout(function(){renderElectionChart(data)},500); return; }
+      var ctx = document.getElementById('electionResultsChart');
+      if (!ctx) return;
+      if (electionChart) { electionChart.destroy(); electionChart=null; }
+      if (!data.length) return;
+      electionChart = new Chart(ctx, {
+        type:'bar',
+        data:{labels:data.map(function(c){return c.name}),datasets:[{label:'Votos',data:data.map(function(c){return c.votes}),backgroundColor:'#800000',borderRadius:6}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+      });
+    }
+
+    async function addCandidate() {
+      var name = document.getElementById('cand-name').value;
+      var file = document.getElementById('cand-photo').files[0];
+      if (!name||!file) { toast('Nombre y foto son obligatorios','error'); return; }
+      toggleLoading(true);
+      var fd = new FormData(); fd.append('name',name); fd.append('file',file);
+      try {
+        var res = await fetch(window.API_URL+'/api/admin/candidates',{method:'POST',body:fd});
+        if (!res.ok) throw Error();
+        document.getElementById('cand-name').value=''; document.getElementById('cand-photo').value='';
+        toast('Candidato registrado','success');
+        await loadElectionChart();
+      } catch(e){toast('Error al registrar candidato','error')}
+      toggleLoading(false);
+    }
+
+    async function resetElection() { if(!confirm('¿REINICIAR TODOS LOS VOTOS? Esta acción no se puede deshacer.')) return; toggleLoading(true); try{await fetch(window.API_URL+'/api/admin/election-reset',{method:'POST'});toast('Elección reiniciada','success');await loadElectionChart()}catch(e){toast('Error al reiniciar','error')}toggleLoading(false)}
+
+    async function deleteCandidate(id){if(!confirm('¿Eliminar candidato?')) return; await fetch(window.API_URL+'/api/admin/candidates/'+id,{method:'DELETE'}); await loadElectionChart()}
+
+    function openModal(type) {
+      modalType = type;
+      var modal = document.getElementById('admin-modal');
+      var form = document.getElementById('admin-form');
+      modal.classList.add('active');
+      if (type==='estudiante') {
+        document.getElementById('modal-title').textContent = 'Matricular Estudiante';
+        form.innerHTML = '<input type="hidden" id="form-type" value="estudiante"><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Documento ID</label><input type="text" class="input-apple" id="s-id" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Nombre Completo</label><input type="text" class="input-apple" id="s-name" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Grado</label><select class="input-apple" id="s-grade">'+window.GRADOS_HTML+'</select></div><div class="form-group"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Contraseña</label><input type="password" class="input-apple" id="s-pass" value="123456"></div>';
+      } else if (type==='docente') {
+        document.getElementById('modal-title').textContent = 'Nuevo Docente';
+        form.innerHTML = '<input type="hidden" id="form-type" value="docente"><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Nombre</label><input type="text" class="input-apple" id="d-name" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">ID Usuario (Cédula)</label><input type="text" class="input-apple" id="d-id" required></div><div class="form-group"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Clave</label><input type="password" class="input-apple" id="d-pass" value="123456"></div>';
+      } else if (type==='assign-subject') {
+        document.getElementById('modal-title').textContent = 'Asignar Materia a Docente';
+        var subjOpts = (cache.subjects||[]).map(function(s){return '<option value="'+s.id+'">'+s.name+' ('+(s.grade||'-')+')</option>'}).join('');
+        form.innerHTML = '<input type="hidden" id="form-type" value="assign-subject"><input type="hidden" id="t-id-assign" value=""><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Docente</label><strong id="t-name-display" style="font-size:.85rem"></strong></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Seleccionar Materia</label><select class="input-apple" id="subj-to-assign">'+subjOpts+'</select></div><div class="form-group"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">¿Es Director de Grupo?</label><select class="input-apple" id="dir-grade-assign"><option value="">No es director</option>'+window.GRADOS_HTML+'</select></div>';
       }
-      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-      html{font-family:'Sora',sans-serif;-webkit-font-smoothing:antialiased}
-      body{background:var(--alabaster);color:var(--charcoal);min-height:100vh;display:flex}
-      ::selection{background:var(--crimson);color:#fff}
-      ::-webkit-scrollbar{width:5px}
-      ::-webkit-scrollbar-track{background:transparent}
-      ::-webkit-scrollbar-thumb{background:rgba(128,0,0,0.15);border-radius:3px}
-      .admin-layout{display:flex;width:100%;min-height:100vh}
-      .admin-sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:#fff;border-right:1px solid var(--border-light);display:flex;flex-direction:column;z-index:40}
-      .admin-sidebar-header{padding:1.25rem 1.25rem 0.75rem;border-bottom:1px solid var(--border-light)}
-      .admin-sidebar-brand{display:flex;align-items:center;gap:0.625rem;font-family:'Syne',sans-serif}
-      .admin-sidebar-brand .logo-mark{width:2rem;height:2rem;border-radius:0.5rem;background:var(--crimson);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem}
-      .admin-sidebar-brand .brand-name{font-weight:700;font-size:0.9rem;color:var(--charcoal)}
-      .admin-sidebar-brand .brand-sub{font-size:0.65rem;color:var(--slate);text-transform:uppercase;letter-spacing:0.08em}
-      .admin-sidebar-nav{flex:1;padding:0.75rem 0.5rem;overflow-y:auto}
-      .admin-sidebar-nav .nav-section{margin-bottom:1.5rem}
-      .admin-sidebar-nav .nav-label{padding:0 0.75rem;margin-bottom:0.375rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--slate)}
-      .admin-sidebar-nav a{display:flex;align-items:center;gap:0.625rem;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.8125rem;font-weight:500;color:var(--slate);text-decoration:none;transition:all 0.15s ease}
-      .admin-sidebar-nav a:hover,.admin-sidebar-nav a.active{background:rgba(128,0,0,0.06);color:var(--crimson)}
-      .admin-sidebar-nav a.active{font-weight:600}
-      .admin-sidebar-nav a svg{width:1.125rem;height:1.125rem;flex-shrink:0}
-      .admin-sidebar-footer{padding:0.75rem;border-top:1px solid var(--border-light)}
-      .admin-sidebar-footer .user-badge{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.625rem;border-radius:0.5rem;background:rgba(128,0,0,0.04)}
-      .admin-sidebar-footer .user-badge .avatar{width:1.75rem;height:1.75rem;border-radius:50%;background:var(--crimson);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem}
-      .admin-sidebar-footer .user-badge .info{flex:1;min-width:0}
-      .admin-sidebar-footer .user-badge .name{font-size:0.75rem;font-weight:600;color:var(--charcoal)}
-      .admin-sidebar-footer .user-badge .role{font-size:0.625rem;color:var(--slate)}
-      .admin-main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
-      .admin-topbar{position:sticky;top:0;z-index:30;background:rgba(245,240,235,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1.5rem}
-      .admin-topbar .page-title h1{font-family:'Syne',sans-serif;font-size:1.125rem;font-weight:700;color:var(--charcoal)}
-      .admin-topbar .page-title p{font-size:0.75rem;color:var(--slate);margin-top:0.125rem}
-      .admin-topbar .topbar-actions{display:flex;align-items:center;gap:0.75rem}
-      .admin-topbar .topbar-actions .status-pill{display:flex;align-items:center;gap:0.375rem;padding:0.25rem 0.75rem;border-radius:999px;background:rgba(76,175,80,0.1);color:#2E7D32;font-size:0.6875rem;font-weight:600}
-      .admin-topbar .topbar-actions .status-pill .dot{width:0.375rem;height:0.375rem;border-radius:50%;background:#4CAF50}
-      .admin-content{padding:1.5rem;flex:1}
-      .stat-card{background:#fff;border-radius:0.75rem;padding:1.125rem 1.25rem;box-shadow:var(--shadow-card);border:1px solid var(--border-light)}
-      .stat-card .stat-label{font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--slate);margin-bottom:0.25rem}
-      .stat-card .stat-value{font-family:'Syne',sans-serif;font-size:1.625rem;font-weight:700;color:var(--charcoal);line-height:1.2}
-      .stat-card .stat-footer{font-size:0.6875rem;color:var(--slate);margin-top:0.25rem}
-      .module-card{background:#fff;border-radius:0.75rem;box-shadow:var(--shadow-card);border:1px solid var(--border-light);overflow:hidden}
-      .module-card:hover{box-shadow:var(--shadow-hover)}
-      .module-card-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border-light)}
-      .module-card-header .module-title{display:flex;align-items:center;gap:0.625rem;font-family:'Syne',sans-serif;font-size:0.9375rem;font-weight:700;color:var(--charcoal)}
-      .module-card-header .module-title .icon-wrap{width:1.75rem;height:1.75rem;border-radius:0.375rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-      .module-card-header .module-title .icon-wrap.crimson{background:rgba(128,0,0,0.1);color:var(--crimson)}
-      .module-card-header .module-title .icon-wrap.amber{background:rgba(253,192,3,0.15);color:#B8860B}
-      .module-card-header .module-title .icon-wrap.emerald{background:rgba(76,175,80,0.1);color:#2E7D32}
-      .module-card-body{padding:1.25rem}
-      .student-row{display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0;border-bottom:1px solid var(--border-light)}
-      .student-row:last-child{border-bottom:none}
-      .student-row .student-avatar{width:2rem;height:2rem;border-radius:50%;background:rgba(128,0,0,0.08);color:var(--crimson);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0}
-      .student-row .student-info{flex:1;min-width:0}
-      .student-row .student-info .name{font-size:0.8125rem;font-weight:600;color:var(--charcoal)}
-      .student-row .student-info .meta{font-size:0.6875rem;color:var(--slate);margin-top:0.0625rem}
-      .toggle-switch{position:relative;display:inline-flex;width:2.25rem;height:1.25rem;cursor:pointer;flex-shrink:0}
-      .toggle-switch input{position:absolute;opacity:0;width:0;height:0}
-      .toggle-switch .track{position:absolute;inset:0;border-radius:999px;background:#D1D5DB;transition:background 0.2s ease}
-      .toggle-switch .thumb{position:absolute;top:0.125rem;left:0.125rem;width:1rem;height:1rem;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform 0.2s ease}
-      .toggle-switch input:checked+.track{background:var(--crimson)}
-      .toggle-switch input:checked~.thumb{transform:translateX(1rem)}
-      .incident-table{width:100%;border-collapse:collapse;font-size:0.8125rem}
-      .incident-table thead th{text-align:left;padding:0.5rem 0.75rem;font-size:0.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--slate);border-bottom:2px solid var(--border-light)}
-      .incident-table tbody td{padding:0.625rem 0.75rem;border-bottom:1px solid var(--border-light);color:var(--charcoal)}
-      .incident-table tbody tr:last-child td{border-bottom:none}
-      .incident-table tbody tr:hover{background:rgba(128,0,0,0.02)}
-      .status-badge{display:inline-flex;align-items:center;gap:0.375rem;padding:0.125rem 0.5rem;border-radius:999px;font-size:0.6875rem;font-weight:600}
-      .status-badge.safe{background:rgba(76,175,80,0.1);color:#2E7D32}
-      .abp-board{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-      .abp-card{padding:0.75rem 1rem;border-radius:0.5rem;border:1px solid var(--border-light);background:rgba(128,0,0,0.02);cursor:pointer;transition:all 0.15s ease}
-      .abp-card:hover{border-color:var(--crimson);box-shadow:0 0 0 1px rgba(128,0,0,0.1)}
-      .abp-card .abp-name{font-size:0.8125rem;font-weight:600;color:var(--charcoal)}
-      .abp-card .abp-subjects{display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.375rem}
-      .abp-card .abp-subject-tag{font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:999px;background:rgba(128,0,0,0.06);color:var(--crimson);font-weight:500}
-      .abp-card .abp-desc{font-size:0.6875rem;color:var(--slate);margin-top:0.25rem}
-      .btn{display:inline-flex;align-items:center;gap:0.375rem;padding:0.375rem 0.875rem;border-radius:0.5rem;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;transition:all 0.15s ease;text-decoration:none}
-      .btn-crimson{background:var(--crimson);color:#fff}
-      .btn-crimson:hover{background:var(--crimson-dark)}
-      .btn-ghost{background:transparent;color:var(--slate);border:1px solid var(--border-light)}
-      .btn-ghost:hover{background:rgba(128,0,0,0.04);color:var(--crimson);border-color:rgba(128,0,0,0.15)}
-      .btn-sm{padding:0.25rem 0.625rem;font-size:0.6875rem}
-      .btn-gold{background:var(--gold);color:var(--charcoal)}
-      .btn-gold:hover{background:#E5AC02}
-      .btn-danger{background:#BA1A1A;color:#fff}
-      .btn-danger:hover{background:#8B0000}
-      .input-field{width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;border:1px solid var(--border-light);font-size:0.8125rem;font-family:'Sora',sans-serif;background:#fff;color:var(--charcoal);outline:none;transition:border 0.15s ease}
-      .input-field:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(253,192,3,0.15)}
-      .input-field::placeholder{color:#B0B0B0}
-      .tag-select{display:flex;flex-wrap:wrap;gap:0.375rem;margin-top:0.5rem}
-      .tag-select .tag-option{padding:0.25rem 0.625rem;border-radius:999px;font-size:0.6875rem;font-weight:500;cursor:pointer;border:1px solid var(--border-light);background:#fff;color:var(--slate);transition:all 0.15s ease}
-      .tag-select .tag-option.selected{background:var(--crimson);color:#fff;border-color:var(--crimson)}
-      .empty-state{text-align:center;padding:2rem 1rem;font-size:0.8125rem;color:var(--slate)}
-      .empty-state svg{width:2rem;height:2rem;margin:0 auto 0.5rem;opacity:0.4}
-      .modal-overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center}
-      .modal-box{background:#fff;border-radius:0.75rem;box-shadow:0 16px 48px rgba(0,0,0,0.15);width:90%;max-width:32rem;max-height:80vh;overflow-y:auto;padding:1.5rem}
-      .modal-box h2{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--charcoal)}
-      .pill-tabs{display:flex;gap:0.25rem;background:rgba(0,0,0,0.03);border-radius:0.5rem;padding:0.1875rem}
-      .pill-tabs .pill-tab{padding:0.375rem 0.875rem;border-radius:0.375rem;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--slate);transition:all 0.15s ease}
-      .pill-tabs .pill-tab.active{background:#fff;color:var(--crimson);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+    }
 
-      .identity-row{display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0;border-bottom:1px solid var(--border-light)}
-      .identity-row:last-child{border-bottom:none}
-      .identity-row .id-avatar{width:2rem;height:2rem;border-radius:50%;background:rgba(128,0,0,0.08);color:var(--crimson);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0}
-      .identity-row .id-info{flex:1;min-width:0}
-      .identity-row .id-info .id-name{font-size:0.8125rem;font-weight:600;color:var(--charcoal)}
-      .identity-row .id-info .id-meta{font-size:0.6875rem;color:var(--slate);margin-top:0.0625rem}
+    function openSubjectAssign(docId, name) { openModal('assign-subject'); document.getElementById('t-id-assign').value=docId; document.getElementById('t-name-display').textContent=name; }
 
-      .thermometer-bar{display:flex;height:1.5rem;border-radius:999px;overflow:hidden;margin-top:0.5rem}
-      .thermometer-bar .seg-oro{background:rgba(253,192,3,0.5);transition:width 0.5s ease}
-      .thermometer-bar .seg-plata{background:rgba(156,163,175,0.4);transition:width 0.5s ease}
-      .thermometer-bar .seg-bronce{background:rgba(205,127,50,0.3);transition:width 0.5s ease}
+    function closeModal() { document.getElementById('admin-modal').classList.remove('active'); }
 
-      .sidebar-overlay{display:none}
-      .sidebar-toggle{display:none}
-      @media(max-width:768px){
-        .admin-sidebar{transform:translateX(-100%);transition:transform 0.3s ease}
-        .admin-sidebar.open{transform:translateX(0)}
-        .admin-main{margin-left:0}
-        .sidebar-overlay{display:block;position:fixed;inset:0;z-index:35;background:rgba(0,0,0,0.3);opacity:0;pointer-events:none;transition:opacity 0.3s ease}
-        .sidebar-overlay.open{opacity:1;pointer-events:auto}
-        .sidebar-toggle{display:flex}
-        .abp-board{grid-template-columns:1fr}
-        .admin-topbar .page-title h1{font-size:0.9375rem}
-        .stat-card .stat-value{font-size:1.25rem}
-      }
-    </style>
-  </head>
-  <body>
-    <div class="admin-layout">
-      <div class="sidebar-overlay" id="sidebar-overlay"></div>
-      <aside class="admin-sidebar" id="admin-sidebar">
-        <div class="admin-sidebar-header">
-          <div class="admin-sidebar-brand">
-            <div class="logo-mark">C</div>
-            <div><div class="brand-name">Vyntra Executive</div><div class="brand-sub">Panel de Rectoría</div></div>
-          </div>
-        </div>
-        <nav class="admin-sidebar-nav">
-          <div class="nav-section">
-            <div class="nav-label">Administración</div>
-            <a href="#" class="active" data-nav="panel">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-              Panel General
-            </a>
-            <a href="#" data-nav="financial">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              Estado Financiero
-            </a>
-            <a href="#" data-nav="abp">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-              Proyectos ABP
-            </a>
-            <a href="#" data-nav="incidents">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-              Incidentes
-            </a>
-            <a href="#" data-nav="identidades">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-              Identidades
-            </a>
-          </div>
-          <div class="nav-section">
-            <div class="nav-label">Enlaces</div>
-            <a href="/estudiante">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
-              Portal Estudiantil
-            </a>
-            <a href="/docente">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              Portal Docente
-            </a>
-          </div>
-        </nav>
-        <div class="admin-sidebar-footer">
-          <div class="user-badge">
-            <div class="avatar" id="sidebar-avatar">A</div>
-            <div class="info">
-              <div class="name" id="sidebar-name">Administrador</div>
-              <div class="role">Rectoría</div>
-            </div>
-            <button id="logout-btn" class="btn btn-sm btn-ghost" title="Cerrar sesión" onclick="localStorage.clear();window.location.href='/login'">Salir</button>
-          </div>
-        </div>
-      </aside>
+    async function saveForm() {
+      var type = document.getElementById('form-type').value;
+      toggleLoading(true);
+      try {
+        if (type==='estudiante') {
+          var res = await fetch(window.API_URL+'/api/admin/students',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login_credential:document.getElementById('s-id').value,fullname:document.getElementById('s-name').value,grade:document.getElementById('s-grade').value,password:document.getElementById('s-pass').value,role:'student'})});
+          if (!res.ok) { var e=await res.json(); throw new Error(e.detail||'Error'); }
+          toast('Estudiante matriculado','success');
+        } else if (type==='docente') {
+          var res = await fetch(window.API_URL+'/api/admin/assign-teacher',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({document_id:document.getElementById('d-id').value,teacher_name:document.getElementById('d-name').value,password:document.getElementById('d-pass').value})});
+          if (!res.ok) { var e=await res.json(); throw new Error(e.detail||'Error'); }
+          toast('Docente registrado','success');
+        } else if (type==='assign-subject') {
+          var docId = document.getElementById('t-id-assign').value;
+          var subId = document.getElementById('subj-to-assign').value;
+          var dirGrade = document.getElementById('dir-grade-assign').value;
+          var res = await fetch(window.API_URL+'/api/admin/teachers/'+docId+'/subjects',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject_id:subId})});
+          if (!res.ok) { var e=await res.json(); throw new Error(e.detail||'Error'); }
+          if (dirGrade) { await fetch(window.API_URL+'/api/admin/teachers/'+docId+'/director',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({grade:dirGrade})}); }
+          toast('Materia asignada','success');
+        }
+        closeModal();
+        await loadAllData();
+      } catch(e){toast('Error: '+e.message,'error')}
+      toggleLoading(false);
+    }
 
-      <div class="admin-main">
-        <header class="admin-topbar">
-          <div class="page-title">
-            <h1>Panel de Administración</h1>
-            <p>Gestión ejecutiva — Colegio Técnico Ciudad del Sol</p>
-          </div>
-          <div class="topbar-actions">
-            <span class="sidebar-toggle" style="display:inline-flex;padding:0.375rem;border-radius:0.375rem;background:transparent;border:1px solid var(--border-light);cursor:pointer" id="sidebar-toggle-btn">
-              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--charcoal)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </span>
-            <div class="status-pill"><span class="dot"></span>Sistema operativo</div>
-          </div>
-        </header>
+    async function togglePayment(id,current) { toggleLoading(true); try{await fetch(window.API_URL+'/api/admin/students/'+id+'/financial',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_paid:!current})});toast('Estado actualizado','success');await loadAllData()}catch(e){toast('Error al actualizar','error')}toggleLoading(false)}
+    async function deleteStudent(id){if(!confirm('¿Eliminar este estudiante permanentemente?')) return; toggleLoading(true); try{await fetch(window.API_URL+'/api/admin/students/'+id,{method:'DELETE'});toast('Estudiante eliminado','success');await loadAllData()}catch(e){toast('Error al eliminar','error')}toggleLoading(false)}
+    async function deleteTeacher(docId){if(!confirm('¿Eliminar este docente permanentemente?')) return; toggleLoading(true); try{await fetch(window.API_URL+'/api/admin/teachers/'+docId,{method:'DELETE'});toast('Docente eliminado','success');await loadAllData()}catch(e){toast('Error al eliminar','error')}toggleLoading(false)}
+    async function deleteSubject(id){if(!confirm('¿Eliminar esta materia?')) return; await fetch(window.API_URL+'/api/admin/subjects/'+id,{method:'DELETE'});toast('Materia eliminada','success');await loadAllData()}
+    async function deleteNotice(id){if(!confirm('¿Eliminar este aviso?')) return; await fetch(window.API_URL+'/api/admin/notices/'+id,{method:'DELETE'});toast('Aviso eliminado','success');await loadAllData()}
 
-        <div class="admin-content">
-          <!-- Stats -->
-          <div id="stats-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:0.75rem;margin-bottom:1.5rem">
-            <div class="stat-card"><div class="stat-label">Estudiantes</div><div class="stat-value" id="stat-total">--</div><div class="stat-footer">Matrícula activa</div></div>
-            <div class="stat-card"><div class="stat-label">Al día</div><div class="stat-value" id="stat-paid" style="color:#2E7D32">--</div><div class="stat-footer"><span id="stat-rate">--</span>% de cobertura</div></div>
-            <div class="stat-card"><div class="stat-label">En mora</div><div class="stat-value" id="stat-unpaid" style="color:var(--crimson)">--</div><div class="stat-footer"><span id="stat-overrides">0</span> overrides activos</div></div>
-            <div class="stat-card"><div class="stat-label">Incidentes</div><div class="stat-value" id="stat-incidents" style="color:#B8860B">--</div><div class="stat-footer">Reportes de examen</div></div>
-            <div class="stat-card"><div class="stat-label">Materiales Digitales</div><div class="stat-value" id="stat-materials" style="color:var(--charcoal)">--</div><div class="stat-footer">Documentos procesados</div></div>
-            <div class="stat-card"><div class="stat-label">Termómetro Global</div><div class="stat-value" id="stat-thermo" style="color:var(--charcoal)">--</div><div class="stat-footer">Promedio de competencias</div></div>
-          </div>
+    async function addSubject() {
+      var name = document.getElementById('new-subject-input').value;
+      var grade = document.getElementById('new-subject-grade').value;
+      var tutor = document.getElementById('subject-tutor-link').value;
+      var planner = document.getElementById('subject-planner-link').value;
+      if (!name) { toast('El nombre es obligatorio','error'); return; }
+      toggleLoading(true);
+      try {
+        await fetch(window.API_URL+'/api/admin/subjects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,grade,tutor_ai:tutor,planner_ai:planner})});
+        document.getElementById('new-subject-input').value='';document.getElementById('subject-tutor-link').value='';document.getElementById('subject-planner-link').value='';
+        toast('Materia creada','success');
+        await loadAllData();
+      } catch(e){toast('Error al crear materia','error')}
+      toggleLoading(false);
+    }
 
-          <!-- SECTION: Panel General -->
-          <div id="section-panel">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-              <div class="module-card">
-                <div class="module-card-header">
-                  <div class="module-title"><div class="icon-wrap crimson"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>Resumen Financiero</div>
-                </div>
-                <div class="module-card-body" id="panel-finance-summary"><div class="empty-state">Cargando datos financieros...</div></div>
-              </div>
-              <div class="module-card">
-                <div class="module-card-header">
-                  <div class="module-title"><div class="icon-wrap amber"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>Proyectos ABP</div>
-                </div>
-                <div class="module-card-body" id="panel-abp-summary"><div class="empty-state">Cargando proyectos...</div></div>
-              </div>
-            </div>
-            <div class="module-card" style="margin-top:1rem">
-              <div class="module-card-header">
-                <div class="module-title"><div class="icon-wrap emerald"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>Incidentes Recientes</div>
-              </div>
-              <div class="module-card-body" id="panel-incidents-summary"><div class="empty-state">No hay incidentes registrados.</div></div>
-            </div>
-            <div class="module-card" style="margin-top:1rem">
-              <div class="module-card-header">
-                <div class="module-title"><div class="icon-wrap amber"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg></div>Termómetro de Competencias Global</div>
-              </div>
-              <div class="module-card-body" id="panel-thermo-summary"><div class="empty-state">Cargando termómetro...</div></div>
-            </div>
-          </div>
+    async function publishNotice() {
+      var titulo = document.getElementById('notice-title').value;
+      var contenido = document.getElementById('notice-content').value;
+      var file = document.getElementById('notice-file').files[0];
+      if (!titulo||!contenido) { toast('Título y contenido son obligatorios','error'); return; }
+      toggleLoading(true);
+      var fd = new FormData(); fd.append('titulo',titulo); fd.append('contenido',contenido); fd.append('categoria','General');
+      if (file) fd.append('file',file);
+      try {
+        await fetch(window.API_URL+'/api/admin/notices',{method:'POST',body:fd});
+        document.getElementById('notice-title').value='';document.getElementById('notice-content').value='';document.getElementById('notice-file').value='';
+        document.getElementById('file-name-display').textContent='SUBIR IMAGEN O PDF';
+        document.getElementById('notice-preview-container').innerHTML='';
+        toast('Aviso publicado','success');
+        await loadAllData();
+      } catch(e){toast('Error al publicar aviso','error')}
+      toggleLoading(false);
+    }
 
-          <!-- SECTION: Financial Health & Overrides -->
-          <div id="section-financial" style="display:none">
-            <div class="module-card">
-              <div class="module-card-header">
-                <div class="module-title"><div class="icon-wrap crimson"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>Gestión de Pagos y Overrides</div>
-                <div class="pill-tabs" id="finance-filter-tabs">
-                  <button class="pill-tab active" data-filter="all">Todos</button>
-                  <button class="pill-tab" data-filter="mora">En mora</button>
-                  <button class="pill-tab" data-filter="override">Override</button>
-                </div>
-              </div>
-              <div class="module-card-body" id="financial-student-list"><div class="empty-state">Cargando estudiantes...</div></div>
-            </div>
-          </div>
-
-          <!-- SECTION: ABP Project Linker -->
-          <div id="section-abp" style="display:none">
-            <div class="module-card" style="margin-bottom:1rem">
-              <div class="module-card-header">
-                <div class="module-title"><div class="icon-wrap amber"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg></div>Registro de Proyecto ABP</div>
-                <button class="btn btn-crimson btn-sm" id="abp-create-btn">+ Nuevo Proyecto</button>
-              </div>
-            </div>
-            <div class="abp-board" id="abp-board"><div class="empty-state" style="grid-column:1/-1">Cargando proyectos...</div></div>
-          </div>
-
-          <!-- SECTION: Incident Monitor -->
-          <div id="section-incidents" style="display:none">
-            <div class="module-card">
-              <div class="module-card-header">
-                <div class="module-title"><div class="icon-wrap emerald"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>Monitoreo de Incidentes</div>
-                <span style="font-size:0.6875rem;color:var(--slate);font-weight:500" id="incident-count">0 registros</span>
-              </div>
-              <div class="module-card-body" style="padding:0;overflow-x:auto">
-                <table class="incident-table">
-                  <thead><tr><th>Estudiante</th><th>Examen</th><th>Estado</th><th>Fecha</th></tr></thead>
-                  <tbody id="incident-tbody"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--slate)">Cargando incidentes...</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- SECTION: Consola de Identidades -->
-          <div id="section-identidades" style="display:none">
-            <div class="module-card">
-              <div class="module-card-header">
-                <div class="module-title"><div class="icon-wrap crimson"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>Consola de Identidades</div>
-              </div>
-              <div class="module-card-body">
-                <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
-                  <input id="id-search" class="input-field" placeholder="Buscar por nombre o documento..." />
-                  <button class="btn btn-crimson" id="id-search-btn">Buscar</button>
-                </div>
-                <div id="id-results"><div class="empty-state">Realiza una búsqueda para encontrar usuarios.</div></div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- ABP Create Modal -->
-    <div id="abp-modal" class="modal-overlay" style="display:none">
-      <div class="modal-box">
-        <h2>Registrar Proyecto ABP</h2>
-        <div style="display:flex;flex-direction:column;gap:0.75rem">
-          <div><label style="font-size:0.75rem;font-weight:600;color:var(--charcoal);display:block;margin-bottom:0.25rem">Nombre del proyecto</label><input id="abp-name-input" class="input-field" placeholder="Ej: Proyecto Sostenibilidad 2026" /></div>
-          <div><label style="font-size:0.75rem;font-weight:600;color:var(--charcoal);display:block;margin-bottom:0.25rem">Descripción</label><textarea id="abp-desc-input" class="input-field" rows="2" placeholder="Descripción opcional del proyecto..."></textarea></div>
-          <div><label style="font-size:0.75rem;font-weight:600;color:var(--charcoal);display:block;margin-bottom:0.25rem">Materias vinculadas</label><div id="abp-subject-select" class="tag-select"></div></div>
-          <div><label style="font-size:0.75rem;font-weight:600;color:var(--charcoal);display:block;margin-bottom:0.25rem">Palabra clave de activación</label><input id="abp-keyword-input" class="input-field" value="abp" placeholder="abp" /></div>
-          <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem">
-            <button class="btn btn-ghost" id="abp-modal-cancel">Cancelar</button>
-            <button class="btn btn-crimson" id="abp-modal-save">Guardar Proyecto</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Reset Password Modal -->
-    <div id="reset-modal" class="modal-overlay" style="display:none">
-      <div class="modal-box">
-        <h2>Contraseña Restablecida</h2>
-        <div style="font-size:0.8125rem;color:var(--charcoal);margin-bottom:1rem">
-          <p>Se ha generado una contraseña temporal para <strong id="reset-name"></strong>:</p>
-          <div style="padding:0.75rem;border-radius:0.5rem;background:rgba(253,192,3,0.1);border:1px solid rgba(253,192,3,0.2);font-family:monospace;font-size:1rem;text-align:center;margin:0.75rem 0;font-weight:700" id="reset-pass"></div>
-          <p style="font-size:0.75rem;color:var(--crimson);font-weight:600">⚠️ Copia esta contraseña ahora. No se mostrará de nuevo.</p>
-        </div>
-        <div style="display:flex;gap:0.5rem;justify-content:flex-end">
-          <button class="btn btn-crimson" id="reset-modal-close">Cerrar</button>
-        </div>
-      </div>
-    </div>
-
-    <AIChat role="admin" />
-  </body>
+    function previewNoticeFile(e) {
+      var file = e.target.files[0];
+      var container = document.getElementById('notice-preview-container');
+      var display = document.getElementById('file-name-display');
+      if (!file) { container.innerHTML=''; display.textContent='SUBIR IMAGEN O PDF'; return; }
+      display.textContent = file.name;
+      if (file.type.startsWith('image/')) {
+        var reader = new FileReader();
+        reader.onload = function(ev) { container.innerHTML='<img src="'+ev.target.result+'" style="max-width:100%;max-height:200px;border-radius:var(--radius-md);border:1px solid var(--border)">'; };
+        reader.readAsDataURL(file);
+      } else if (file.type==='application/pdf') {
+        container.innerHTML='<div style="padding:.5rem;background:var(--maroon-subtle);border-radius:var(--radius-md);font-size:.75rem;color:var(--text)">📄 Documento PDF seleccionado</div>';
+      } else { container.innerHTML=''; }
+    }
+    document.getElementById('notice-file').addEventListener('change', previewNoticeFile);
+    document.getElementById('admin-modal').addEventListener('click', function(e) { if (e.target===this) closeModal(); });
+  </script>
+</body>
 </html>
-
-<script define:vars={{ apiUrl }}>
-(function () {
-  var token = localStorage.getItem('access_token')
-  if (!token) { window.location.href = '/login'; return }
-
-  var name = localStorage.getItem('userName') || 'Administrador'
-  var sidebarName = document.getElementById('sidebar-name')
-  var sidebarAvatar = document.getElementById('sidebar-avatar')
-  if (sidebarName) sidebarName.textContent = name
-  if (sidebarAvatar) sidebarAvatar.textContent = name.charAt(0).toUpperCase()
-
-  // ── Navigation ──
-  var currentSection = 'panel'
-  var navLinks = document.querySelectorAll('[data-nav]')
-  var sections = {
-    panel: document.getElementById('section-panel'),
-    financial: document.getElementById('section-financial'),
-    abp: document.getElementById('section-abp'),
-    incidents: document.getElementById('section-incidents'),
-    identidades: document.getElementById('section-identidades'),
-  }
-
-  function showSection(id) {
-    currentSection = id
-    Object.keys(sections).forEach(function (k) { sections[k].style.display = k === id ? 'block' : 'none' })
-    navLinks.forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-nav') === id) })
-    if (id === 'financial') loadFinancialStudents()
-    if (id === 'abp') loadAbpProjects()
-    if (id === 'incidents') loadIncidents()
-    if (id === 'panel') { loadPanelData(); loadThermometer() }
-    if (id === 'identidades') loadIdentityDirectory('')
-  }
-
-  navLinks.forEach(function (a) {
-    a.addEventListener('click', function (e) { e.preventDefault(); var nav = a.getAttribute('data-nav'); if (nav && sections[nav]) showSection(nav) })
-  })
-
-  // ── Sidebar Toggle ──
-  var sidebar = document.getElementById('admin-sidebar')
-  var overlay = document.getElementById('sidebar-overlay')
-  var toggleBtn = document.getElementById('sidebar-toggle-btn')
-  if (toggleBtn) { toggleBtn.addEventListener('click', function () { sidebar.classList.toggle('open'); overlay.classList.toggle('open') }) }
-  if (overlay) { overlay.addEventListener('click', function () { sidebar.classList.remove('open'); overlay.classList.remove('open') }) }
-
-  // ── API Helpers ──
-  function apiHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token } }
-  function apiFetch(path, opts) {
-    var url = apiUrl.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
-    var merged = Object.assign({ headers: apiHeaders() }, opts || {})
-    if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) { merged.body = JSON.stringify(merged.body) }
-    return fetch(url, merged).then(function (r) { if (r.status === 401) { localStorage.clear(); window.location.href = '/login' }; return r.json() })
-  }
-
-  // ── Stats ──
-  function loadStats() {
-    apiFetch('/api/admin/financial-summary').then(function (d) {
-      document.getElementById('stat-total').textContent = d.total_students || 0
-      document.getElementById('stat-paid').textContent = d.total_paid || 0
-      document.getElementById('stat-unpaid').textContent = d.total_in_arrears || 0
-      document.getElementById('stat-rate').textContent = d.collection_rate || 0
-      document.getElementById('stat-overrides').textContent = d.active_overrides || 0
-    }).catch(function () {})
-    apiFetch('/api/admin/materials-count').then(function (d) {
-      document.getElementById('stat-materials').textContent = d.total || 0
-    }).catch(function () {})
-    apiFetch('/api/admin/skill-thermometer').then(function (d) {
-      document.getElementById('stat-thermo').textContent = d.average_score || '0.0'
-    }).catch(function () {})
-  }
-
-  // ── Panel Data ──
-  function loadPanelData() {
-    apiFetch('/api/admin/financial-summary').then(function (data) {
-      if (data.total_students > 0) {
-        document.getElementById('panel-finance-summary').innerHTML =
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">' +
-          '<div style="padding:0.75rem;border-radius:0.5rem;background:rgba(76,175,80,0.06);border:1px solid rgba(76,175,80,0.12)"><div style="font-size:0.6875rem;font-weight:600;text-transform:uppercase;color:#2E7D32">Recaudado</div><div style="font-family:Syne;font-size:1.125rem;font-weight:700;color:#1B5E20;margin-top:0.125rem">$' + (data.total_collected || 0).toLocaleString() + '</div></div>' +
-          '<div style="padding:0.75rem;border-radius:0.5rem;background:rgba(128,0,0,0.06);border:1px solid rgba(128,0,0,0.12)"><div style="font-size:0.6875rem;font-weight:600;text-transform:uppercase;color:var(--crimson)">Cobertura</div><div style="font-family:Syne;font-size:1.125rem;font-weight:700;color:var(--crimson);margin-top:0.125rem">' + (data.collection_rate || 0) + '%</div></div></div>'
-      }
-    }).catch(function () {})
-    apiFetch('/api/admin/abp-projects').then(function (projects) {
-      var el = document.getElementById('panel-abp-summary')
-      if (!projects || projects.length === 0) { el.innerHTML = '<div class="empty-state">Sin proyectos ABP registrados.</div>'; return }
-      el.innerHTML = projects.slice(0, 3).map(function (p) { return '<div style="padding:0.5rem 0;border-bottom:1px solid var(--border-light);font-size:0.8125rem;font-weight:600;color:var(--charcoal)">' + (p.name || '—') + '</div>' }).join('') +
-        (projects.length > 3 ? '<div style="font-size:0.75rem;color:var(--slate);padding-top:0.5rem;text-align:center">+' + (projects.length - 3) + ' más</div>' : '')
-    }).catch(function () {})
-    apiFetch('/api/admin/incidents?limit=5').then(function (inc) {
-      var el = document.getElementById('panel-incidents-summary')
-      if (!inc || inc.length === 0) { el.innerHTML = '<div class="empty-state">No hay incidentes registrados.</div>'; return }
-      el.innerHTML = inc.map(function (i) {
-        return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.375rem 0;border-bottom:1px solid var(--border-light);font-size:0.75rem"><span style="width:0.375rem;height:0.375rem;border-radius:50%;background:' + (i.severity === 'high' ? '#BA1A1A' : '#B8860B') + '"></span><span style="color:var(--charcoal)">' + (i.student_name || i.student_id || '-') + '</span><span style="color:var(--slate)">' + (i.exam_title || '') + '</span></div>'
-      }).join('')
-    }).catch(function () {})
-  }
-
-  function loadThermometer() {
-    apiFetch('/api/admin/skill-thermometer').then(function (d) {
-      var el = document.getElementById('panel-thermo-summary')
-      el.innerHTML =
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:0.75rem">' +
-        '<div style="text-align:center"><div style="font-size:1.25rem;font-weight:700;color:#B8860B">' + d.oro + '</div><div style="font-size:0.6875rem;color:var(--slate)">Oro</div></div>' +
-        '<div style="text-align:center"><div style="font-size:1.25rem;font-weight:700;color:#4B5563">' + d.plata + '</div><div style="font-size:0.6875rem;color:var(--slate)">Plata</div></div>' +
-        '<div style="text-align:center"><div style="font-size:1.25rem;font-weight:700;color:#8B5E3C">' + d.bronce + '</div><div style="font-size:0.6875rem;color:var(--slate)">Bronce</div></div>' +
-        '</div>' +
-        '<div class="thermometer-bar"><div class="seg-oro" style="width:' + (d.oro_pct || 0) + '%"></div><div class="seg-plata" style="width:' + (d.plata_pct || 0) + '%"></div><div class="seg-bronce" style="width:' + (d.bronce_pct || 0) + '%"></div></div>' +
-        '<div style="font-size:0.75rem;color:var(--slate);text-align:center;margin-top:0.5rem">' + d.total_quizzes + ' quizzes · Promedio global: <strong>' + d.average_score + '</strong></div>'
-    }).catch(function () {})
-  }
-
-  // ── Financial Students ──
-  var currentFilter = 'all'
-  function loadFinancialStudents() {
-    var list = document.getElementById('financial-student-list')
-    list.innerHTML = '<div class="empty-state">Cargando estudiantes...</div>'
-    apiFetch('/api/admin/students').then(function (students) {
-      if (!students || students.length === 0) { list.innerHTML = '<div class="empty-state">No hay estudiantes registrados.</div>'; return }
-      apiFetch('/api/students/risk').then(function (riskData) {
-        var riskMap = {}; if (Array.isArray(riskData)) riskData.forEach(function (r) { riskMap[r.profile_id] = r.avg_score })
-        var filtered = students.filter(function (s) { if (currentFilter === 'mora') return !s.is_paid; return true })
-        if (filtered.length === 0) { list.innerHTML = '<div class="empty-state">No hay estudiantes en esta categoría.</div>'; return }
-        list.innerHTML = filtered.map(function (s) {
-          var sid = s._id || ''; var isPaid = s.is_paid !== false; var initial = (s.nombre || '?').charAt(0).toUpperCase()
-          return '<div class="student-row" data-sid="' + sid + '" data-paid="' + isPaid + '"><div class="student-avatar">' + initial + '</div><div class="student-info"><div class="name">' + (s.nombre || 'Sin nombre') + '</div><div class="meta">ID: ' + sid + (riskMap[sid] ? ' · Prom: ' + riskMap[sid] : '') + '</div></div><div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0"><span style="font-size:0.625rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;' + (isPaid ? 'color:#2E7D32' : 'color:var(--crimson)') + '">' + (isPaid ? 'Al día' : 'En mora') + '</span><label class="toggle-switch"><input type="checkbox" ' + (isPaid ? 'checked' : '') + ' data-sid="' + sid + '" /><span class="track"></span><span class="thumb"></span></label></div></div>'
-        }).join('')
-        list.querySelectorAll('.toggle-switch input').forEach(function (cb) {
-          cb.addEventListener('change', function () { var sid = cb.getAttribute('data-sid'); var wasPaid = cb.checked; apiFetch('/api/students/' + encodeURIComponent(sid) + '/bypass-override', { method: 'POST' }).then(function () { loadFinancialStudents(); loadStats() }).catch(function () { cb.checked = !wasPaid }) })
-        })
-      }).catch(function () { list.innerHTML = '<div class="empty-state">Error al cargar datos financieros.</div>' })
-    }).catch(function () { list.innerHTML = '<div class="empty-state">Error al conectar con el servidor.</div>' })
-  }
-  document.querySelectorAll('#finance-filter-tabs .pill-tab').forEach(function (btn) {
-    btn.addEventListener('click', function () { document.querySelectorAll('#finance-filter-tabs .pill-tab').forEach(function (b) { b.classList.remove('active') }); btn.classList.add('active'); currentFilter = btn.getAttribute('data-filter'); loadFinancialStudents() })
-  })
-
-  // ── ABP Projects ──
-  var allSubjects = []
-  function loadAbpProjects() {
-    var board = document.getElementById('abp-board')
-    board.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Cargando proyectos...</div>'
-    apiFetch('/api/subjects').then(function (subjects) { allSubjects = Array.isArray(subjects) ? subjects : [] }).catch(function () { allSubjects = [] })
-    apiFetch('/api/admin/abp-projects').then(function (projects) {
-      if (!projects || projects.length === 0) { board.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No hay proyectos ABP registrados. Crea el primero.</div>'; return }
-      board.innerHTML = projects.map(function (p) {
-        var subs = Array.isArray(p.linked_subject_names) ? p.linked_subject_names : []
-        return '<div class="abp-card" data-pid="' + (p.id || '') + '"><div class="abp-name">' + (p.name || 'Sin nombre') + '</div>' + (p.description ? '<div class="abp-desc">' + p.description + '</div>' : '') + '<div class="abp-subjects">' + (subs.length ? subs.map(function (s) { return '<span class="abp-subject-tag">' + s + '</span>' }).join('') : '<span style="font-size:0.625rem;color:var(--slate)">Sin materias vinculadas</span>') + '</div><div style="margin-top:0.375rem;display:flex;gap:0.375rem"><span style="font-size:0.625rem;color:var(--slate)">Palabra clave: <strong>' + (p.project_trigger_keyword || 'abp') + '</strong></span><button class="btn btn-sm btn-ghost abp-delete-btn" data-pid="' + (p.id || '') + '" style="margin-left:auto">Eliminar</button></div></div>'
-      }).join('')
-      board.querySelectorAll('.abp-delete-btn').forEach(function (btn) { btn.addEventListener('click', function (e) { e.stopPropagation(); var pid = btn.getAttribute('data-pid'); if (!pid) return; apiFetch('/api/admin/abp-projects/' + encodeURIComponent(pid), { method: 'DELETE' }).then(function () { loadAbpProjects(); loadStats() }).catch(function () { alert('Error al eliminar proyecto') }) }) })
-    }).catch(function () { board.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error al cargar proyectos.</div>' })
-  }
-
-  // ABP Create Modal
-  var modal = document.getElementById('abp-modal')
-  document.getElementById('abp-create-btn').addEventListener('click', function () {
-    modal.style.display = 'flex'
-    document.getElementById('abp-name-input').value = ''; document.getElementById('abp-desc-input').value = ''; document.getElementById('abp-keyword-input').value = 'abp'
-    var container = document.getElementById('abp-subject-select')
-    if (allSubjects.length) {
-      container.innerHTML = allSubjects.map(function (s) { return '<span class="tag-option" data-sid="' + (s.id || '') + '">' + (s.name || s.id) + '</span>' }).join('')
-      container.querySelectorAll('.tag-option').forEach(function (t) { t.addEventListener('click', function () { t.classList.toggle('selected') }) })
-    } else { container.innerHTML = '<span style="font-size:0.75rem;color:var(--slate)">Cargando materias...</span>' }
-  })
-  document.getElementById('abp-modal-cancel').addEventListener('click', function () { modal.style.display = 'none' })
-  modal.addEventListener('click', function (e) { if (e.target === modal) modal.style.display = 'none' })
-  document.getElementById('abp-modal-save').addEventListener('click', function () {
-    var name = document.getElementById('abp-name-input').value.trim(); if (!name) { alert('Ingresa un nombre para el proyecto.'); return }
-    var selected = document.querySelectorAll('#abp-subject-select .tag-option.selected')
-    var subjectIds = Array.from(selected).map(function (t) { return t.getAttribute('data-sid') })
-    var payload = { name: name, description: document.getElementById('abp-desc-input').value.trim(), linked_subject_ids: subjectIds, project_trigger_keyword: document.getElementById('abp-keyword-input').value.trim() || 'abp' }
-    var btn = document.getElementById('abp-modal-save'); btn.textContent = 'Guardando...'; btn.disabled = true
-    apiFetch('/api/admin/abp-projects', { method: 'POST', body: payload }).then(function () { modal.style.display = 'none'; loadAbpProjects(); loadStats(); btn.textContent = 'Guardar Proyecto'; btn.disabled = false }).catch(function () { alert('Error al crear proyecto'); btn.textContent = 'Guardar Proyecto'; btn.disabled = false })
-  })
-
-  // ── Incidents ──
-  function loadIncidents() {
-    var tbody = document.getElementById('incident-tbody')
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--slate)">Cargando incidentes...</td></tr>'
-    apiFetch('/api/admin/incidents?limit=50').then(function (incidents) {
-      var count = document.getElementById('incident-count')
-      if (!incidents || incidents.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--slate)">No hay incidentes registrados.</td></tr>'; if (count) count.textContent = '0 registros'; document.getElementById('stat-incidents').textContent = '0'; return }
-      if (count) count.textContent = incidents.length + (incidents.length === 1 ? ' registro' : ' registros')
-      document.getElementById('stat-incidents').textContent = incidents.length
-      tbody.innerHTML = incidents.map(function (inc) {
-        var dateStr = inc.created_at ? new Date(inc.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-'
-        return '<tr><td style="font-weight:600">' + (inc.student_name || 'ID: ' + (inc.student_id || '-').substring(0, 8)) + '</td><td>' + (inc.exam_title || 'Examen #' + (inc.exam_id || '-').substring(0, 8)) + '</td><td><span class="status-badge safe">' + inc.status + '</span></td><td style="font-size:0.75rem;color:var(--slate)">' + dateStr + '</td></tr>'
-      }).join('')
-    }).catch(function () { var t2 = document.getElementById('incident-tbody'); if (t2) t2.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--slate)">Error al cargar incidentes.</td></tr>' })
-  }
-
-  // ── Identity Console ──
-  function loadIdentityDirectory(search) {
-    var el = document.getElementById('id-results')
-    el.innerHTML = '<div class="empty-state">Buscando...</div>'
-    var url = '/api/admin/identity-directory'
-    if (search) url += '?search=' + encodeURIComponent(search)
-    apiFetch(url).then(function (users) {
-      if (!users || users.length === 0) { el.innerHTML = '<div class="empty-state">No se encontraron usuarios.</div>'; return }
-      el.innerHTML = users.map(function (u) {
-        var initial = (u.fullname || '?').charAt(0).toUpperCase()
-        var roleLabel = { student: 'Estudiante', teacher: 'Docente', admin: 'Administrador' }
-        var label = roleLabel[u.role] || u.role
-        return '<div class="identity-row"><div class="id-avatar">' + initial + '</div><div class="id-info"><div class="id-name">' + (u.fullname || 'Sin nombre') + '</div><div class="id-meta">' + u.login_credential + ' · ' + label + (u.grade ? ' · ' + u.grade : '') + ' · ' + (u.is_active ? 'Activo' : 'Inactivo') + '</div></div><button class="btn btn-sm btn-crimson reset-pwd-btn" data-pid="' + u.id + '" data-name="' + (u.fullname || '') + '">Restablecer</button></div>'
-      }).join('')
-      el.querySelectorAll('.reset-pwd-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var pid = btn.getAttribute('data-pid'); var fname = btn.getAttribute('data-name')
-          btn.disabled = true; btn.textContent = 'Generando...'
-          apiFetch('/api/admin/reset-password', { method: 'POST', body: { profile_id: pid } }).then(function (data) {
-            if (data.temporary_password) {
-              document.getElementById('reset-name').textContent = fname || data.fullname || pid
-              document.getElementById('reset-pass').textContent = data.temporary_password
-              document.getElementById('reset-modal').style.display = 'flex'
-              btn.textContent = '✓ Restablecido'; btn.style.background = '#2E7D32'
-              setTimeout(function () { btn.textContent = 'Restablecer'; btn.disabled = false; btn.style.background = '' }, 3000)
-            } else { throw new Error('Sin respuesta') }
-          }).catch(function () { btn.textContent = 'Error'; btn.disabled = false })
-        })
-      })
-    }).catch(function () { el.innerHTML = '<div class="empty-state">Error al cargar el directorio.</div>' })
-  }
-
-  document.getElementById('id-search-btn').addEventListener('click', function () {
-    var q = document.getElementById('id-search').value.trim(); loadIdentityDirectory(q)
-  })
-  document.getElementById('id-search').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { var q = document.getElementById('id-search').value.trim(); loadIdentityDirectory(q) }
-  })
-  document.getElementById('reset-modal-close').addEventListener('click', function () { document.getElementById('reset-modal').style.display = 'none' })
-  document.getElementById('reset-modal').addEventListener('click', function (e) { if (e.target === this) this.style.display = 'none' })
-
-  // ── Initial Load ──
-  loadStats(); loadAbpProjects(); loadIncidents(); loadPanelData(); loadThermometer()
-  setInterval(loadStats, 30000)
-})()
-</script>

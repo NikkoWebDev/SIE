@@ -1,4 +1,4 @@
-Este documento consolida la arquitectura relacional definitiva, las reglas de negocio, el modelo de datos y la hoja de ruta técnica para el nuevo backend modular del **SIE ("Solaris Academic")**, migrado desde la infraestructura monolítica original hacia un SaaS escalable en **Supabase (PostgreSQL)**.
+Este documento consolida la arquitectura relacional definitiva, las reglas de negocio, el modelo de datos y la hoja de ruta técnica para el nuevo backend modular de **Vyntra Academic**, migrado desde la infraestructura monolítica original hacia un SaaS escalable en **Supabase (PostgreSQL)**.
 
 ## 1. Identidad del Sistema y Modelo de Negocio
 

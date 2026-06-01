@@ -30,7 +30,7 @@ const RESPONSES: Record<string, string[]> = {
     'tutor y comunicación con acudientes.',
   ],
   default: [
-    'Basado en los datos del SIE, ',
+    'Basado en los datos del sistema VYNTRA, ',
     'el estudiante consultado presenta ',
     'un perfil académico en seguimiento. ',
     'Para obtener un análisis detallado, ',

@@ -1,8 +1,8 @@
 ---
-const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
 ---
-<div id="risk-alert-slot" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+<div id="risk-alert-slot" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 max-w-sm w-full pointer-events-none" style="top:max(1rem,env(safe-area-inset-top,1rem));right:max(1rem,env(safe-area-inset-right,1rem))"></div>
 <script define:vars={{ wsUrl }}>
   (function () {
     var container = document.getElementById('risk-alert-slot')
@@ -13,7 +13,8 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
     var delay = 1000
 
     function connect() {
-      var token = localStorage.getItem('access_token')
+      var token
+      try { token = localStorage.getItem('access_token') } catch(e) {}
       if (!token) { scheduleReconnect(); return }
       try {
         ws = new WebSocket(wsUrl + '?token=' + encodeURIComponent(token))
@@ -47,6 +48,12 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
       }, delay)
     }
 
+    function escapeHtml(t) {
+      var d = document.createElement('div')
+      d.appendChild(document.createTextNode(t || ''))
+      return d.innerHTML
+    }
+
     function showRiskAlert(msg) {
       var mainContainer = document.querySelector('.relative.min-h-screen')
       if (mainContainer && !mainContainer.classList.contains('ambient-risk-active')) {
@@ -58,10 +65,10 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
       el.innerHTML =
         '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-danger/10"><svg class="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>' +
         '<div class="flex-1 min-w-0"><p class="text-sm font-bold text-brand-danger truncate">' +
-        (msg.msg || 'Alerta académica') +
+        escapeHtml(msg.msg || 'Alerta académica') +
         '</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">Estudiante: ' +
-        (msg.student_id || '') +
-        ' · Nota: ' + (msg.score || '') +
+        escapeHtml(msg.student_id || '') +
+        ' · Nota: ' + escapeHtml(msg.score || '') +
         '</p></div>' +
         '<button class="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-brand-danger/10 hover:text-brand-danger transition-colors" data-dismiss-risk>&times;</button>'
       container.appendChild(el)

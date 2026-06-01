@@ -45,8 +45,8 @@ async def get_grades(
         all_subjects = db.table("subjects").select("id, name").execute()
         for s in all_subjects.data:
             subjects_map[s["id"]] = s.get("name", s["id"])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("subjects fetch error in _query_grades: %s", e)
 
     grades = []
     for g in result.data:
@@ -130,7 +130,7 @@ async def download_grade_pdf(
     c.setFont("Helvetica-Bold", 18)
     c.drawString(50, h - 60, "Colegio Técnico Ciudad del Sol")
     c.setFont("Helvetica", 12)
-    c.drawString(50, h - 80, "Sistema de Información Estudiantil — Boletín Académico")
+    c.drawString(50, h - 80, "Vyntra Academic — Boletín Académico")
     c.drawString(50, h - 100, f"Estudiante: {name}")
     c.drawString(50, h - 115, f"ID: {student_id}")
     c.drawString(50, h - 130, f"Fecha: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")

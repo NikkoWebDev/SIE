@@ -1,36 +1,30 @@
 ---
 import Layout from '@layouts/Layout.astro'
-import FloatingPillNav from '@components/FloatingPillNav.astro'
-import WsRiskAlert from '@components/WsRiskAlert.astro'
-const apiUrl = import.meta.env.PUBLIC_API_URL || 'https://backend-colegio-hdx7.onrender.com'
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 ---
-<Layout titulo="C sol · SIE">
-  <FloatingPillNav />
-  <div class="relative z-10 px-4 md:px-6 lg:px-8 pt-4 lg:pt-6 max-w-7xl mx-auto">
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4 auto-rows-min">
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8 mb-2">
-        <h1 class="text-xl md:text-3xl font-bold text-gray-900 dark:text-white" id="hub-title">Redirigiendo...</h1>
-        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400" id="hub-sub">Portal Soleísta</p>
-      </div>
-      <div class="col-span-2 sm:col-span-4 lg:col-span-6 xl:col-span-8" id="hub-redirect">
-        <div class="flex items-center justify-center py-20">
-          <div class="h-10 w-10 rounded-full border-4 border-brand-maroon border-t-transparent animate-spin"></div>
-        </div>
-      </div>
+<Layout titulo="Academic">
+  <div style="display:flex;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center">
+    <div>
+      <div class="spinner" style="margin:0 auto 1rem"></div>
+      <h1 id="hub-title" style="font-family:var(--font-display);font-weight:700;font-size:1.3rem;color:var(--text);margin-bottom:.35rem">Redirigiendo...</h1>
+      <p id="hub-sub" style="font-size:.8rem;color:var(--text-tertiary)">Portal Soleísta</p>
     </div>
   </div>
-  <WsRiskAlert />
 </Layout>
 <script>
   (function () {
-    var role = (localStorage.getItem('userRole') || '').toUpperCase()
-    var name = localStorage.getItem('userName') || ''
-    var target = ''
-    if (role === 'PROFESOR' || role === 'TEACHER') target = '/docente'
-    else if (role === 'RECTOR' || role === 'ADMIN') target = '/admin'
-    else target = '/estudiante'
-    if (name) document.getElementById('hub-title').textContent = 'Bienvenido, ' + name
-    document.getElementById('hub-sub').textContent = 'Redirigiendo a tu panel...'
-    setTimeout(function () { window.location.href = target }, 800)
+    try {
+      var token = localStorage.getItem('access_token')
+      if (!token) { window.location.href = '/login'; return }
+      var role = (localStorage.getItem('userRole') || '').toUpperCase()
+      var name = localStorage.getItem('userName') || ''
+      var target = ''
+      if (role === 'PROFESOR' || role === 'TEACHER') target = '/docente'
+      else if (role === 'RECTOR' || role === 'ADMIN') target = '/admin'
+      else target = '/estudiante'
+      if (name) document.getElementById('hub-title').textContent = 'Bienvenido, ' + name
+      document.getElementById('hub-sub').textContent = 'Redirigiendo a tu panel...'
+      setTimeout(function () { window.location.href = target }, 800)
+    } catch(e) {}
   })()
 </script>

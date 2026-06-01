@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
+import sentry_sdk
 from dotenv import load_dotenv
 
 _dotenv_path = Path(__file__).resolve().parent.parent / ".env"
@@ -44,6 +45,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger("siee.core")
 
+SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=os.getenv("ENV", "development"),
+        traces_sample_rate=0.25,
+        enable_tracing=True,
+    )
+    logger.info("sentry initialized (env=%s)", os.getenv("ENV", "development"))
+
 FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
     "/api/grades/download-pdf",
     "/api/grades/report-card",
@@ -63,10 +74,10 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.info("supabase ping — run seed.sql in Supabase Dashboard first if you see 403s")
     yield
-    logger.info("siee core stopped")
+    logger.info("vyntra core stopped")
 
 
-app = FastAPI(title="SIEE Core — Solara Academic (Supabase)", version="5.0.0", lifespan=lifespan)
+app = FastAPI(title="Vyntra Core — Academic Platform", version="5.0.0", lifespan=lifespan)
 
 
 @app.exception_handler(Exception)
@@ -81,9 +92,18 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     )
 
 
+ALLOWED_ORIGINS: list[str] = [
+    "https://vyntraacademic.netlify.app",
+    "http://localhost:4321",
+    "http://localhost:8000",
+]
+_env_origins = os.getenv("ALLOWED_ORIGINS", "")
+if _env_origins:
+    ALLOWED_ORIGINS.extend([o.strip() for o in _env_origins.split(",") if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -155,16 +175,14 @@ app.include_router(teachers_router)
 
 @app.get("/")
 async def root() -> dict[str, Any]:
-    return {"status": "online", "message": "SIEE Core — Solara Academic (Supabase v5)", "colegio": "Ciudad del Sol"}
+    return {"status": "online", "message": "Vyntra Core — Academic Platform v5", "colegio": "Ciudad del Sol"}
 
 
-@app.get("/api/health")
-async def health() -> dict[str, Any]:
-    return {
-        "status": "alive",
-        "ws_connected": ws_manager.count,
-        "database": "supabase",
-    }
+@app.api_route("/api/health", methods=["GET", "HEAD"])
+async def health() -> Response:
+    return JSONResponse(
+        {"status": "alive", "ws_connected": ws_manager.count, "database": "supabase"},
+    )
 
 
 @app.websocket("/ws")

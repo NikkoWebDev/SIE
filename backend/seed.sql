@@ -40,52 +40,18 @@ ALTER TABLE IF EXISTS public.conversations ENABLE ROW LEVEL SECURITY;
 -- Allow full access for anon key (development only)
 -- In production, restrict to service_role and authenticated users
 DO $$
+DECLARE
+  tbl TEXT;
+  policy_tables TEXT[] := ARRAY['profiles','student_metadata','courses','subjects','teacher_assignments','grades','exam_progress','class_schedules','homework_reminders','teacher_metadata','academic_histories','mobile_push_tokens','abp_projects','project_abp_deliverables','behavior_logs','conversations'];
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.profiles FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'student_metadata' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.student_metadata FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'courses' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.courses FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'subjects' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.subjects FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'teacher_assignments' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.teacher_assignments FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'grades' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.grades FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'exam_progress' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.exam_progress FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'class_schedules' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.class_schedules FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'teacher_metadata' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.teacher_metadata FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'academic_histories' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.academic_histories FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'mobile_push_tokens' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.mobile_push_tokens FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'abp_projects' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.abp_projects FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'project_abp_deliverables' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.project_abp_deliverables FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'behavior_logs' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.behavior_logs FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'conversations' AND policyname = 'anon_all') THEN
-    CREATE POLICY anon_all ON public.conversations FOR ALL USING (true) WITH CHECK (true);
-  END IF;
+  FOREACH tbl IN ARRAY policy_tables
+  LOOP
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = tbl) THEN
+      IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = tbl AND policyname = 'anon_all') THEN
+        EXECUTE format('CREATE POLICY anon_all ON public.%I FOR ALL USING (true) WITH CHECK (true)', tbl);
+      END IF;
+    END IF;
+  END LOOP;
 END;
 $$;
 
@@ -208,7 +174,8 @@ CREATE TABLE IF NOT EXISTS public.teacher_metadata (
   profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
   specialty VARCHAR(100) DEFAULT '',
   bio TEXT DEFAULT '',
-  office_hours VARCHAR(100) DEFAULT ''
+  office_hours VARCHAR(100) DEFAULT '',
+  director_grade TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS public.class_schedules (
@@ -262,6 +229,7 @@ CREATE TABLE IF NOT EXISTS public.guides (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   grade TEXT NOT NULL DEFAULT '',
   subject TEXT NOT NULL DEFAULT '',
+  title TEXT DEFAULT '',
   filename TEXT NOT NULL DEFAULT '',
   url TEXT NOT NULL DEFAULT '',
   teacher_id TEXT DEFAULT '',
@@ -303,7 +271,10 @@ ALTER TABLE public.subjects
   ADD COLUMN IF NOT EXISTS is_abp BOOLEAN NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '',
-  ADD COLUMN IF NOT EXISTS syllabus JSONB DEFAULT '{}'::jsonb;
+  ADD COLUMN IF NOT EXISTS syllabus JSONB DEFAULT '{}'::jsonb,
+  ADD COLUMN IF NOT EXISTS grade TEXT DEFAULT '',
+  ADD COLUMN IF NOT EXISTS tutor_ai TEXT DEFAULT '',
+  ADD COLUMN IF NOT EXISTS planner_ai TEXT DEFAULT '';
 
 ALTER TABLE public.teacher_assignments
   ADD COLUMN IF NOT EXISTS grade TEXT DEFAULT '';
@@ -312,7 +283,8 @@ ALTER TABLE public.grades
   ADD COLUMN IF NOT EXISTS observations TEXT DEFAULT '',
   ADD COLUMN IF NOT EXISTS teacher_id TEXT DEFAULT '',
   ADD COLUMN IF NOT EXISTS course_id TEXT DEFAULT '',
-  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS period TEXT NOT NULL DEFAULT 'P1';
 
 ALTER TABLE public.exam_progress
   ADD COLUMN IF NOT EXISTS current_question_index INTEGER NOT NULL DEFAULT 0,
@@ -408,8 +380,8 @@ WHERE p.login_credential = '102';
 -- STEP 8: Subjects (9 ABP + 1 Traditional)
 -- ─────────────────────────────────────────────────────────────────────
 
-INSERT INTO public.subjects (id, name, is_abp)
-SELECT gen_random_uuid(), name, is_abp
+INSERT INTO public.subjects (id, name, is_abp, grade)
+SELECT gen_random_uuid(), name, is_abp, '11-A'
 FROM (VALUES
   ('Investigación Guiada',     true),
   ('Matemáticas Aplicadas',    true),
@@ -464,8 +436,13 @@ CREATE TABLE IF NOT EXISTS public.class_materials (
 );
 
 ALTER TABLE public.class_materials ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "class_materials_all_access" ON public.class_materials
-    USING (true) WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'class_materials' AND policyname = 'class_materials_all_access') THEN
+    CREATE POLICY class_materials_all_access ON public.class_materials USING (true) WITH CHECK (true);
+  END IF;
+END;
+$$;
 
 -- ─────────────────────────────────────────────────────────────────────
 -- Verification
@@ -494,4 +471,4 @@ UNION ALL SELECT 'homework_reminders', COUNT(*) FROM public.homework_reminders
 UNION ALL SELECT 'academic_histories', COUNT(*) FROM public.academic_histories
 UNION ALL SELECT 'mobile_push_tokens', COUNT(*) FROM public.mobile_push_tokens
 UNION ALL SELECT 'conversations', COUNT(*) FROM public.conversations
-UNION ALL SELECT 'class_materials', COUNT(*) FROM public.class_materials ;
+UNION ALL SELECT 'class_materials', COUNT(*) FROM public.class_materials;

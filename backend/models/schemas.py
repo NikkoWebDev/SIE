@@ -166,7 +166,10 @@ class NoticeResponse(BaseModel):
 
 class SubjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
+    grade: str = Field(default="", max_length=10)
     is_abp: bool = Field(default=False)
+    tutor_ai: str = Field(default="", max_length=500)
+    planner_ai: str = Field(default="", max_length=500)
     model_config = {"extra": "forbid"}
 
 
@@ -196,6 +199,18 @@ class BehaviorLogEntry(BaseModel):
     log_type: str = ""  # 'positive', 'disciplinary', 'merit'
     description: str = ""
     recorded_by: str = ""
+    created_at: str = ""
+    model_config = {"extra": "ignore"}
+
+
+class ClassMaterialSchema(BaseModel):
+    id: str
+    subject_id: str
+    subject_name: str = ""
+    grade_id: str
+    file_url: str
+    file_type: str = "md"
+    uploaded_by: str = ""
     created_at: str = ""
     model_config = {"extra": "ignore"}
 

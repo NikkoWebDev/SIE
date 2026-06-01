@@ -3,6 +3,8 @@ services:
     build: .
     ports:
       - "10000:10000"
+    env_file:
+      - ../.env
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
@@ -13,4 +15,13 @@ services:
       - OPENROUTER_ADMIN_KEY=${OPENROUTER_ADMIN_KEY}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openrouter/free}
       - ENV=production
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:10000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

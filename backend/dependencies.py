@@ -22,7 +22,10 @@ logger = logging.getLogger("siee.deps")
 
 RISK_THRESHOLD: float = 3.5
 MAX_GRADE: float = 5.0
-JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
+JWT_SECRET: str = os.getenv("JWT_SECRET", "")
+if not JWT_SECRET:
+    logger.warning("JWT_SECRET not set! Using insecure default. Set JWT_SECRET in .env for production.")
+    JWT_SECRET = "dev-secret-change-me"
 JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
 
 SKIP_AUTH_PATHS: frozenset[str] = frozenset({
