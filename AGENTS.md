@@ -39,14 +39,14 @@ Full-stack Academic Platform (VYNTRA) — Sogamoso, Boyacá, Colombia.
 - **`login.astro`** — Split layout: left 45% brand panel, right 55% Apple-style form. Segmented tab control (Estudiante / Personal). JWT auth. Dual theme.
 - **`dashboard.astro`** — Auth-based redirect page. Reads `userRole` from localStorage, routes to `/estudiante`, `/docente`, or `/admin`.
 
-### Dashboards (all use `Layout.astro` with sidebar)
-- **`estudiante.astro`** — Student panel. Academic grades grid, ABP hub with tabs (parciales + proyecto transversal drag-drop), grade cards with progress bars. Uses `AIChat` + `WsRiskAlert`.
-- **`docente.astro`** — Teacher standalone sidebar. Grade entry form, recent grades list, risk alerts feed. Uses jsPDF for reports.
-- **`admin.astro`** — Rector/admin standalone sidebar. Student management table with filters/CSV export, teacher management, subjects config with AI links, notices publish, election management with Chart.js.
+### Dashboards (standalone sidebars, no `Layout.astro`)
+- **`estudiante.astro`** (1154 lines) — Student panel. Claude Apple-style design merged with all features: dashboard stats, grades chart (Chart.js), secure exam modal (fullscreen/strikes/timer), voting, AIChat, WsRiskAlert, schedule, task upload (FormData), PDF boletin, live clock, online indicator, **Pruebas Saber** (6 areas × 4 bimestres study materials + practice tests). Uses `AIChat` + `WsRiskAlert`.
+- **`docente.astro`** (~950 lines) — Teacher standalone sidebar. Dashboard stats, **P1-P4 planilla** (per-period inputs with auto-average), **Guías y Tareas** (upload PDF guides + student deliveries inbox), **Exámenes** (question builder + publish), **Incidentes de Seguridad** (monitor exam strikes, reset), Horario semanal, Subir Material (AI-powered PDF/Word), Alertas de Riesgo, ABP propagation banner, jsPDF export. Uses `AIChat`.
+- **`admin.astro`** (~640 lines) — Admin standalone sidebar. Dashboard stats (Grados/Estudiantes/Docentes/Avisos), Student CRUD + CSV export + filters, Teacher CRUD + subject assignment + director grade, Subjects config with IA links, Notices with file upload, Elections with Chart.js bar chart, Admin management. No pension/mora tracking. Uses `AIChat`.
 
 ### Shared layout
-- **`Layout.astro`** — Base HTML shell with theme injection, sidebar nav, glass topbar, content area. Used by `estudiante.astro` and `dashboard.astro`.
-- **`Sidebar.astro`** (used by `admin.astro` and `docente.astro`) — Standalone sidebar component with nav links, user badge, theme toggle.
+- **`Layout.astro`** — Base HTML shell with theme injection, sidebar nav, glass topbar, content area. Used only by `dashboard.astro`.
+- **No dashboard pages use `Layout.astro` directly** — `estudiante.astro`, `docente.astro`, and `admin.astro` each have their own standalone sidebar + topbar inline (not using `Sidebar.astro` component).
 
 ### Components
 - **`WsRiskAlert.astro`** — WebSocket client for real-time risk alerts. Fixed top-right toast notifications. Audio alert (Web Audio API oscillator).

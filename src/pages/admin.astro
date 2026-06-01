@@ -1,5 +1,6 @@
 ---
 import '../styles/theme.css'
+import AIChat from '@components/AIChat.astro'
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11°'] as const
 ---
@@ -123,9 +124,9 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
             <p style="font-size:.8rem;color:var(--text-secondary)">Bienvenido al Sistema Integral Educativo. Estado actual de la institución:</p>
           </div>
           <div class="stats-grid-custom">
-            {['stat-mora','En Mora','stat-estudiantes','Estudiantes','stat-docentes','Docentes','stat-avisos','Avisos'].map((_,i) => i%2===0 ? null : (
+            {['stat-mora','En Mora','stat-grados','Grados','stat-estudiantes','Estudiantes','stat-docentes','Docentes','stat-avisos','Avisos'].map((_,i) => i%2===0 ? null : (
               <div class="card-float stat-card">
-                <span class="stat-value" id={['stat-mora','stat-estudiantes','stat-docentes','stat-avisos'][i/2-0.5]}>0</span>
+                <span class="stat-value" id={['stat-mora','stat-grados','stat-estudiantes','stat-docentes','stat-avisos'][i/2-0.5]}>0</span>
                 <span class="stat-label">{_}</span>
               </div>
             ))}
@@ -148,6 +149,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
               <select class="input-apple" id="filter-payment" onchange="filterStudents()">
                 <option value="">Todos los estados</option><option value="paid">Al día</option><option value="debt">En mora</option>
               </select>
+
               <button class="btn-apple btn-secondary" style="padding:.45rem .85rem;font-size:.7rem" onclick="exportCSV()">
                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
                 Exportar CSV
@@ -365,6 +367,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     function renderDashboard(d) {
       if (!d) return;
       document.getElementById('stat-mora').textContent = d.mora||0;
+      document.getElementById('stat-grados').textContent = d.total_grades||'6';
       document.getElementById('stat-estudiantes').textContent = d.total_students||0;
       document.getElementById('stat-docentes').textContent = d.total_teachers||0;
       document.getElementById('stat-avisos').textContent = d.total_notices||0;
@@ -642,5 +645,6 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     document.getElementById('notice-file').addEventListener('change', previewNoticeFile);
     document.getElementById('admin-modal').addEventListener('click', function(e) { if (e.target===this) closeModal(); });
   </script>
+  <AIChat role="admin" />
 </body>
 </html>

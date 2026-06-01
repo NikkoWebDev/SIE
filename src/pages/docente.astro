@@ -1,5 +1,6 @@
 ---
 import '../styles/theme.css'
+import AIChat from '@components/AIChat.astro'
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 ---
 <!doctype html>
@@ -56,7 +57,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       </div>
       <nav class="sidebar-nav">
         <div style="padding:0 .75rem;margin-bottom:.35rem;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary)">Panel</div>
-        {[['inicio','Dashboard','M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],['notas','Control de Notas','M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'],['materiales','Subir Material','M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'],['alertas','Alertas de Riesgo','M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z']].map(n => (
+        {[['inicio','Dashboard','M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],['notas','Control de Notas','M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'],['contenidos','Gu\u00edas y Tareas','M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z'],['examenes','Ex\u00e1menes','M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10'],['materiales','Subir Material','M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'],['horario','Horario','M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],['incidentes','Incidentes','M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z'],['alertas','Alertas de Riesgo','M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z']].map(n => (
           <a href="#" class="sidebar-link" data-nav-section={n[0]} onclick="showSection('{n[0]}')">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={n[2]}/></svg>
             {n[1]}
@@ -114,85 +115,153 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
             <div class="card-float stat-card"><span class="stat-value" id="stat-recent">0</span><span class="stat-label">Notas Recientes</span></div>
           </div>
           <div class="card-float" style="padding:1.25rem">
-            <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Últimas Calificaciones Registradas</h3>
+            <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">\u00daltimas Calificaciones Registradas</h3>
             <div id="recent-grades-list" style="font-size:.8rem;color:var(--text-tertiary)">No hay calificaciones recientes.</div>
           </div>
         </section>
 
-        <!-- CONTROL DE NOTAS -->
+        <!-- CONTROL DE NOTAS P1-P4 -->
         <section id="sec-notas" class="t-section">
           <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
-            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Registrar Nota</h2>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem" class="grade-form-grid">
-              <select class="input-apple" id="grade-student"><option value="">Seleccionar estudiante...</option></select>
-              <select class="input-apple" id="grade-subject"><option value="">Seleccionar materia...</option></select>
-              <input type="number" class="input-apple" id="grade-score" placeholder="Nota (0.0 - 5.0)" min="0" max="5" step="0.1">
-              <select class="input-apple" id="grade-type">
-                <option value="parcial">Parcial</option>
-                <option value="final">Final</option>
-                <option value="proyecto">Proyecto</option>
-                <option value="taller">Taller</option>
-              </select>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem">
+              <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text)">Planilla de Calificaciones</h2>
+              <button class="btn-apple btn-secondary" style="padding:.35rem .65rem;font-size:.7rem" onclick="exportGradesPDF()">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                Exportar PDF
+              </button>
             </div>
-            <textarea class="input-apple" id="grade-notes" placeholder="Notas adicionales (opcional)" rows="2" style="margin-bottom:.75rem;resize:vertical"></textarea>
-            <button class="btn-apple btn-primary" onclick="submitGrade()" style="width:100%;font-size:.8rem">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              Guardar Calificación
-            </button>
+            <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+              <select class="input-apple" id="filter-grade-notas" onchange="pageUpdateSubjects(\'notas\')" style="flex:1;min-width:140px"><option value="">Grado...</option></select>
+              <select class="input-apple" id="filter-subject-notas" onchange="loadGradesSheet()" style="flex:1;min-width:140px"><option value="">Primero elija grado</option></select>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:650px">
+                <thead><tr>
+                  <th style="text-align:left;padding:.5rem .6rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border)">Estudiante</th>
+                  <th style="text-align:center;padding:.5rem .4rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);width:56px">P1</th>
+                  <th style="text-align:center;padding:.5rem .4rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);width:56px">P2</th>
+                  <th style="text-align:center;padding:.5rem .4rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);width:56px">P3</th>
+                  <th style="text-align:center;padding:.5rem .4rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);width:56px">P4</th>
+                  <th style="text-align:center;padding:.5rem .4rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);width:64px">Prom.</th>
+                  <th style="text-align:left;padding:.5rem .6rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);min-width:100px">Obs.</th>
+                  <th style="text-align:center;padding:.5rem .4rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);width:50px"></th>
+                </tr></thead>
+                <tbody id="grades-tbody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-tertiary);font-size:.8rem">Selecciona grado y materia</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- CONTENIDOS: GUIAS + TAREAS -->
+        <section id="sec-contenidos" class="t-section">
+          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Publicar Gu\u00eda o Recurso</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem" class="grade-form-grid">
+              <input type="text" class="input-apple" id="guide-title" placeholder="T\u00edtulo (Ej: Gu\u00eda 1 - Algebra)">
+              <select class="input-apple" id="guide-subject"><option value="">Materia...</option></select>
+            </div>
+            <div id="guide-drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;transition:all .3s;margin:.75rem 0">
+              <svg class="h-8 w-8" style="margin:0 auto .5rem;color:var(--text-tertiary)" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+              <p style="font-size:.8rem;color:var(--text-tertiary)">Arrastra un PDF o haz clic para seleccionar</p>
+              <input type="file" id="guide-file" accept=".pdf" style="display:none">
+            </div>
+            <div id="guide-preview" style="margin-bottom:.75rem"></div>
+            <button class="btn-apple btn-primary" onclick="uploadGuide()" style="width:100%;font-size:.8rem">Publicar Gu\u00eda</button>
+          </div>
+          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+            <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Gu\u00edas Publicadas</h3>
+            <div id="guides-list" style="font-size:.8rem;color:var(--text-tertiary)">Cargando gu\u00edas...</div>
           </div>
           <div class="card-float" style="padding:1.25rem">
-            <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Historial de Notas</h3>
-            <div id="grades-history" style="font-size:.8rem;color:var(--text-tertiary)">Selecciona un estudiante y materia para ver su historial.</div>
+            <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Buz\u00f3n de Tareas (Entregas de Estudiantes)</h3>
+            <div id="tasks-list" style="font-size:.8rem;color:var(--text-tertiary)">Cargando entregas...</div>
+          </div>
+        </section>
+
+        <!-- EXAMENES -->
+        <section id="sec-examenes" class="t-section">
+          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
+            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Generar Examen</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem" class="grade-form-grid">
+              <input type="text" class="input-apple" id="exam-title-input" placeholder="T\u00edtulo del examen">
+              <select class="input-apple" id="exam-grade" onchange="pageUpdateSubjects(\'exam\')"><option value="">Grado...</option></select>
+              <select class="input-apple" id="exam-subject"><option value="">Materia...</option></select>
+            </div>
+            <div id="questions-area" style="margin:.75rem 0"></div>
+            <div style="display:flex;gap:.75rem">
+              <button class="btn-apple btn-secondary" onclick="addQuestion()" style="flex:1;font-size:.8rem">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                A\u00f1adir Pregunta
+              </button>
+              <button class="btn-apple btn-primary" onclick="saveExam()" style="flex:1;font-size:.8rem">Publicar Examen</button>
+            </div>
+          </div>
+          <div class="card-float" style="padding:1.25rem">
+            <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Mis Ex\u00e1menes</h3>
+            <div id="my-exams-list" style="font-size:.8rem;color:var(--text-tertiary)">Cargando ex\u00e1menes...</div>
+          </div>
+        </section>
+
+        <!-- INCIDENTES -->
+        <section id="sec-incidentes" class="t-section">
+          <div class="card-float" style="padding:1.25rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;margin-bottom:.75rem">
+              <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text)">Seguridad en Ex\u00e1menes</h2>
+              <span class="badge badge-red" style="font-size:.65rem">Monitor activo</span>
+            </div>
+            <p style="font-size:.8rem;color:var(--text-secondary);margin-bottom:1rem">Incidentes reportados durante evaluaciones en l\u00ednea (cambio de pesta\u00f1a, salida de pantalla completa).</p>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:.8rem;min-width:550px">
+                <thead><tr>
+                  <th style="text-align:left;padding:.5rem .6rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border)">Estudiante</th>
+                  <th style="text-align:left;padding:.5rem .6rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border)">Examen</th>
+                  <th style="text-align:center;padding:.5rem .4rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);width:60px">Strikes</th>
+                  <th style="text-align:left;padding:.5rem .6rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border)">Motivo</th>
+                  <th style="text-align:center;padding:.5rem .4rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border);width:60px"></th>
+                </tr></thead>
+                <tbody id="incidents-tbody"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-tertiary);font-size:.8rem">Cargando incidentes...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- MATERIALES UPLOAD -->
+        <section id="sec-materiales" class="t-section">        <!-- HORARIO -->
+        <section id="sec-horario" class="t-section">
+          <div class="card-float" style="padding:1.25rem">
+            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Horario Semanal</h2>
+            <p style="font-size:.8rem;color:var(--text-secondary);margin-bottom:1rem" id="teacher-schedule-grade">Grado:</p>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;min-width:680px;font-size:13.5px">
+                <thead>
+                  <tr><th style="width:80px;padding:10px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:.5;border-bottom:1px solid var(--border)">Hora</th>
+                    <th style="padding:10px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:.5;border-bottom:1px solid var(--border)">Lunes</th>
+                    <th style="padding:10px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:.5;border-bottom:1px solid var(--border)">Martes</th>
+                    <th style="padding:10px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:.5;border-bottom:1px solid var(--border)">Mi\u00e9rcoles</th>
+                    <th style="padding:10px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:.5;border-bottom:1px solid var(--border)">Jueves</th>
+                    <th style="padding:10px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:.5;border-bottom:1px solid var(--border)">Viernes</th>
+                  </tr>
+                </thead>
+                <tbody id="teacher-schedule-body"><tr><td colspan="6" style="text-align:center;opacity:.5;padding:2rem">Cargando horario...</td></tr></tbody>
+              </table>
+            </div>
           </div>
         </section>
 
         <!-- ALERTAS -->
         <section id="sec-alertas" class="t-section">
           <div class="card-float" style="padding:1.25rem">
-            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Alertas de Riesgo Académico</h2>
-            <p style="font-size:.8rem;color:var(--text-secondary);margin-bottom:1rem">Estudiantes con rendimiento por debajo del umbral mínimo.</p>
+            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Alertas de Riesgo Acad\u00e9mico</h2>
+            <p style="font-size:.8rem;color:var(--text-secondary);margin-bottom:1rem">Estudiantes con rendimiento por debajo del umbral m\u00ednimo.</p>
             <div id="risk-alerts-list">
               <div class="shimmer" style="height:60px;border-radius:var(--radius-md);margin-bottom:.5rem"></div>
               <div class="shimmer" style="height:60px;border-radius:var(--radius-md)"></div>
             </div>
           </div>
         </section>
-
-        <!-- MATERIALES UPLOAD -->
-        <section id="sec-materiales" class="t-section">
-          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
-            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Subir Material Educativo</h2>
-            <p style="font-size:.8rem;color:var(--text-secondary);margin-bottom:1rem">Sube un PDF o Word para extraer su contenido y convertirlo a Markdown educativo mediante IA.</p>
-            <div style="margin-bottom:.75rem">
-              <select class="input-apple" id="material-subject" style="margin-bottom:.5rem"><option value="">Seleccionar materia...</option></select>
-            </div>
-            <div id="drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;transition:all .3s;margin-bottom:.75rem">
-              <svg class="h-8 w-8" style="margin:0 auto .5rem;color:var(--text-tertiary)" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-              <p style="font-size:.8rem;color:var(--text-tertiary)">Arrastra un archivo aquí o haz clic para seleccionar</p>
-              <p style="font-size:.65rem;color:var(--text-tertiary);margin-top:.25rem">PDF o Word</p>
-              <input type="file" id="material-file" accept=".pdf,.docx,.doc" style="display:none">
-            </div>
-            <div id="upload-progress" style="display:none;margin-bottom:.75rem">
-              <div style="display:flex;justify-content:space-between;margin-bottom:.35rem">
-                <span id="upload-stage" style="font-size:.75rem;color:var(--text-secondary)">Procesando...</span>
-                <span id="upload-pct" style="font-size:.75rem;font-weight:600;color:var(--maroon)">0%</span>
-              </div>
-              <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
-                <div id="upload-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--maroon),var(--gold));border-radius:3px;transition:width .4s ease"></div>
-              </div>
-            </div>
-            <button class="btn-apple btn-primary" id="btn-upload-material" style="width:100%;font-size:.8rem" onclick="startMaterialUpload()">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-              Subir y Procesar con IA
-            </button>
-            <div id="upload-result" style="margin-top:.75rem;display:none"></div>
-          </div>
-        </section>
       </div>
     </main>
-  </div>
-
-  <script define:vars={{ apiUrl }}>
+  </div>  <script define:vars={{ apiUrl }}>
     (function () {
       try {
       var API = apiUrl
@@ -201,17 +270,23 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var role; try { role = localStorage.getItem('userRole') || '' } catch(e) { role = '' }
       if (!['PROFESOR','TEACHER','DOCENTE'].includes(role.toUpperCase())) { window.location.href = '/'; return }
       var headers = { 'Authorization': 'Bearer ' + token }
+      var teacherData = null
 
       // ── Theme toggle ──
-      document.getElementById('sidebar-theme-toggle').addEventListener('click', function() {
-        var dark = !document.documentElement.classList.contains('dark')
-        document.documentElement.classList.toggle('dark', dark)
-        localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
-        document.getElementById('sidebar-theme-label').textContent = dark ? 'Modo claro' : 'Modo oscuro'
-      })
+      var themeBtn = document.getElementById('sidebar-theme-toggle')
+      var themeLabel = document.getElementById('sidebar-theme-label')
+      if (themeBtn) {
+        themeBtn.addEventListener('click', function() {
+          var dark = !document.documentElement.classList.contains('dark')
+          document.documentElement.classList.toggle('dark', dark)
+          localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
+          if (themeLabel) themeLabel.textContent = dark ? 'Modo claro' : 'Modo oscuro'
+        })
+      }
 
       function toast(msg, type) {
         var t = document.getElementById('toast')
+        if (!t) return
         t.style.opacity = '1'; t.style.transform = 'translateY(0)'
         if (type==='error') { t.style.borderColor='rgba(186,26,26,0.3)'; t.style.color='var(--red)' }
         else if (type==='success') { t.style.borderColor='rgba(52,211,153,0.3)'; t.style.color='var(--green)' }
@@ -222,7 +297,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 
       function toggleLoading(show) {
         var el = document.getElementById('loading-overlay')
-        el.style.display = show ? 'flex' : 'none'
+        if (el) el.style.display = show ? 'flex' : 'none'
       }
 
       function showSection(id) {
@@ -230,12 +305,15 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
         var sec = document.getElementById('sec-'+id)
         if (sec) sec.classList.add('active')
         document.querySelectorAll('.sidebar-link').forEach(function(a){a.classList.remove('active')})
-        var titles = {inicio:'Panel Docente',notas:'Control de Notas',materiales:'Subir Material',alertas:'Alertas de Riesgo'}
-        var subs = {inicio:'Control de notas y alertas',notas:'Registrar y consultar calificaciones',materiales:'Subir PDF/Word y convertir a Markdown con IA',alertas:'Estudiantes con rendimiento crítico'}
+        var titles = {inicio:'Panel Docente',notas:'Control de Notas',contenidos:'Gu\u00edas y Tareas',examenes:'Ex\u00e1menes',materiales:'Subir Material',horario:'Horario Semanal',incidentes:'Incidentes de Seguridad',alertas:'Alertas de Riesgo'}
+        var subs = {inicio:'Control de notas y alertas',notas:'Registrar calificaciones por per\u00edodo',contenidos:'Subir gu\u00edas y revisar entregas',examenes:'Crear y publicar evaluaciones',materiales:'Subir PDF/Word y convertir a Markdown con IA',horario:'Clases programadas de la semana',incidentes:'Monitoreo de seguridad en ex\u00e1menes',alertas:'Estudiantes con rendimiento cr\u00edtico'}
         document.getElementById('page-title').textContent = titles[id] || 'Panel Docente'
         document.getElementById('page-subtitle').textContent = subs[id] || ''
         document.querySelectorAll('[data-nav-section]').forEach(function(a){if(a.getAttribute('data-nav-section')===id)a.classList.add('active')})
         if (window.innerWidth < 1024) document.getElementById('teacher-sidebar').classList.remove('open')
+        if (id === 'contenidos') { loadGuides(); loadTasks(); }
+        if (id === 'examenes') loadMyExams();
+        if (id === 'incidentes') loadIncidents();
       }
 
       showSection('inicio')
@@ -268,19 +346,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
             document.getElementById('stat-subjects').textContent = subjSet.size || '--'
             document.getElementById('stat-recent').textContent = subjects.length || 0
 
-            // Populate dropdowns
-            var studentSelect = document.getElementById('grade-student')
-            studentSelect.innerHTML = '<option value="">Seleccionar estudiante...</option>'
-            Array.from(students).sort().forEach(function(n) {
-              studentSelect.innerHTML += '<option value="'+n+'">'+n+'</option>'
-            })
-            var subjSelect = document.getElementById('grade-subject')
-            subjSelect.innerHTML = '<option value="">Seleccionar materia...</option>'
-            Array.from(subjSet).sort().forEach(function(n) {
-              subjSelect.innerHTML += '<option value="'+n+'">'+n+'</option>'
-            })
-
-            // Populate material subject dropdown (same subjects, query by name)
+            // Populate material subject dropdown
             var matSubjSelect = document.getElementById('material-subject')
             if (matSubjSelect) {
               matSubjSelect.innerHTML = '<option value="">Seleccionar materia...</option>'
@@ -289,36 +355,57 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
               })
             }
 
+            // Populate guide subject dropdown
+            var guideSubj = document.getElementById('guide-subject')
+            if (guideSubj && teacherData && teacherData.subjects) {
+              guideSubj.innerHTML = '<option value="">Materia...</option>'
+              teacherData.subjects.forEach(function(s) {
+                guideSubj.innerHTML += '<option value="'+(s.name||s.subject_name)+'|'+(s.grade||s.grado)+'">'+(s.name||s.subject_name)+' ('+(s.grade||s.grado)+')</option>'
+              })
+            }
+
+            // Populate grade filter dropdowns
+            var gradeFilter = document.getElementById('filter-grade-notas')
+            if (gradeFilter && teacherData && teacherData.subjects) {
+              var grades = [...new Set(teacherData.subjects.map(function(s){ return s.grade || s.grado }))].filter(Boolean).sort()
+              gradeFilter.innerHTML = '<option value="">Grado...</option>' + grades.map(function(g){ return '<option value="'+g+'">'+g+'</option>' }).join('')
+            }
+            var examGrade = document.getElementById('exam-grade')
+            if (examGrade && teacherData && teacherData.subjects) {
+              var grades2 = [...new Set(teacherData.subjects.map(function(s){ return s.grade || s.grado }))].filter(Boolean).sort()
+              examGrade.innerHTML = '<option value="">Grado...</option>' + grades2.map(function(g){ return '<option value="'+g+'">'+g+'</option>' }).join('')
+            }
+
             // Recent grades
             var recentList = document.getElementById('recent-grades-list')
-            recentList.innerHTML = subjects.slice(-10).reverse().map(function(s) {
-              return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border)">'+
-                '<div><strong style="font-size:.8rem">'+(s.student_name||'')+'</strong> · <span style="color:var(--text-tertiary);font-size:.7rem">'+(s.subject_name||'')+'</span></div>'+
-                '<span style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:'+(s.score>=3?'var(--green)':'var(--red)')+'">'+(s.score||'-').toFixed(1)+'</span></div>'
-            }).join('') || '<div style="color:var(--text-tertiary);font-size:.8rem">No hay calificaciones recientes.</div>'
+            if (recentList) {
+              recentList.innerHTML = subjects.slice(-10).reverse().map(function(s) {
+                return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border)">'+
+                  '<div><strong style="font-size:.8rem">'+(s.student_name||'')+'</strong> \u00b7 <span style="color:var(--text-tertiary);font-size:.7rem">'+(s.subject_name||'')+'</span></div>'+
+                  '<span style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:'+(s.score>=3?'var(--green)':'var(--red)')+'">'+(s.score||'-').toFixed(1)+'</span></div>'
+              }).join('') || '<div style="color:var(--text-tertiary);font-size:.8rem">No hay calificaciones recientes.</div>'
+            }
           }
 
-          // Risk alerts from API
+          // Risk alerts
           if (riskRes && riskRes.ok) {
             var riskData = await riskRes.json()
             var riskList = document.getElementById('risk-alerts-list')
-            var students = riskData.students || riskData || []
-            document.getElementById('stat-risk').textContent = students.length || 0
-            if (students.length) {
-              riskList.innerHTML = students.map(function(s) {
-                var name = s.fullname || s.nombre || s.student_name || ''
+            var riskStudents = riskData.students || riskData || []
+            document.getElementById('stat-risk').textContent = riskStudents.length || 0
+            if (riskStudents.length) {
+              riskList.innerHTML = riskStudents.map(function(s) {
+                var n = s.fullname || s.nombre || s.student_name || ''
                 return '<div class="card-float" style="padding:.75rem;margin-bottom:.5rem;border-left:3px solid var(--red)">'+
                   '<div style="display:flex;justify-content:space-between;align-items:center">'+
-                  '<div><strong style="font-size:.8rem">'+name+'</strong><br><span style="font-size:.65rem;color:var(--text-tertiary)">Promedio: '+(s.avg_score||s.promedio||'0')+'</span></div>'+
+                  '<div><strong style="font-size:.8rem">'+n+'</strong><br><span style="font-size:.65rem;color:var(--text-tertiary)">Promedio: '+(s.avg_score||s.promedio||'0')+'</span></div>'+
                   '<span class="badge badge-red">En riesgo</span></div></div>'
               }).join('')
             } else {
               riskList.innerHTML = '<div class="card-float" style="padding:1rem;text-align:center;color:var(--green);font-size:.8rem">✅ No hay estudiantes en riesgo.</div>'
             }
-          } else {
-            document.getElementById('risk-alerts-list').innerHTML = '<div style="color:var(--text-tertiary);font-size:.8rem">No se pudieron cargar las alertas.</div>'
           }
-          
+
           // DB risk alerts
           if (dbRiskRes && dbRiskRes.ok) {
             var dbRiskData = await dbRiskRes.json()
@@ -326,7 +413,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
               var dbHTML = '<h4 style="font-family:var(--font-display);font-size:.75rem;font-weight:600;color:var(--text);margin:.75rem 0 .5rem">Historial de Alertas</h4>'
               dbHTML += dbRiskData.slice(0, 10).map(function(a) {
                 var sev = a.severity === 'high' ? 'badge-red' : 'badge-gold'
-                var label = a.severity === 'high' ? 'Crítica' : 'Media'
+                var label = a.severity === 'high' ? 'Cr\u00edtica' : 'Media'
                 return '<div class="card-float" style="padding:.5rem .75rem;margin-bottom:.35rem;border-left:3px solid '+(a.severity==='high'?'var(--red)':'var(--gold)')+'">'+
                   '<div style="display:flex;justify-content:space-between;align-items:center">'+
                   '<div><span style="font-size:.75rem;font-weight:500">'+(a.reason||'Alerta')+'</span><br><span style="font-size:.6rem;color:var(--text-tertiary)">'+new Date(a.created_at).toLocaleDateString('es-CO')+'</span></div>'+
@@ -339,117 +426,346 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 
           document.getElementById('sidebar-role').textContent = subjSet.size + ' materias asignadas'
           document.getElementById('teacher-subjects').textContent = Array.from(subjSet).join(', ') || 'Sin materias asignadas'
+
+          // Schedule
+          try {
+            var schedRes = await fetch(API+'/api/teacher/schedule?teacher_id='+userId, {headers})
+            if (schedRes.ok) {
+              var sched = await schedRes.json()
+              var gradeLabel = sched.grado || sched.grade_name || 'No asignado'
+              document.getElementById('teacher-schedule-grade').textContent = 'Grado: ' + gradeLabel
+              var tbody = document.getElementById('teacher-schedule-body')
+              if (sched.days && sched.hours) {
+                var weekday = ['lunes','martes','mi\u00e9rcoles','jueves','viernes']
+                var hours = sched.hours
+                if (typeof hours === 'string') { try { hours = JSON.parse(hours) } catch(e) {} }
+                if (Array.isArray(hours)) {
+                  tbody.innerHTML = hours.map(function(hour, hi) {
+                    var cells = '<td style="padding:10px;text-align:center;font-weight:600;font-size:11px;opacity:.6;border-bottom:1px solid var(--border)">' + (hour.time || hour.hour || ('H'+(hi+1))) + '</td>'
+                    weekday.forEach(function(d) {
+                      var cell = (sched.days[d] && sched.days[d][hi]) ? sched.days[d][hi] : (sched.schedule && sched.schedule[d] ? sched.schedule[d][hi] : null)
+                      cells += '<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">'
+                      if (cell) {
+                        cells += '<div style="font-weight:600;font-size:13px">'+(cell.subject||cell.materia||'')+'</div>'
+                        cells += '<div style="font-size:11px;opacity:.5">'+gradeLabel+' \u00b7 Aula '+(cell.classroom||cell.aula||'')+'</div>'
+                      } else {
+                        cells += '<span style="opacity:.2">---</span>'
+                      }
+                      cells += '</td>'
+                    })
+                    return '<tr>' + cells + '</tr>'
+                  }).join('')
+                }
+              } else {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;opacity:.5;padding:1rem">No hay horario disponible</td></tr>'
+              }
+            }
+          } catch(e) {}
         } catch(e) { toast('Error al cargar datos','error') }
         toggleLoading(false)
       }
 
-      async function submitGrade() {
-        var studentName = document.getElementById('grade-student').value
-        var subjectName = document.getElementById('grade-subject').value
-        var score = parseFloat(document.getElementById('grade-score').value)
-        var type = document.getElementById('grade-type').value
-        var notes = document.getElementById('grade-notes').value
+      // ── P1-P4 Grade Sheet ──
+      function pageUpdateSubjects(ctx) {
+        var gradeVal = document.getElementById(ctx === 'notas' ? 'filter-grade-notas' : 'exam-grade').value
+        var target = document.getElementById(ctx === 'notas' ? 'filter-subject-notas' : 'exam-subject')
+        if (!gradeVal || !teacherData) { target.innerHTML = '<option value="">Primero elija grado</option>'; return }
+        var filtered = teacherData.subjects.filter(function(s){ return (s.grade || s.grado) == gradeVal })
+        target.innerHTML = '<option value="">Materia...</option>' + filtered.map(function(s){ return '<option value="'+(s.name||s.subject_name)+'|'+(s.grade||s.grado)+'">'+(s.name||s.subject_name)+'</option>' }).join('')
+      }
 
-        if (!studentName || !subjectName || isNaN(score)) {
-          toast('Completa todos los campos obligatorios','error'); return
-        }
-        if (score < 0 || score > 5) { toast('La nota debe estar entre 0.0 y 5.0','error'); return }
+      function calcAvg(input) {
+        var row = input.closest('tr')
+        var notes = row.querySelectorAll('.note-input-cell')
+        var vals = Array.from(notes).map(function(i){ return parseFloat(i.value) || 0 })
+        var avg = (vals.reduce(function(a,b){ return a+b }, 0) / 4).toFixed(2) || '0.00'
+        var cell = row.querySelector('.avg-cell')
+        if (cell) { cell.textContent = avg; cell.style.color = parseFloat(avg) < 3 ? 'var(--red)' : 'var(--green)' }
+      }
 
+      async function loadGradesSheet() {
+        var val = document.getElementById('filter-subject-notas').value
+        if (!val) return
+        var parts = val.split('|')
+        var subject = parts[0], grade = parts[1]
+        var tbody = document.getElementById('grades-tbody')
+        if (!tbody) return
         toggleLoading(true)
+        try {
+          var students = await (await fetch(API+'/api/admin/students', {headers})).json()
+          var filtered = (Array.isArray(students) ? students : []).filter(function(s){ return (s.grade || s.grado) == grade })
+          tbody.innerHTML = filtered.map(function(s){
+            return '<tr>'+
+              '<td style="font-weight:600;padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.8rem">'+((s.fullname||s.name)||'')+'</td>'+
+              '<td style="text-align:center;padding:.25rem .2rem;border-bottom:1px solid var(--border)"><input type="number" class="input-apple note-input-cell" placeholder="0.0" min="0" max="5" step="0.1" oninput="calcAvg(this)" style="width:52px;padding:.3rem;text-align:center;font-size:.75rem"></td>'+
+              '<td style="text-align:center;padding:.25rem .2rem;border-bottom:1px solid var(--border)"><input type="number" class="input-apple note-input-cell" placeholder="0.0" min="0" max="5" step="0.1" oninput="calcAvg(this)" style="width:52px;padding:.3rem;text-align:center;font-size:.75rem"></td>'+
+              '<td style="text-align:center;padding:.25rem .2rem;border-bottom:1px solid var(--border)"><input type="number" class="input-apple note-input-cell" placeholder="0.0" min="0" max="5" step="0.1" oninput="calcAvg(this)" style="width:52px;padding:.3rem;text-align:center;font-size:.75rem"></td>'+
+              '<td style="text-align:center;padding:.25rem .2rem;border-bottom:1px solid var(--border)"><input type="number" class="input-apple note-input-cell" placeholder="0.0" min="0" max="5" step="0.1" oninput="calcAvg(this)" style="width:52px;padding:.3rem;text-align:center;font-size:.75rem"></td>'+
+              '<td class="avg-cell" style="text-align:center;font-weight:700;font-size:.85rem;padding:.5rem .4rem;border-bottom:1px solid var(--border);color:var(--gold)">0.00</td>'+
+              '<td style="padding:.25rem .4rem;border-bottom:1px solid var(--border)"><input class="input-apple" style="width:100%;padding:.3rem;font-size:.7rem" placeholder="Obs."></td>'+
+              '<td style="text-align:center;padding:.25rem .2rem;border-bottom:1px solid var(--border)"><button class="btn-apple btn-ghost" style="padding:.25rem .5rem;font-size:.65rem" onclick="saveGradeRow(\''+(s.document_id||s._id)+'\',\''+subject.replace(/'/g,"\\'")+'\',this)" title="Guardar">✅</button></td>'+
+              '</tr>'
+          }).join('') || '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-tertiary);font-size:.8rem">Sin estudiantes en este grado</td></tr>'
+        } catch(e) { toast('Error cargando estudiantes','error') }
+        toggleLoading(false)
+      }
+
+      async function saveGradeRow(studentId, subject, btn) {
+        var row = btn.closest('tr')
+        var inputs = row.querySelectorAll('input.note-input-cell')
+        var avg = row.querySelector('.avg-cell')
+        var obs = row.querySelector('td:nth-child(7) input')
+        var data = {
+          student_id: String(studentId),
+          subject: String(subject),
+          p1: inputs[0]?.value || '0',
+          p2: inputs[1]?.value || '0',
+          p3: inputs[2]?.value || '0',
+          p4: inputs[3]?.value || '0',
+          final_grade: parseFloat(avg?.textContent || '0').toFixed(1),
+          observations: obs?.value || '',
+          teacher_id: (function(){ try { return localStorage.getItem('profile_id') || localStorage.getItem('userId') } catch(e) { return '' } })(),
+        }
+        btn.disabled = true
         try {
           var res = await fetch(API+'/api/teacher/submit-grade', {
             method:'POST',
             headers: Object.assign({'Content-Type':'application/json'}, headers),
-            body: JSON.stringify({ student_name: studentName, subject_name: subjectName, score: score, type: type, notes: notes })
+            body: JSON.stringify(data)
           })
           if (!res.ok) throw new Error((await res.json()).detail || 'Error')
-          var result = await res.json()
-          document.getElementById('grade-score').value = ''
-          document.getElementById('grade-notes').value = ''
-          var msg = 'Calificación guardada exitosamente'
-          if (result.propagation_count > 0) {
-            msg += ' · Propagada a ' + result.propagation_count + ' materias'
-            showPropagationBanner(result.abp_propagated, result.propagation_note)
-          }
-          toast(msg, 'success')
-          await loadData()
-        } catch(e) { toast('Error: '+e.message,'error') }
+          toast('Nota guardada','success')
+          btn.innerHTML = '✅'
+          inputs.forEach(function(i){ i.disabled = true })
+        } catch(e) { toast('Error: '+e.message,'error'); btn.disabled = false; btn.innerHTML = '✅' }
+      }
+
+      // ── Guides ──
+      var guideDrop = document.getElementById('guide-drop-zone')
+      var guideFile = document.getElementById('guide-file')
+      if (guideDrop) {
+        guideDrop.addEventListener('click', function(){ guideFile.click() })
+        guideDrop.addEventListener('dragover', function(e){ e.preventDefault(); guideDrop.style.borderColor = 'var(--maroon)'; guideDrop.style.background = 'var(--maroon-subtle)' })
+        guideDrop.addEventListener('dragleave', function(){ guideDrop.style.borderColor = 'var(--border)'; guideDrop.style.background = 'transparent' })
+        guideDrop.addEventListener('drop', function(e){ e.preventDefault(); guideDrop.style.borderColor = 'var(--border)'; guideDrop.style.background = 'transparent'; guideFile.files = e.dataTransfer.files; if(guideFile.files.length){ document.getElementById('guide-preview').innerHTML = '<div class="card-float" style="padding:.5rem .75rem;display:flex;justify-content:space-between;font-size:.75rem"><span>📄 '+guideFile.files[0].name+'</span><button class="btn-apple btn-ghost" style="padding:.15rem .3rem;font-size:.6rem" onclick="this.closest(\'div\').remove();document.getElementById(\'guide-file\').value=\'\'">✖</button></div>' } })
+        guideFile.addEventListener('change', function(){ if(guideFile.files.length){ document.getElementById('guide-preview').innerHTML = '<div class="card-float" style="padding:.5rem .75rem;display:flex;justify-content:space-between;font-size:.75rem"><span>📄 '+guideFile.files[0].name+'</span><button class="btn-apple btn-ghost" style="padding:.15rem .3rem;font-size:.6rem" onclick="this.closest(\'div\').remove();document.getElementById(\'guide-file\').value=\'\'">✖</button></div>' } })
+      }
+
+      async function uploadGuide() {
+        var title = document.getElementById('guide-title').value.trim()
+        var subjectVal = document.getElementById('guide-subject').value
+        var file = guideFile?.files[0]
+        if (!title || !subjectVal || !file) { toast('Completa todos los campos','error'); return }
+        var parts = subjectVal.split('|')
+        var subject = parts[0], grade = parts[1]
+        toggleLoading(true)
+        var fd = new FormData()
+        fd.append('title', title)
+        fd.append('subject_name', subject)
+        fd.append('grade', grade)
+        var uid; try { uid = localStorage.getItem('profile_id') || localStorage.getItem('userId') } catch(e) { uid = '' }
+        fd.append('teacher_id', uid)
+        fd.append('file', file)
+        try {
+          await fetch(API+'/api/teacher/guides', { method:'POST', headers:{'Authorization':'Bearer '+token}, body:fd })
+          toast('Gu\u00eda publicada','success')
+          document.getElementById('guide-title').value = ''
+          guideFile.value = ''
+          document.getElementById('guide-preview').innerHTML = ''
+          loadGuides()
+        } catch(e) { toast('Error al subir','error') }
         toggleLoading(false)
       }
 
-      function showPropagationBanner(propagated, note) {
-        var existing = document.getElementById('propagation-banner')
-        if (existing) existing.remove()
-        var banner = document.createElement('div')
-        banner.id = 'propagation-banner'
-        banner.style.cssText = 'margin-top:.75rem;padding:.75rem 1rem;border-radius:var(--radius-md);background:rgba(253,192,3,0.1);border:1px solid var(--gold);font-size:.75rem'
-        banner.innerHTML = '<strong style="color:var(--gold)">🔄 Propagación ABP</strong><br>' +
-          '<span style="color:var(--text-secondary)">' + (note || 'Nota propagada a ' + propagated.length + ' materias') + '</span>' +
-          '<div style="margin-top:.35rem;display:flex;flex-wrap:wrap;gap:.35rem">' +
-          propagated.map(function(p){ return '<span class="badge badge-gold">' + p + '</span>' }).join('') +
-          '</div>' +
-          '<button onclick="this.parentElement.remove()" style="margin-top:.35rem;background:none;border:none;color:var(--text-tertiary);font-size:.65rem;cursor:pointer;text-decoration:underline">Cerrar</button>'
-        document.getElementById('sec-notas').querySelector('.card-float').appendChild(banner)
+      async function loadGuides() {
+        var list = document.getElementById('guides-list')
+        if (!list) return
+        var uid; try { uid = localStorage.getItem('profile_id') || localStorage.getItem('userId') } catch(e) { uid = '' }
+        try {
+          var data = await (await fetch(API+'/api/teacher/guides/'+uid, {headers})).json()
+          if (!Array.isArray(data) || !data.length) { list.innerHTML = '<div style="color:var(--text-tertiary);font-size:.8rem">No hay gu\u00edas publicadas.</div>'; return }
+          list.innerHTML = data.map(function(g){
+            return '<div class="card-float" style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .75rem;margin-bottom:.35rem">'+
+              '<div><strong style="font-size:.8rem">'+((g.title||'')+'')+'</strong><br><small style="color:var(--text-tertiary);font-size:.65rem">'+(g.subject_name||g.subject||'')+' \u00b7 Grado '+(g.grade||'')+'</small></div>'+
+              '<div style="display:flex;gap:.35rem">'+
+              (g.file_url ? '<a href="'+g.file_url+'" target="_blank" class="btn-apple btn-ghost" style="padding:.2rem .4rem;font-size:.6rem;text-decoration:none">📄</a>' : '')+
+              '<button class="btn-apple btn-ghost" style="padding:.2rem .4rem;font-size:.6rem;color:var(--red)" onclick="delResource(\'guide\',\''+(g._id||g.id)+'\')">✖</button></div></div>'
+          }).join('')
+        } catch(e) { list.innerHTML = '<div style="color:var(--text-tertiary);font-size:.8rem">Error cargando gu\u00edas</div>' }
       }
 
-      // ── Grade history on selection ──
-      function loadGradeHistory() {
-        var student = document.getElementById('grade-student').value
-        var subject = document.getElementById('grade-subject').value
-        var historyDiv = document.getElementById('grades-history')
-        if (!student || !subject) {
-          historyDiv.innerHTML = 'Selecciona un estudiante y materia para ver su historial.'
-          return
-        }
-        var userId; try { userId = localStorage.getItem('profile_id') || localStorage.getItem('userId') } catch(e) {}
-        fetch(API+'/api/grades?teacher_id='+userId, {headers})
-          .then(function(r){return r.json()})
-          .then(function(data){
-            var subjects = data.subjects || data || []
-            var filtered = subjects.filter(function(s){
-              return (s.student_name||'') === student && (s.subject_name||'') === subject
-            })
-            if (!filtered.length) {
-              historyDiv.innerHTML = 'No hay registros para este estudiante y materia.'
-              return
-            }
-            historyDiv.innerHTML = filtered.map(function(s){
-              return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border)">'+
-                '<span style="font-size:.75rem;color:var(--text-secondary)">'+(s.type||'parcial')+' · '+new Date(s.date||s.created_at).toLocaleDateString('es-CO')+'</span>'+
-                '<span style="font-weight:700;font-size:1rem;color:'+(s.score>=3?'var(--green)':'var(--red)')+'">'+s.score.toFixed(1)+'</span></div>'
-            }).join('')
+      async function loadTasks() {
+        var list = document.getElementById('tasks-list')
+        if (!list) return
+        var uid; try { uid = localStorage.getItem('profile_id') || localStorage.getItem('userId') } catch(e) { uid = '' }
+        try {
+          var data = await (await fetch(API+'/api/teacher/deliveries/'+uid, {headers})).json()
+          if (!Array.isArray(data) || !data.length) { list.innerHTML = '<div style="color:var(--text-tertiary);font-size:.8rem">Buz\u00f3n vac\u00edo.</div>'; return }
+          list.innerHTML = data.map(function(t){
+            return '<div class="card-float" style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .75rem;margin-bottom:.35rem">'+
+              '<div><strong style="font-size:.8rem">'+(t.student_name||'')+'</strong><br><small style="color:var(--text-tertiary);font-size:.65rem">'+(t.subject||'')+' \u00b7 Grado '+(t.grade||'')+'</small></div>'+
+              '<div style="display:flex;gap:.35rem">'+
+              (t.file_url ? '<a href="'+t.file_url+'" target="_blank" class="btn-apple btn-ghost" style="padding:.2rem .4rem;font-size:.6rem;text-decoration:none">📁</a>' : '')+
+              '<button class="btn-apple btn-ghost" style="padding:.2rem .4rem;font-size:.6rem;color:var(--red)" onclick="delResource(\'task\',\''+(t._id||t.id)+'\')">✖</button></div></div>'
+          }).join('')
+        } catch(e) { list.innerHTML = '<div style="color:var(--text-tertiary);font-size:.8rem">Error cargando entregas</div>' }
+      }
+
+      async function delResource(type, id) {
+        if (!confirm('\u00bfEliminar?')) return
+        var path = type === 'task' ? 'deliveries' : type === 'guide' ? 'guides' : 'exams'
+        try {
+          await fetch(API+'/api/teacher/'+path+'/'+id, { method:'DELETE', headers:headers })
+          toast('Eliminado','success')
+          if (type === 'task') loadTasks()
+          else if (type === 'guide') loadGuides()
+          else loadMyExams()
+        } catch(e) { toast('Error','error') }
+      }
+
+      // ── Exams ──
+      function addQuestion() {
+        var area = document.getElementById('questions-area')
+        var count = area.querySelectorAll('.q-card').length + 1
+        var div = document.createElement('div')
+        div.className = 'card-float q-card'
+        div.style.cssText = 'margin-bottom:.75rem;border-left:4px solid var(--gold);padding:1rem'
+        div.innerHTML = '<div style="display:flex;justify-content:space-between;margin-bottom:.5rem">'+
+          '<strong style="color:var(--gold);font-size:.8rem">#'+count+'</strong>'+
+          '<button class="btn-apple btn-ghost" style="padding:.15rem .35rem;font-size:.6rem;color:var(--red)" onclick="this.closest(\'.q-card\').remove()">✖</button></div>'+
+          '<input type="text" class="input-apple q-text" placeholder="Pregunta..." style="margin-bottom:.5rem;font-size:.8rem">'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">'+
+          '<input type="text" class="input-apple opt-a" placeholder="A (Correcta)" style="font-size:.8rem">'+
+          '<input type="text" class="input-apple opt-b" placeholder="B" style="font-size:.8rem">'+
+          '<input type="text" class="input-apple opt-c" placeholder="C" style="font-size:.8rem">'+
+          '<input type="text" class="input-apple opt-d" placeholder="D" style="font-size:.8rem"></div>'+
+          '<div style="display:flex;align-items:center;gap:.5rem">'+
+          '<small style="font-size:.65rem;opacity:.6;text-transform:uppercase;letter-spacing:.05em">Correcta:</small>'+
+          '<select class="input-apple correct-opt" style="width:auto;padding:.35rem;font-size:.75rem">'+
+          '<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div>'
+        area.appendChild(div)
+      }
+
+      async function saveExam() {
+        var title = document.getElementById('exam-title-input').value.trim()
+        var subjectVal = document.getElementById('exam-subject').value
+        var qCards = document.querySelectorAll('.q-card')
+        if (!title || !subjectVal || !qCards.length) { toast('Completa todos los campos','error'); return }
+        var parts = subjectVal.split('|')
+        var subjectName = parts[0], grade = parts[1]
+        var questions = Array.from(qCards).map(function(q){
+          var opts = [q.querySelector('.opt-a').value, q.querySelector('.opt-b').value, q.querySelector('.opt-c').value, q.querySelector('.opt-d').value]
+          return { question: q.querySelector('.q-text').value, options: opts, correct: opts[q.querySelector('.correct-opt').value.charCodeAt(0) - 65] }
+        })
+        toggleLoading(true)
+        var uid; try { uid = localStorage.getItem('profile_id') || localStorage.getItem('userId') } catch(e) { uid = '' }
+        try {
+          await fetch(API+'/api/teacher/exams', {
+            method:'POST',
+            headers: Object.assign({'Content-Type':'application/json'}, headers),
+            body: JSON.stringify({ title: title, subject_name: subjectName, grade: grade, teacher_id: uid, duration_minutes: 60, max_attempts: 1, questions: questions })
           })
-          .catch(function(){historyDiv.innerHTML='Error al cargar historial.'})
+          toast('Examen publicado','success')
+          document.getElementById('questions-area').innerHTML = ''
+          document.getElementById('exam-title-input').value = ''
+          loadMyExams()
+        } catch(e) { toast('Error al publicar','error') }
+        toggleLoading(false)
       }
 
-      document.getElementById('grade-student').addEventListener('change', loadGradeHistory)
-      document.getElementById('grade-subject').addEventListener('change', loadGradeHistory)
+      async function loadMyExams() {
+        var list = document.getElementById('my-exams-list')
+        if (!list) return
+        var uid; try { uid = localStorage.getItem('profile_id') || localStorage.getItem('userId') } catch(e) { uid = '' }
+        try {
+          var data = await (await fetch(API+'/api/teacher/my-exams/'+uid, {headers})).json()
+          if (!Array.isArray(data) || !data.length) { list.innerHTML = '<div style="color:var(--text-tertiary);font-size:.8rem">No hay ex\u00e1menes creados.</div>'; return }
+          list.innerHTML = data.map(function(e){
+            return '<div class="card-float" style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .75rem;margin-bottom:.35rem">'+
+              '<div><strong style="font-size:.8rem">📝 '+((e.title||'')+'')+'</strong><br><small style="color:var(--text-tertiary);font-size:.65rem">Grado '+(e.grade||'')+' \u00b7 '+(e.subject_name||'')+'</small></div>'+
+              '<button class="btn-apple btn-ghost" style="padding:.2rem .4rem;font-size:.6rem;color:var(--red)" onclick="delResource(\'exam\',\''+(e._id||e.id)+'\')">✖</button></div>'
+          }).join('')
+        } catch(e) { list.innerHTML = '<div style="color:var(--text-tertiary);font-size:.8rem">Error cargando ex\u00e1menes</div>' }
+      }
+
+      // ── Incidents ──
+      async function loadIncidents() {
+        var tbody = document.getElementById('incidents-tbody')
+        if (!tbody) return
+        var uid; try { uid = localStorage.getItem('profile_id') || localStorage.getItem('userId') } catch(e) { uid = '' }
+        try {
+          var data = await (await fetch(API+'/api/teacher/exam-incidents/'+uid, {headers})).json()
+          if (!Array.isArray(data) || !data.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-tertiary);font-size:.8rem">Sin alertas de seguridad</td></tr>'; return }
+          tbody.innerHTML = data.map(function(inc){
+            var s = inc.strikes || 0
+            var cls = s >= 5 ? 'badge-red' : s >= 3 ? 'badge-gold' : 'badge-green'
+            var label = s >= 5 ? 'Cr\u00edtico' : s >= 3 ? 'Alto' : 'Leve'
+            return '<tr>'+
+              '<td style="padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.8rem"><strong>'+(inc.student_id||'')+'</strong></td>'+
+              '<td style="padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text-secondary)">'+(inc.exam_name||String(inc.exam_id||'').slice(-6)||'N/A')+'</td>'+
+              '<td style="text-align:center;padding:.5rem .4rem;border-bottom:1px solid var(--border)"><span class="badge '+cls+'">'+s+'</span></td>'+
+              '<td style="padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.8rem">'+(inc.reason||'Desconocido')+'</td>'+
+              '<td style="text-align:center;padding:.5rem .4rem;border-bottom:1px solid var(--border)">'+
+              '<button class="btn-apple btn-ghost" style="padding:.2rem .4rem;font-size:.6rem" onclick="resetStrikes(\''+(inc.student_id||'')+'\',\''+(inc.exam_id||'')+'\')" title="Resetear">🔄</button></td></tr>'
+          }).join('')
+        } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-tertiary);font-size:.8rem">Error cargando incidentes</td></tr>' }
+      }
+
+      async function resetStrikes(studentId, examId) {
+        if (!confirm('\u00bfResetear strikes de este estudiante?')) return
+        try {
+          await fetch(API+'/api/teacher/reset-attempt/'+encodeURIComponent(studentId)+'/'+encodeURIComponent(examId), { method:'DELETE', headers:headers })
+          toast('Strikes reseteado','success')
+          loadIncidents()
+        } catch(e) { toast('Error al resetear','error') }
+      }
+
+      // ── PDF Export ──
+      function exportGradesPDF() {
+        var val = document.getElementById('filter-subject-notas').value
+        if (!val) { toast('Selecciona una materia','error'); return }
+        var parts = val.split('|')
+        var subject = parts[0], grade = parts[1]
+        if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') { toast('Cargando librer\u00eda PDF...'); return }
+        var { jsPDF } = window.jspdf
+        var doc = new jsPDF('l', 'mm', 'a4')
+        var uname; try { uname = localStorage.getItem('userName') || 'Docente' } catch(e) { uname = 'Docente' }
+        doc.setFillColor(128,0,0); doc.rect(0,0,300,35,'F')
+        doc.setTextColor(253,192,3); doc.setFontSize(18); doc.text('VYNTRA', 15, 18)
+        doc.setTextColor(255,255,255); doc.setFontSize(9); doc.text('MATERIA: '+subject+' | GRADO: '+grade+' | DOCENTE: '+uname, 15, 28)
+        var rows = Array.from(document.querySelectorAll('#grades-tbody tr')).map(function(tr){
+          var cells = tr.querySelectorAll('td')
+          return [cells[0]?.innerText||'', tr.querySelector('.note-input-cell')?.value||'', tr.querySelectorAll('.note-input-cell')[1]?.value||'', tr.querySelectorAll('.note-input-cell')[2]?.value||'', tr.querySelectorAll('.note-input-cell')[3]?.value||'', tr.querySelector('.avg-cell')?.textContent||'', tr.querySelector('td:nth-child(7) input')?.value||'']
+        })
+        doc.autoTable({ startY:50, head:[['ESTUDIANTE','P1','P2','P3','P4','PROM.','OBS.']], body:rows, headStyles:{ fillColor:[128,0,0], textColor:[255,255,255] } })
+        doc.save('Planilla_'+subject+'.pdf')
+        toast('PDF exportado','success')
+      }
 
       // ── Material Upload ──
       var dropZone = document.getElementById('drop-zone')
       var fileInput = document.getElementById('material-file')
-      dropZone.addEventListener('click', function(){ fileInput.click() })
-      dropZone.addEventListener('dragover', function(e){ e.preventDefault(); dropZone.style.borderColor = 'var(--maroon)'; dropZone.style.background = 'var(--maroon-subtle)' })
-      dropZone.addEventListener('dragleave', function(){ dropZone.style.borderColor = 'var(--border)'; dropZone.style.background = 'transparent' })
-      dropZone.addEventListener('drop', function(e){ e.preventDefault(); dropZone.style.borderColor = 'var(--border)'; dropZone.style.background = 'transparent'; fileInput.files = e.dataTransfer.files; if(fileInput.files.length){ dropZone.querySelector('p').textContent = fileInput.files[0].name } })
-      fileInput.addEventListener('change', function(){ if(fileInput.files.length){ dropZone.querySelector('p').textContent = fileInput.files[0].name } })
+      if (dropZone) {
+        dropZone.addEventListener('click', function(){ fileInput.click() })
+        dropZone.addEventListener('dragover', function(e){ e.preventDefault(); dropZone.style.borderColor = 'var(--maroon)'; dropZone.style.background = 'var(--maroon-subtle)' })
+        dropZone.addEventListener('dragleave', function(){ dropZone.style.borderColor = 'var(--border)'; dropZone.style.background = 'transparent' })
+        dropZone.addEventListener('drop', function(e){ e.preventDefault(); dropZone.style.borderColor = 'var(--border)'; dropZone.style.background = 'transparent'; fileInput.files = e.dataTransfer.files; if(fileInput.files.length){ dropZone.querySelector('p').textContent = fileInput.files[0].name } })
+        fileInput.addEventListener('change', function(){ if(fileInput.files.length){ dropZone.querySelector('p').textContent = fileInput.files[0].name } })
+      }
 
       async function startMaterialUpload() {
         var file = fileInput.files[0]
         var subject = document.getElementById('material-subject').value
         if (!file) { toast('Selecciona un archivo','error'); return }
         if (!subject) { toast('Selecciona una materia','error'); return }
-
         var btn = document.getElementById('btn-upload-material')
         btn.disabled = true; btn.textContent = 'Procesando...'
         document.getElementById('upload-progress').style.display = 'block'
         document.getElementById('upload-result').style.display = 'none'
-
         var formData = new FormData()
         formData.append('file', file)
         formData.append('subject_id', subject)
         var userGrade; try { userGrade = localStorage.getItem('userGrade') || '' } catch(e) { userGrade = '' }; formData.append('grade_id', userGrade)
-
         try {
           var res = await fetch(API+'/api/teacher/upload-material', {
             method: 'POST',
@@ -498,21 +814,46 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 
       function resetUploadUI() {
         var btn = document.getElementById('btn-upload-material')
+        if (!btn) return
         btn.disabled = false; btn.textContent = 'Subir y Procesar con IA'
         fileInput.value = ''
-        dropZone.querySelector('p').textContent = 'Arrastra un archivo aquí o haz clic para seleccionar'
+        if (dropZone) dropZone.querySelector('p').textContent = 'Arrastra un archivo aqu\u00ed o haz clic para seleccionar'
       }
 
       window.startMaterialUpload = startMaterialUpload
 
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadData)
-      else loadData()
+      // ── Init ──
+      async function initTeacher() {
+        var uid; try { uid = localStorage.getItem('profile_id') || localStorage.getItem('userId') } catch(e) { uid = '' }
+        if (!uid) return
+        try {
+          var subs = await (await fetch(API+'/api/teacher/my-subjects/'+uid, {headers})).json()
+          teacherData = { document_id: uid, subjects: subs }
+        } catch(e) { teacherData = null }
+      }
+
+      ;(async function(){
+        await initTeacher()
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadData)
+        else loadData()
+      })()
 
       window.logout = function() { try { localStorage.clear() } catch(e) {}; window.location.href = '/' }
       window.showSection = showSection
       window.submitGrade = submitGrade
+      window.calcAvg = calcAvg
+      window.saveGradeRow = saveGradeRow
+      window.pageUpdateSubjects = pageUpdateSubjects
+      window.loadGradesSheet = loadGradesSheet
+      window.uploadGuide = uploadGuide
+      window.addQuestion = addQuestion
+      window.saveExam = saveExam
+      window.delResource = delResource
+      window.resetStrikes = resetStrikes
+      window.exportGradesPDF = exportGradesPDF
       } catch(e) {}
     })()
   </script>
+  <AIChat role="teacher" />
 </body>
 </html>
