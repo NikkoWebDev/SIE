@@ -193,7 +193,7 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
     @media(max-width:768px){.modal-overlay.active{align-items:flex-end}.modal-overlay.active>.modal-content{margin-top:auto;border-radius:var(--radius-xl) var(--radius-xl) 0 0;max-height:85vh;overflow-y:auto}}
   </style>
 
-  <script define:vars={{ baseUrl }}>
+  <script define:vars={{ baseUrl, googleClientId: import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || '' }}>
     (function () {
       var tabEst = document.getElementById('tab-estudiante')
       var tabPer = document.getElementById('tab-personal')
@@ -303,7 +303,7 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
       var googleBtn = document.getElementById('google-signin-btn')
       if (googleBtn) {
         googleBtn.addEventListener('click', function () {
-          var clientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
+          var clientId = googleClientId || ''
           if (!clientId) { showError('Google OAuth no está configurado.'); return }
           if (typeof google !== 'undefined' && google.accounts) {
             google.accounts.id.initialize({
