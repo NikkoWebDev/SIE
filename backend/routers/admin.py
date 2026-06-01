@@ -197,6 +197,36 @@ async def register_teacher(data: TeacherRegisterRequest, user_id: str = Depends(
     return JSONResponse(content={"message": "Docente registrado", "profile_id": result.data[0]["id"]}, status_code=201)
 
 
+# ── Admin Account Creation ──
+
+class AdminCreateRequest(BaseModel):
+    login_credential: str = Field(..., min_length=1)
+    fullname: str = Field(..., min_length=3, max_length=120)
+    password: str = Field(..., min_length=4, max_length=128)
+    email: str = Field(default="", max_length=255)
+    model_config = {"extra": "forbid"}
+
+
+@router.post("/admins", status_code=201)
+async def create_admin(data: AdminCreateRequest, user_id: str = Depends(admin_dependency)) -> JSONResponse:
+    db: Client = next(get_db())
+    existing = db.table("profiles").select("id").eq("login_credential", data.login_credential).execute()
+    if existing.data:
+        raise HTTPException(status_code=409, detail="El usuario ya existe")
+    hashed = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    profile_doc = {
+        "login_credential": data.login_credential,
+        "fullname": data.fullname,
+        "role": "admin",
+        "password_hash": hashed,
+        "is_active": True,
+        "email": data.email,
+    }
+    result = db.table("profiles").insert(profile_doc).execute()
+    logger.info("admin created profile=%s by admin=%s", result.data[0]["id"], user_id)
+    return JSONResponse(content={"message": "Administrador creado", "profile_id": result.data[0]["id"]}, status_code=201)
+
+
 @router.get("/teachers")
 async def list_teachers_with_subjects(user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())

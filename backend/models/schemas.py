@@ -210,6 +210,8 @@ class ClassMaterialSchema(BaseModel):
     grade_id: str
     file_url: str
     file_type: str = "md"
+    markdown_content: str = ""
+    cloudinary_url: str = ""
     uploaded_by: str = ""
     created_at: str = ""
     model_config = {"extra": "ignore"}

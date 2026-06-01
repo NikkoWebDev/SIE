@@ -20,6 +20,16 @@ ALTER TABLE public.teacher_metadata ADD COLUMN IF NOT EXISTS director_grade TEXT
 -- Missing column: student_metadata.course_id (DDL missing from seed)
 ALTER TABLE public.student_metadata ADD COLUMN IF NOT EXISTS course_id UUID REFERENCES public.courses(id) ON DELETE SET NULL;
 
+-- Missing column: class_materials.markdown_content (AI-generated MD storage)
+ALTER TABLE public.class_materials ADD COLUMN IF NOT EXISTS markdown_content TEXT DEFAULT '';
+ALTER TABLE public.class_materials ADD COLUMN IF NOT EXISTS cloudinary_url TEXT DEFAULT '';
+
+-- Missing column: profiles.email (for password recovery + OAuth)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS supabase_auth_id UUID DEFAULT NULL;
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
+CREATE INDEX IF NOT EXISTS idx_profiles_supabase_auth_id ON public.profiles(supabase_auth_id);
+
 -- Add period constraint on grades
 -- Add period constraint on grades
 DO $$

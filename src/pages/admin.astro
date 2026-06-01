@@ -42,7 +42,9 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     @media(max-width:768px){.admin-table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch}.admin-table{min-width:600px}}
     @media(max-width:768px){.modal-overlay.active{align-items:flex-end}.modal-overlay.active>div{margin-top:auto;border-radius:var(--radius-xl) var(--radius-xl) 0 0;max-height:85vh;overflow-y:auto}}
     @media(max-width:480px){.admin-main .content-area{padding:.75rem!important}.filter-row{flex-direction:column}.filter-row input,.filter-row select{min-width:0;width:100%}}
-    @media(max-width:380px){.admin-stats-grid{grid-template-columns:repeat(2,1fr)!important}}
+    @media(max-width:480px){.admin-form-2col{grid-template-columns:1fr!important}}
+    @media(max-width:768px){.admin-elections-2col{grid-template-columns:1fr!important}}
+    @media(max-width:380px){.stats-grid-custom{grid-template-columns:repeat(2,1fr)!important}}
   </style>
 </head>
 <body>
@@ -70,6 +72,11 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
             {n[1]}
           </a>
         ))}
+        <div style="padding:.75rem .75rem .35rem;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);margin-top:.5rem">Administración</div>
+        <a href="#" class="sidebar-link" data-nav-section="administradores" onclick="showSection('administradores')">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
+          Administradores
+        </a>
       </nav>
       <div class="admin-sidebar-footer" style="border-top:1px solid var(--border);padding:.75rem">
         <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem .65rem;border-radius:var(--radius-md);background:var(--maroon-subtle)">
@@ -79,6 +86,12 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
             <div style="font-size:.6rem;color:var(--text-tertiary)">Administrador</div>
           </div>
         </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding:.5rem .75rem">
+        <button id="sidebar-theme-toggle" style="display:flex;align-items:center;gap:.5rem;width:100%;padding:.4rem .5rem;border-radius:var(--radius-md);color:var(--text-secondary);font-size:.75rem;font-weight:500;background:none;border:none;cursor:pointer;transition:all var(--transition)">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          <span id="sidebar-theme-label">Modo oscuro</span>
+        </button>
       </div>
     </aside>
 
@@ -166,7 +179,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
         <section id="sec-materias" class="t-section">
           <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
             <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Configuración de Materias e IA</h2>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem" class="admin-form-2col">
               <input type="text" class="input-apple" id="new-subject-input" placeholder="Nombre de la materia (Ej: Física)">
               <select class="input-apple" id="new-subject-grade"></select>
               <input type="text" class="input-apple" id="subject-tutor-link" placeholder="Link Agente IA Tutor">
@@ -200,7 +213,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
 
         <!-- ELECCIONES -->
         <section id="sec-elecciones" class="t-section">
-          <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:1.25rem">
+          <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:1.25rem" class="admin-elections-2col">
             <div class="card-float" style="padding:1.25rem">
               <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Nuevo Candidato</h3>
               <input type="text" class="input-apple" id="cand-name" placeholder="Nombre completo" style="margin-bottom:.75rem">
@@ -219,6 +232,22 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
             </div>
           </div>
           <div id="candidates-management-list" style="margin-top:1rem"></div>
+        </section>
+
+        <!-- ADMINISTRADORES -->
+        <section id="sec-administradores" class="t-section">
+          <div class="card-float" style="padding:1.25rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
+              <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text)">Gestión de Administradores</h2>
+              <button class="btn-apple btn-primary" style="padding:.45rem .85rem;font-size:.7rem" onclick="openAdminModal()">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                Crear Administrador
+              </button>
+            </div>
+            <div id="admins-list" style="margin-top:1rem">
+              <p style="font-size:.8rem;color:var(--text-tertiary);text-align:center;padding:1rem">Los administradores existentes se muestran aquí.</p>
+            </div>
+          </div>
         </section>
       </div>
     </main>
@@ -299,6 +328,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       renderTeachers(cache.teachers);
       renderNotices(cache.notices);
       renderSubjects(cache.subjects);
+      loadAdmins();
     }
 
     function showSection(id) {
@@ -307,8 +337,8 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       if (sec) sec.classList.add('active');
       document.querySelectorAll('.sidebar-link').forEach(function(a){a.classList.remove('active')});
       var links = document.querySelectorAll('.sidebar-link');
-      var titles = {inicio:'Panel de Administración',estudiantes:'Gestión de Alumnado',docentes:'Cuerpo Docente',materias:'Materias e IA',avisos:'Comunicados',elecciones:'Elecciones Escolares'};
-      var subs = {inicio:'Vista general del sistema',estudiantes:'Matricular, filtrar y exportar',docentes:'Registrar y asignar materias',materias:'Configurar materias y enlaces IA',avisos:'Publicar y gestionar avisos',elecciones:'Candidatos y resultados'};
+      var titles = {inicio:'Panel de Administración',estudiantes:'Gestión de Alumnado',docentes:'Cuerpo Docente',materias:'Materias e IA',avisos:'Comunicados',elecciones:'Elecciones Escolares',administradores:'Administradores'};
+      var subs = {inicio:'Vista general del sistema',estudiantes:'Matricular, filtrar y exportar',docentes:'Registrar y asignar materias',materias:'Configurar materias y enlaces IA',avisos:'Publicar y gestionar avisos',elecciones:'Candidatos y resultados',administradores:'Crear y gestionar administradores'};
       document.getElementById('page-title').textContent = titles[id] || 'Administración';
       document.getElementById('page-subtitle').textContent = subs[id] || '';
       links.forEach(function(a){ if (a.getAttribute('data-nav-section')===id) a.classList.add('active'); });
@@ -316,6 +346,21 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     }
 
     function logout() { localStorage.clear(); window.location.href = '/'; }
+
+    // ── Theme toggle ──
+    document.addEventListener('DOMContentLoaded', function() {
+      var themeBtn = document.getElementById('sidebar-theme-toggle')
+      var themeLabel = document.getElementById('sidebar-theme-label')
+      if (!themeBtn || !themeLabel) return
+      function setTheme(dark) {
+        document.documentElement.classList.toggle('dark', dark)
+        localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
+        themeLabel.textContent = dark ? 'Modo claro' : 'Modo oscuro'
+      }
+      themeBtn.addEventListener('click', function() {
+        setTheme(!document.documentElement.classList.contains('dark'))
+      })
+    })
 
     function renderDashboard(d) {
       if (!d) return;
@@ -415,6 +460,22 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       }).join('') || '<div class="card-float" style="padding:1rem;text-align:center;color:var(--text-tertiary);font-size:.8rem">No hay avisos publicados</div>';
     }
 
+    async function loadAdmins() {
+      try {
+        var res = await fetch(window.API_URL + '/api/admin/identity-directory?search=admin')
+        var data = await res.json()
+        var list = document.getElementById('admins-list')
+        if (!list) return
+        var admins = (data||[]).filter(function(p){ return p.role === 'admin' })
+        list.innerHTML = admins.length ? admins.map(function(a){
+          return '<div class="card-float" style="display:flex;align-items:center;gap:.75rem;padding:.75rem;margin-bottom:.5rem">'+
+            '<div style="width:36px;height:36px;border-radius:50%;background:var(--maroon);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem">'+(a.fullname||'A').charAt(0)+'</div>'+
+            '<div style="flex:1"><strong style="font-size:.8rem">'+a.fullname+'</strong><br><small style="color:var(--text-tertiary);font-size:.65rem">'+a.login_credential+'</small></div>'+
+            '<span class="badge badge-maroon" style="font-size:.6rem">ADMIN</span></div>'
+        }).join('') : '<p style="font-size:.8rem;color:var(--text-tertiary);text-align:center;padding:1rem">No hay administradores registrados.</p>'
+      } catch(e){console.error('loadAdmins error', e)}
+    }
+
     async function loadElectionChart() {
       try {
         var res = await fetch(window.API_URL + '/api/admin/candidates');
@@ -480,8 +541,13 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
         document.getElementById('modal-title').textContent = 'Asignar Materia a Docente';
         var subjOpts = (cache.subjects||[]).map(function(s){return '<option value="'+s.id+'">'+s.name+' ('+(s.grade||'-')+')</option>'}).join('');
         form.innerHTML = '<input type="hidden" id="form-type" value="assign-subject"><input type="hidden" id="t-id-assign" value=""><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Docente</label><strong id="t-name-display" style="font-size:.85rem"></strong></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Seleccionar Materia</label><select class="input-apple" id="subj-to-assign">'+subjOpts+'</select></div><div class="form-group"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">¿Es Director de Grupo?</label><select class="input-apple" id="dir-grade-assign"><option value="">No es director</option>'+window.GRADOS_HTML+'</select></div>';
+      } else if (type==='admin') {
+        document.getElementById('modal-title').textContent = 'Crear Administrador';
+        form.innerHTML = '<input type="hidden" id="form-type" value="admin"><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Documento ID</label><input type="text" class="input-apple" id="a-id" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Nombre Completo</label><input type="text" class="input-apple" id="a-name" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Email</label><input type="email" class="input-apple" id="a-email"></div><div class="form-group"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Contraseña</label><input type="password" class="input-apple" id="a-pass" value="123456"></div>';
       }
     }
+
+    window.openAdminModal = function () { openModal('admin') }
 
     function openSubjectAssign(docId, name) { openModal('assign-subject'); document.getElementById('t-id-assign').value=docId; document.getElementById('t-name-display').textContent=name; }
 
@@ -507,6 +573,10 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
           if (!res.ok) { var e=await res.json(); throw new Error(e.detail||'Error'); }
           if (dirGrade) { await fetch(window.API_URL+'/api/admin/teachers/'+docId+'/director',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({grade:dirGrade})}); }
           toast('Materia asignada','success');
+        } else if (type==='admin') {
+          var res = await fetch(window.API_URL+'/api/admin/admins',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login_credential:document.getElementById('a-id').value,fullname:document.getElementById('a-name').value,email:document.getElementById('a-email').value,password:document.getElementById('a-pass').value})});
+          if (!res.ok) { var e=await res.json(); throw new Error(e.detail||'Error'); }
+          toast('Administrador creado','success');
         }
         closeModal();
         await loadAllData();

@@ -30,6 +30,7 @@ JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
 
 SKIP_AUTH_PATHS: frozenset[str] = frozenset({
     "/", "/api/health", "/api/login", "/api/auth/login", "/api/auth/register",
+    "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/google",
     "/api/notices", "/api/admin/stats", "/api/admin/mora-students", "/api/admin/at-risk-students",
     "/api/subjects", "/api/admin/candidates", "/api/admin/election-results",
     "/docs", "/openapi.json", "/redoc",

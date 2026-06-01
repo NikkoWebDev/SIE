@@ -424,31 +424,39 @@ async def _process_material_upload(task_id: str, raw: bytes, filename: str, subj
             _set_upload_progress(task_id, "error", 0, "El asistente no respondió a tiempo")
             return
 
-        _set_upload_progress(task_id, "uploading", 70, "Subiendo a Cloudinary...")
+        _set_upload_progress(task_id, "uploading", 70, "Subiendo a Cloudinary + Google Drive...")
+        file_url = ""
+        drive_url = ""
+        # Upload MD to Cloudinary (for AI agent access)
         try:
             import cloudinary
             import cloudinary.uploader
             cname = os.getenv("CLOUDINARY_CLOUD_NAME", "")
             ckey = os.getenv("CLOUDINARY_API_KEY", "")
             csec = os.getenv("CLOUDINARY_API_SECRET", "")
-            if not cname or not ckey or not csec:
-                _set_upload_progress(task_id, "error", 0, "Cloudinary no configurado (faltan credenciales)")
-                return
-            cloudinary.config(cloud_name=cname, api_key=ckey, api_secret=csec)
-            safe_name = filename.rsplit(".", 1)[0][:40]
-            upload_result = cloudinary.uploader.upload(
-                md_text.encode("utf-8"),
-                folder=CLOUDINARY_MD_FOLDER,
-                public_id=f"{safe_name}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
-                resource_type="raw",
-            )
-            file_url = upload_result.get("secure_url", "")
-            if not file_url:
-                _set_upload_progress(task_id, "error", 0, "Error al obtener URL de Cloudinary")
-                return
+            if cname and ckey and csec:
+                cloudinary.config(cloud_name=cname, api_key=ckey, api_secret=csec)
+                safe_name = filename.rsplit(".", 1)[0][:40]
+                upload_result = cloudinary.uploader.upload(
+                    md_text.encode("utf-8"),
+                    folder=CLOUDINARY_MD_FOLDER,
+                    public_id=f"{safe_name}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+                    resource_type="raw",
+                )
+                file_url = upload_result.get("secure_url", "")
         except Exception as exc:
             logger.error("cloudinary md upload error: %s", exc)
-            _set_upload_progress(task_id, "error", 0, "Error al subir el material a la nube")
+
+        # Upload original file to Google Drive
+        try:
+            from google_drive import upload_to_drive
+            drive_result = upload_to_drive(raw, filename, file.content_type or "application/octet-stream")
+            drive_url = drive_result.get("url", "")
+        except Exception as exc:
+            logger.error("google drive upload error: %s", exc)
+
+        if not file_url and not drive_url:
+            _set_upload_progress(task_id, "error", 0, "Error al subir el material — tanto Cloudinary como Google Drive fallaron")
             return
 
         _set_upload_progress(task_id, "saving", 90, "Guardando registro...")
@@ -456,11 +464,14 @@ async def _process_material_upload(task_id: str, raw: bytes, filename: str, subj
         doc = {
             "subject_id": subject_id,
             "grade_id": grade_id,
-            "file_url": file_url,
+            "file_url": drive_url or file_url,
             "file_type": "md",
+            "markdown_content": md_text,
             "uploaded_by": user_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
+        if file_url:
+            doc["cloudinary_url"] = file_url
         result = db.table("class_materials").insert(doc).execute()
         record_id = result.data[0]["id"]
         logger.info("material uploaded id=%s subject=%s grade=%s url=%s", record_id, subject_id, grade_id, file_url)

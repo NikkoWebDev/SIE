@@ -5,7 +5,7 @@ import AIChat from '@components/AIChat.astro'
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 const wsUrl = apiUrl.replace(/^http/, 'ws')
 ---
-<Layout titulo="Estudiante">
+<Layout titulo="Estudiante" sinMenu={true}>
   <WsRiskAlert />
 
   <style>
@@ -63,6 +63,8 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       .est-header .header-right{gap:.5rem}
       #online-text{display:none}
       .candidate-card{padding:1rem}
+      .grid-2col{grid-template-columns:1fr!important}
+      #metrics-grid{grid-template-columns:repeat(2,1fr)!important}
     }
     @media(max-width:380px){
       .est-header .live-clock{display:none}
@@ -83,6 +85,16 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
     <button class="est-nav-link" data-nav="aula" tabindex="0"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg> Aula Virtual</button>
     <button class="est-nav-link" data-nav="tareas" tabindex="0"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg> Tareas</button>
     <button class="est-nav-link" data-nav="boletin" tabindex="0"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Boletín</button>
+    <div style="margin-top:auto;border-top:1px solid rgba(255,255,255,0.06);padding:.5rem .75rem">
+      <button id="est-theme-toggle" style="display:flex;align-items:center;gap:.5rem;width:100%;padding:.4rem .5rem;border-radius:var(--radius-md);color:rgba(255,255,255,.5);font-size:.75rem;font-weight:500;background:none;border:none;cursor:pointer">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        <span id="est-theme-label">Modo oscuro</span>
+      </button>
+      <button onclick="localStorage.clear();window.location.href='/'" style="display:flex;align-items:center;gap:.5rem;width:100%;padding:.4rem .5rem;border-radius:var(--radius-md);color:rgba(255,255,255,.5);font-size:.75rem;font-weight:500;background:none;border:none;cursor:pointer;margin-top:.25rem">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>
+        Cerrar sesión
+      </button>
+    </div>
   </nav>
   <div class="est-sidebar-overlay" onclick="document.querySelector('.est-sidebar').classList.remove('open')"></div>
 
@@ -120,7 +132,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
 
     <!-- Inicio -->
     <div class="section-content active" id="sec-inicio">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem" class="grid-2col">
         <div class="card-float" style="padding:1.25rem">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
             <h2 style="font-size:0.85rem;font-weight:600;color:var(--text)">Rendimiento</h2>
@@ -166,7 +178,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
 
     <!-- Tareas -->
     <div class="section-content" id="sec-tareas">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" class="grid-2col">
         <div class="card-float" style="padding:1.25rem">
           <h2 style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.75rem">📤 Subir Tarea</h2>
           <select id="hw-subject" class="input-field" style="margin-bottom:0.75rem;width:100%"><option value="">Materia...</option></select>
@@ -558,7 +570,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
         var grades = Array.isArray(data) ? data : []
         var subjectMap = {}
         grades.forEach(function (g) {
-          var sid = g.subject_id || g.subject_name || 'General'
+          var sid = g.subject_name || g.subject_id || 'General'
           if (!subjectMap[sid]) subjectMap[sid] = []
           subjectMap[sid].push(parseFloat(g.score) || 0)
         })
@@ -608,7 +620,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
         var grades = Array.isArray(data) ? data : []
         var subjectMap = {}
         grades.forEach(function (g) {
-          var sid = g.subject_id || g.subject_name || 'General'
+          var sid = g.subject_name || g.subject_id || 'General'
           if (!subjectMap[sid]) subjectMap[sid] = []
           subjectMap[sid].push(parseFloat(g.score) || 0)
         })
@@ -666,6 +678,19 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       document.getElementById('student-name').textContent = name + (localStorage.getItem('userGrade') ? ' · ' + localStorage.getItem('userGrade') : '')
       document.getElementById('student-meta').textContent = localStorage.getItem('is_paid') === 'true' || !localStorage.getItem('is_paid') ? 'Al día · Rendimiento académico' : '⚠️ En mora'
       loadGrades(); loadNotices(); loadSubjects()
+      // Theme toggle
+      var themeBtn = document.getElementById('est-theme-toggle')
+      var themeLabel = document.getElementById('est-theme-label')
+      if (themeBtn && themeLabel) {
+        function setTheme(dark) {
+          document.documentElement.classList.toggle('dark', dark)
+          localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
+          themeLabel.textContent = dark ? 'Modo claro' : 'Modo oscuro'
+        }
+        themeBtn.addEventListener('click', function() {
+          setTheme(!document.documentElement.classList.contains('dark'))
+        })
+      }
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init)

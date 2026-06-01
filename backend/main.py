@@ -38,6 +38,8 @@ from routers.exams import router as exams_router
 from routers.admin import router as admin_router
 from routers.ai_agent import router as ai_router
 from routers.teachers import router as teachers_router
+from routers.password_reset import router as password_reset_router
+from routers.google_oauth import router as google_oauth_router
 
 logging.basicConfig(
     level=logging.WARNING if os.getenv("ENV") == "production" else logging.DEBUG,
@@ -171,6 +173,8 @@ app.include_router(exams_router)
 app.include_router(admin_router)
 app.include_router(ai_router)
 app.include_router(teachers_router)
+app.include_router(password_reset_router)
+app.include_router(google_oauth_router)
 
 
 @app.get("/")

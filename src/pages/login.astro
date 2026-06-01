@@ -95,7 +95,18 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
               </div>
             </div>
             <div style="display:flex;justify-content:flex-end">
-              <span class="forgot-link">¿Problemas de acceso?</span>
+              <span class="forgot-link" id="forgot-link">¿Problemas de acceso?</span>
+            </div>
+            <!-- Google OAuth button (Personal tab only) -->
+            <div id="google-signin-container" style="display:none;margin-top:.5rem">
+              <div style="position:relative;margin-bottom:.75rem">
+                <div style="border-top:1px solid var(--border);position:absolute;top:50%;left:0;right:0"></div>
+                <span style="position:relative;z-index:1;display:block;text-align:center;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);background:var(--card-bg);width:2rem;margin:0 auto">O</span>
+              </div>
+              <button id="google-signin-btn" class="btn-apple btn-secondary" style="width:100%;height:2.75rem;font-size:.8rem;display:flex;align-items:center;justify-content:center;gap:.5rem">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+                Ingresar con Google
+              </button>
             </div>
             <button id="login-submit" type="submit" class="btn-apple btn-primary" style="width:100%;height:3rem;font-size:.85rem">
               <span id="submit-text">Ingresar al Portal</span>
@@ -120,6 +131,43 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
     </section>
   </main>
 
+  <!-- Forgot Password Modal -->
+  <div id="forgot-modal" class="modal-overlay">
+    <div class="card-float modal-content" style="padding:1.5rem;max-width:400px;width:90%">
+      <div id="forgot-step-1">
+        <h3 style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text);margin-bottom:.25rem">Recuperar Acceso</h3>
+        <p style="font-size:.75rem;color:var(--text-tertiary);margin-bottom:1rem">Ingresa tu identificación institucional para recibir un código de recuperación.</p>
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          <input type="text" class="input-apple" id="forgot-credential" placeholder="Identificación institucional" autocomplete="off">
+          <button class="btn-apple btn-primary" style="width:100%" id="forgot-send-btn" onclick="sendResetCode()">
+            <span id="forgot-send-text">Enviar Código</span>
+            <svg id="forgot-send-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          </button>
+        </div>
+        <div id="forgot-step-1-error" style="margin-top:.5rem;font-size:.75rem;color:var(--red);text-align:center;display:none"></div>
+      </div>
+      <div id="forgot-step-2" style="display:none">
+        <h3 style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text);margin-bottom:.25rem">Nueva Contraseña</h3>
+        <p style="font-size:.75rem;color:var(--text-tertiary);margin-bottom:1rem">Ingresa el código que recibiste y tu nueva contraseña.</p>
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          <input type="text" class="input-apple" id="forgot-code" placeholder="Código de 6 dígitos" maxlength="6" inputmode="numeric" autocomplete="off">
+          <input type="password" class="input-apple" id="forgot-new-pass" placeholder="Nueva contraseña" autocomplete="new-password">
+          <input type="password" class="input-apple" id="forgot-confirm-pass" placeholder="Confirmar contraseña" autocomplete="new-password">
+          <button class="btn-apple btn-primary" style="width:100%" id="forgot-reset-btn" onclick="submitResetCode()">
+            <span id="forgot-reset-text">Restablecer Contraseña</span>
+            <svg id="forgot-reset-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          </button>
+        </div>
+        <div id="forgot-step-2-error" style="margin-top:.5rem;font-size:.75rem;color:var(--red);text-align:center;display:none"></div>
+        <div id="forgot-step-2-success" style="margin-top:.5rem;font-size:.75rem;color:var(--green);text-align:center;display:none"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border)">
+        <button class="btn-apple btn-ghost" style="padding:.35rem .65rem;font-size:.7rem" id="forgot-back-btn" onclick="closeForgotModal()">Cerrar</button>
+        <span id="forgot-debug-code" style="font-size:.65rem;color:var(--text-tertiary);display:none"></span>
+      </div>
+    </div>
+  </div>
+
   <style>
     .login-brand{width:45%;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
     @media(min-width:1024px){.login-brand{display:flex}}
@@ -140,6 +188,9 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
     .animate-spin{animation:spin .7s linear infinite}
     @media(max-width:480px){.login-panel{padding:1rem}}
     @media(max-width:380px){.login-panel{padding:.75rem}.card-float{padding:1.25rem!important}}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;justify-content:center;align-items:center;backdrop-filter:blur(8px)}
+    .modal-overlay.active{display:flex}
+    @media(max-width:768px){.modal-overlay.active{align-items:flex-end}.modal-overlay.active>.modal-content{margin-top:auto;border-radius:var(--radius-xl) var(--radius-xl) 0 0;max-height:85vh;overflow-y:auto}}
   </style>
 
   <script define:vars={{ baseUrl }}>
@@ -162,6 +213,8 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
         try { fetch(baseUrl + '/api/health', { method:'GET', priority:'low' }).catch(function(){}) } catch(e){}
       })()
 
+      var googleContainer = document.getElementById('google-signin-container')
+
       function setTab(tab) {
         currentTab = tab
         slider.style.left = tab === 'estudiante' ? '4px' : 'calc(50% + 4px)'
@@ -170,6 +223,9 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
         passwordInput.required = true
         tabEst.style.color = tab === 'estudiante' ? 'var(--text)' : 'var(--text-tertiary)'
         tabPer.style.color = tab === 'personal' ? 'var(--text)' : 'var(--text-tertiary)'
+        if (googleContainer) {
+          googleContainer.style.display = tab === 'personal' ? 'block' : 'none'
+        }
       }
       tabEst.addEventListener('click', function () { setTab('estudiante') })
       tabPer.addEventListener('click', function () { setTab('personal') })
@@ -243,6 +299,148 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
           submitBtn.disabled = false
         }
       })
+      // ── Google OAuth ──
+      var googleBtn = document.getElementById('google-signin-btn')
+      if (googleBtn) {
+        googleBtn.addEventListener('click', function () {
+          var clientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
+          if (!clientId) { showError('Google OAuth no está configurado.'); return }
+          if (typeof google !== 'undefined' && google.accounts) {
+            google.accounts.id.initialize({
+              client_id: clientId,
+              callback: function (response) {
+                if (response.credential) handleGoogleCredential(response.credential)
+              }
+            })
+            google.accounts.id.prompt()
+          } else {
+            showError('Error al cargar Google Sign-In. Recarga la página.')
+          }
+        })
+      }
+
+      async function handleGoogleCredential(credential) {
+        submitText.textContent = 'Validando...'
+        submitSpinner.classList.remove('hidden')
+        submitBtn.disabled = true
+        try {
+          var res = await fetch(baseUrl + '/api/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: credential }),
+          })
+          if (!res.ok) { var ed; try { ed = await res.json() } catch(e){}; throw new Error(ed && (ed.detail || ed.mensaje) || 'Error de autenticación con Google.') }
+          var data = await res.json()
+          var token = data.access_token || data.token || ''
+          var usuario = data.usuario || {}
+          var role = (usuario.rol || data.rol || 'PROFESOR').toUpperCase()
+          localStorage.setItem('access_token', token)
+          localStorage.setItem('userRole', role)
+          localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
+          localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || '')
+          localStorage.setItem('profile_id', usuario.profile_id || '')
+          submitText.textContent = '¡Bienvenido!'
+          var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', TEACHER:'/docente' }
+          window.location.href = map[role] || '/dashboard'
+        } catch (err) {
+          showError(err.message)
+        }
+      }
+
+      // ── Forgot Password ──
+      var forgotLink = document.getElementById('forgot-link')
+      var forgotModal = document.getElementById('forgot-modal')
+      var currentForgotCredential = ''
+
+      if (forgotLink) {
+        forgotLink.addEventListener('click', function () {
+          forgotModal.classList.add('active')
+          document.getElementById('forgot-step-1').style.display = 'block'
+          document.getElementById('forgot-step-2').style.display = 'none'
+          document.getElementById('forgot-credential').value = ''
+          document.getElementById('forgot-code').value = ''
+          document.getElementById('forgot-new-pass').value = ''
+          document.getElementById('forgot-confirm-pass').value = ''
+          document.getElementById('forgot-step-1-error').style.display = 'none'
+          document.getElementById('forgot-step-2-error').style.display = 'none'
+          document.getElementById('forgot-step-2-success').style.display = 'none'
+          document.getElementById('forgot-debug-code').style.display = 'none'
+        })
+      }
+
+      if (forgotModal) {
+        forgotModal.addEventListener('click', function (e) { if (e.target === this) closeForgotModal() })
+      }
+
+      window.closeForgotModal = function () {
+        forgotModal.classList.remove('active')
+      }
+
+      window.sendResetCode = async function () {
+        var cred = document.getElementById('forgot-credential').value.trim()
+        if (!cred) { document.getElementById('forgot-step-1-error').textContent = 'Ingresa tu identificación institucional.'; document.getElementById('forgot-step-1-error').style.display = 'block'; return }
+        var btn = document.getElementById('forgot-send-btn')
+        var txt = document.getElementById('forgot-send-text')
+        var spn = document.getElementById('forgot-send-spinner')
+        btn.disabled = true; txt.textContent = 'Enviando...'; spn.classList.remove('hidden')
+        document.getElementById('forgot-step-1-error').style.display = 'none'
+        try {
+          var res = await fetch(baseUrl + '/api/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login_credential: cred }),
+          })
+          var data = await res.json()
+          if (!res.ok) throw new Error(data.detail || data.mensaje || 'Error al enviar código')
+          currentForgotCredential = cred
+          document.getElementById('forgot-step-1').style.display = 'none'
+          document.getElementById('forgot-step-2').style.display = 'block'
+          if (data.debug_code) {
+            var debug = document.getElementById('forgot-debug-code')
+            debug.textContent = '🔑 Código: ' + data.debug_code
+            debug.style.display = 'block'
+          }
+        } catch (err) {
+          document.getElementById('forgot-step-1-error').textContent = err.message
+          document.getElementById('forgot-step-1-error').style.display = 'block'
+        }
+        btn.disabled = false; txt.textContent = 'Enviar Código'; spn.classList.add('hidden')
+      }
+
+      window.submitResetCode = async function () {
+        var code = document.getElementById('forgot-code').value.trim()
+        var newPass = document.getElementById('forgot-new-pass').value
+        var confirmPass = document.getElementById('forgot-confirm-pass').value
+        var errDiv = document.getElementById('forgot-step-2-error')
+        var sucDiv = document.getElementById('forgot-step-2-success')
+        errDiv.style.display = 'none'; sucDiv.style.display = 'none'
+        if (!code || code.length !== 6) { errDiv.textContent = 'Ingresa el código de 6 dígitos.'; errDiv.style.display = 'block'; return }
+        if (!newPass || newPass.length < 4) { errDiv.textContent = 'La contraseña debe tener al menos 4 caracteres.'; errDiv.style.display = 'block'; return }
+        if (newPass !== confirmPass) { errDiv.textContent = 'Las contraseñas no coinciden.'; errDiv.style.display = 'block'; return }
+        var btn = document.getElementById('forgot-reset-btn')
+        var txt = document.getElementById('forgot-reset-text')
+        var spn = document.getElementById('forgot-reset-spinner')
+        btn.disabled = true; txt.textContent = 'Restableciendo...'; spn.classList.remove('hidden')
+        try {
+          var res = await fetch(baseUrl + '/api/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login_credential: currentForgotCredential, code: code, new_password: newPass }),
+          })
+          var data = await res.json()
+          if (!res.ok) throw new Error(data.detail || data.mensaje || 'Error al restablecer')
+          sucDiv.textContent = 'Contraseña actualizada exitosamente. Ahora puedes iniciar sesión.'
+          sucDiv.style.display = 'block'
+          document.getElementById('forgot-code').value = ''
+          document.getElementById('forgot-new-pass').value = ''
+          document.getElementById('forgot-confirm-pass').value = ''
+          setTimeout(function () { closeForgotModal() }, 2500)
+        } catch (err) {
+          errDiv.textContent = err.message
+          errDiv.style.display = 'block'
+        }
+        btn.disabled = false; txt.textContent = 'Restablecer Contraseña'; spn.classList.add('hidden')
+      }
     })()
   </script>
 </body>
