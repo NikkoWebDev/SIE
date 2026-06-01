@@ -4,7 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  PUBLIC_API_URL = "https://tu-backend.onrender.com"
+  PUBLIC_API_URL = "https://sie-8agt.onrender.com"
   PUBLIC_GOOGLE_CLIENT_ID = "456201263142-u1r9mr35dccoj6u2ukcp1cn88af883cd.apps.googleusercontent.com"
 
 [[redirects]]
