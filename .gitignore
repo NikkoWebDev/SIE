@@ -7,4 +7,5 @@ __pycache__/
 .astro/
 .vercel/
 .netlify/
+backend/_secrets/
 
