@@ -128,6 +128,8 @@ const cfg = configs[role]
         btn.classList.toggle('border-transparent', !isActive)
         btn.classList.toggle('border-l-brand-maroon', isActive)
         btn.classList.toggle('dark:border-l-brand-gold', isActive)
+        if (isActive) btn.setAttribute('aria-current', 'page')
+        else btn.removeAttribute('aria-current')
       })
     })
   })

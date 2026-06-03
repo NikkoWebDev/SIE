@@ -29,6 +29,7 @@ from config.database import get_db
 from dependencies import (
     JWT_ALGORITHM, JWT_SECRET, SKIP_AUTH_PATHS,
     decode_jwt, get_db as dep_get_db, is_financial_locked_path,
+    validate_csrf,
 )
 from managers import ws_manager
 from routers.auth import router as auth_router
@@ -54,8 +55,9 @@ if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         environment=os.getenv("ENV", "development"),
-        traces_sample_rate=0.25,
-        enable_tracing=True,
+        traces_sample_rate=0.05,
+        profiles_sample_rate=0.0,
+        enable_tracing=False,
     )
     logger.info("sentry initialized (env=%s)", os.getenv("ENV", "development"))
 
@@ -68,6 +70,9 @@ FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
 )
 
 # ── General Rate Limiter (in-memory, per-worker) ──
+# NOTE: in-memory only — if scaling to multiple workers/instances,
+# migrate to Redis-backed limiter (e.g. Upstash Redis, slowapi + redis).
+# See Others.md §8 for discussion.
 _api_calls: dict[str, list[float]] = defaultdict(list)
 API_RATE_LIMIT: int = int(os.getenv("API_RATE_LIMIT", "120"))  # requests per window
 API_RATE_WINDOW: int = 60  # 1 minute window
@@ -135,6 +140,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def csrf_middleware(request: Request, call_next: Any) -> Response:
+    try:
+        validate_csrf(request)
+    except HTTPException as e:
+        origin = _get_cors_origin(request)
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"detail": e.detail},
+            headers={"Access-Control-Allow-Origin": origin},
+        )
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -241,11 +260,43 @@ async def root() -> dict[str, Any]:
     return {"status": "online", "message": "Vyntra Core — Academic Platform v5", "colegio": "Ciudad del Sol"}
 
 
+# ── Pre-warmed cache ──
+_warmup_done = False
+
+@app.on_event("startup")
+async def prewarm():
+    global _warmup_done
+    try:
+        db: Client = next(dep_get_db())
+        db.table("profiles").select("count").limit(1).execute()
+        logger.info("prewarm: database connection OK")
+        _warmup_done = True
+    except Exception as e:
+        logger.warning("prewarm: %s", e)
+
+
+@app.get("/api/warmup")
+async def warmup() -> dict[str, Any]:
+    global _warmup_done
+    db: Client = next(dep_get_db())
+    try:
+        db.table("profiles").select("count").limit(1).execute()
+        _warmup_done = True
+        return {"status": "warm", "database": "connected"}
+    except Exception as e:
+        return {"status": "cold", "error": str(e)}
+
+
 @app.api_route("/api/health", methods=["GET", "HEAD"])
 async def health() -> Response:
     return JSONResponse(
-        {"status": "alive", "ws_connected": ws_manager.count, "database": "supabase"},
+        {"status": "alive", "ws_connected": ws_manager.count, "database": "supabase", "warm": _warmup_done},
     )
+
+
+# ── Response compression ──
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.websocket("/ws")

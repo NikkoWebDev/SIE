@@ -4,9 +4,8 @@ export default defineConfig({
   testDir: './tests',
   testMatch: '*.spec.js',
   timeout: 30000,
-  retries: 2,
+  retries: 1,
   use: {
-    headless: false,
     viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
     video: 'on-first-retry',
@@ -16,7 +15,15 @@ export default defineConfig({
     {
       name: 'chromium',
       use: {
-        browserName: 'chromium'
+        browserName: 'chromium',
+        headless: false
+      }
+    },
+    {
+      name: 'ci',
+      use: {
+        browserName: 'chromium',
+        headless: true
       }
     }
   ]

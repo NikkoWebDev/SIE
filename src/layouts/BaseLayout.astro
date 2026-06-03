@@ -43,7 +43,12 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&family=Syne:wght@500;600;700;800&family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Syne:wght@500;700&family=Azeret+Mono:wght@400;600&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Syne:wght@500;700&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <script>
+    window.__API_URL__ = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'}`
+  </script>
 
   {withThemeScript && (
     <script is:inline>

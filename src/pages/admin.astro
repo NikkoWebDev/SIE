@@ -50,7 +50,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-xs min-w-[600px]">
-            <thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold"><th class="text-left p-2 border-b border-border">Documento</th><th class="text-left p-2 border-b border-border">Nombre</th><th class="text-left p-2 border-b border-border">Grado</th><th class="text-left p-2 border-b border-border">Estado</th><th class="text-left p-2 border-b border-border">Acciones</th></tr></thead>
+            <thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold"><th scope="col" class="text-left p-2 border-b border-border">Documento</th><th scope="col" class="text-left p-2 border-b border-border">Nombre</th><th scope="col" class="text-left p-2 border-b border-border">Grado</th><th scope="col" class="text-left p-2 border-b border-border">Estado</th><th scope="col" class="text-left p-2 border-b border-border">Acciones</th></tr></thead>
             <tbody id="students-list"></tbody>
           </table>
         </div>
@@ -151,43 +151,31 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     var sbName = document.getElementById('sidebar-username-admin'); if (sbName) sbName.textContent = userName
     var sbMeta = document.getElementById('sidebar-metadata-admin'); if (sbMeta) sbMeta.textContent = 'Administrador'
 
-    // Theme
-    document.getElementById('theme-toggle-admin')?.addEventListener('click', function() {
-      var dark = !document.documentElement.classList.contains('dark')
-      document.documentElement.classList.toggle('dark', dark)
-      localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
+    document.getElementById('theme-toggle-admin')?.addEventListener('click', function() { window.setVyntraTheme(!document.documentElement.classList.contains('dark')) })
+
+    window.showSection = window.createShowSection({
+      titles: { inicio:'Panel de Administración', estudiantes:'Gestión de Alumnado', docentes:'Cuerpo Docente', materias:'Materias e IA', avisos:'Comunicados', elecciones:'Elecciones Escolares', administradores:'Administradores' },
+      subs: { inicio:'Vista general del sistema', estudiantes:'Matricular, filtrar y exportar', docentes:'Registrar y asignar', materias:'Configurar materias y enlaces IA', avisos:'Publicar y gestionar avisos', elecciones:'Candidatos y resultados', administradores:'Crear y gestionar' },
+      onNavigate: function(id) { if (id === 'elecciones') loadElectionData() }
     })
-
-    // Navigation
-    var titles = { inicio:'Panel de Administración', estudiantes:'Gestión de Alumnado', docentes:'Cuerpo Docente', materias:'Materias e IA', avisos:'Comunicados', elecciones:'Elecciones Escolares', administradores:'Administradores' }
-    var subs = { inicio:'Vista general del sistema', estudiantes:'Matricular, filtrar y exportar', docentes:'Registrar y asignar', materias:'Configurar materias y enlaces IA', avisos:'Publicar y gestionar avisos', elecciones:'Candidatos y resultados', administradores:'Crear y gestionar' }
-
-    window.showSection = function(id) {
-      document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none' })
-      var sec = document.getElementById('sec-'+id)
-      if (sec) sec.style.display = ''
-      var t = document.querySelector('.topbar h1'), s = document.querySelector('.topbar p')
-      if (t) t.textContent = titles[id] || 'Administración'
-      if (s) s.textContent = subs[id] || ''
-      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id }}))
-      if (id === 'elecciones') loadElectionData()
-    }
 
     // Data cache
     var cache = { stats:null, students:null, teachers:null, notices:null, subjects:null }
+    var abortCtrl = null
 
     async function loadAllData() {
+      abortCtrl = new AbortController()
       try {
         var [stats, students, teachers, notices, subjects] = await Promise.all([
-          fetch(API+'/api/admin/stats',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}),
-          fetch(API+'/api/admin/students',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}),
-          fetch(API+'/api/admin/teachers',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}),
-          fetch(API+'/api/notices',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}),
-          fetch(API+'/api/subjects',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()})
+          vfetch(API, '/api/admin/stats',{signal:abortCtrl.signal}).then(function(r){return r.json()}),
+          vfetch(API, '/api/admin/students',{signal:abortCtrl.signal}).then(function(r){return r.json()}),
+          vfetch(API, '/api/admin/teachers',{signal:abortCtrl.signal}).then(function(r){return r.json()}),
+          vfetch(API, '/api/notices',{signal:abortCtrl.signal}).then(function(r){return r.json()}),
+          vfetch(API, '/api/subjects',{signal:abortCtrl.signal}).then(function(r){return r.json()})
         ])
         cache = { stats, students, teachers, notices, subjects }
         renderAll()
-      } catch(e) { console.error(e) }
+      } catch(e) { window.VyntraToast?.error('Error cargando datos del panel: ' + (e?.message || 'Reintente')) }
     }
 
     function renderAll() {
@@ -242,24 +230,24 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
 
     async function loadAdmins() {
       try {
-        var res = await fetch(API+'/api/admin/identity-directory?search=admin',{headers:{'Authorization':'Bearer '+token}})
+        var res = await vfetch(API, '/api/admin/identity-directory?search=admin')
         var data = await res.json()
         var admins = (data||[]).filter(function(p){return p.role==='admin'})
         var list = document.getElementById('admins-list')
         if (list) list.innerHTML = admins.length ? admins.map(function(a){return'<div class="flex items-center gap-3 p-3 mb-2 border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon text-brand-gold flex items-center justify-center font-bold text-xs">'+(a.fullname||'A').charAt(0)+'</div><div><strong class="text-xs">'+a.fullname+'</strong><br><span class="text-[10px] text-text-tertiary">'+a.login_credential+'</span></div></div>'}).join('') : '<p>No hay administradores.</p>'
-      } catch(e) {}
+      } catch(e) { var l = document.getElementById('admins-list'); if(l) l.innerHTML = '<p class="text-center py-4 text-text-tertiary">Error al cargar administradores.</p>' }
     }
 
     // Elections
     async function loadElectionData() {
       try {
-        var res = await fetch(API+'/api/admin/candidates',{headers:{'Authorization':'Bearer '+token}})
+        var res = await vfetch(API, '/api/admin/candidates')
         var data = await res.json()
         document.getElementById('candidates-management-list').innerHTML = (data||[]).map(function(c){
           return'<div class="flex items-center gap-3 p-3 bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon/10 flex items-center justify-center font-bold text-xs">'+(c.name||'?').charAt(0)+'</div><div class="flex-1"><strong class="text-xs">'+c.name+'</strong> · <span class="text-xs text-text-tertiary">'+c.votes+' votos</span></div><button class="text-brand-danger text-xs" onclick="deleteCandidate(\''+c.id+'\')">Eliminar</button></div>'
         }).join('') || '<p class="text-center py-4 text-text-tertiary">No hay candidatos</p>'
         renderElectionChart(data||[])
-      } catch(e) {}
+      } catch(e) { var cl = document.getElementById('candidates-management-list'); if(cl) cl.innerHTML = '<p class="text-center py-4 text-text-tertiary">Error cargando candidatos.</p>' }
     }
 
     function renderElectionChart(data) {
@@ -276,40 +264,42 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     window.addCandidate = async function() {
       var name = document.getElementById('cand-name').value
       var file = document.getElementById('cand-photo').files[0]
-      if (!name || !file) { alert('Nombre y foto requeridos'); return }
+      if (!name || !file) { window.VyntraToast?.warning('Nombre y foto requeridos'); return }
       var fd = new FormData(); fd.append('name',name); fd.append('file',file)
-      try { await fetch(API+'/api/admin/candidates',{method:'POST',body:fd,headers:{'Authorization':'Bearer '+token}}); loadElectionData() } catch(e) {}
+      try { await vfetch(API, '/api/admin/candidates',{method:'POST',body:fd,headers:{}}); loadElectionData() } catch(e) { window.VyntraToast?.error('Error al registrar candidato: ' + (e?.message || 'Reintente')) }
     }
-    window.resetElection = async function() { if(!confirm('¿Reiniciar?')) return; try{await fetch(API+'/api/admin/election-reset',{method:'POST',headers:{'Authorization':'Bearer '+token}});loadElectionData()}catch(e){} }
-    window.deleteCandidate = async function(id) { await fetch(API+'/api/admin/candidates/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}}); loadElectionData() }
+    window.resetElection = async function() { if(!confirm('¿Reiniciar?')) return; try{await vfetch(API, '/api/admin/election-reset',{method:'POST'});loadElectionData()}catch(e){ window.VyntraToast?.error('Error al reiniciar elección') } }
+    window.deleteCandidate = async function(id) { try { await vfetch(API, '/api/admin/candidates/'+id,{method:'DELETE'}); loadElectionData() } catch(e) { window.VyntraToast?.error('Error al eliminar candidato') } }
 
     // CRUD
-    window.togglePayment = async function(id, current) { await fetch(API+'/api/admin/students/'+id+'/financial',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({is_paid:!current})}); loadAllData() }
-    window.deleteStudent = async function(id) { if(!confirm('¿Eliminar?')) return; await fetch(API+'/api/admin/students/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}}); loadAllData() }
-    window.deleteTeacher = async function(docId) { if(!confirm('¿Eliminar?')) return; await fetch(API+'/api/admin/teachers/'+docId,{method:'DELETE',headers:{'Authorization':'Bearer '+token}}); loadAllData() }
-    window.deleteSubject = async function(id) { await fetch(API+'/api/admin/subjects/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}}); loadAllData() }
+    window.togglePayment = async function(id, current) { try { await fetch(API+'/api/admin/students/'+id+'/financial',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({is_paid:!current})}); loadAllData() } catch(e) { window.VyntraToast?.error('Error cambiando estado') } }
+    window.deleteStudent = async function(id) { if(!confirm('¿Eliminar?')) return; try { await vfetch(API, '/api/admin/students/'+id,{method:'DELETE'}); loadAllData() } catch(e) { window.VyntraToast?.error('Error eliminando estudiante') } }
+    window.deleteTeacher = async function(docId) { if(!confirm('¿Eliminar?')) return; try { await vfetch(API, '/api/admin/teachers/'+docId,{method:'DELETE'}); loadAllData() } catch(e) { window.VyntraToast?.error('Error eliminando docente') } }
+    window.deleteSubject = async function(id) { try { await vfetch(API, '/api/admin/subjects/'+id,{method:'DELETE'}); loadAllData() } catch(e) { window.VyntraToast?.error('Error eliminando materia') } }
 
     window.addSubject = async function() {
       var name = document.getElementById('new-subject-input').value
       var grade = document.getElementById('new-subject-grade').value
-      if (!name) { alert('Nombre requerido'); return }
+      if (!name) { window.VyntraToast?.warning('Nombre de materia requerido'); return }
       var tutor = document.getElementById('subject-tutor-link').value
       var planner = document.getElementById('subject-planner-link').value
-      await fetch(API+'/api/admin/subjects',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({name,grade,tutor_ai:tutor,planner_ai:planner})})
-      loadAllData()
+      try {
+        await vfetch(API, '/api/admin/subjects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,grade,tutor_ai:tutor,planner_ai:planner})})
+        loadAllData()
+      } catch(e) { window.VyntraToast?.error('Error creando materia: ' + (e?.message || 'Reintente')) }
     }
 
     window.publishNotice = async function() {
       var title = document.getElementById('notice-title').value.trim()
       var content = document.getElementById('notice-content').value.trim()
-      if (!title || !content) { alert('Campos requeridos'); return }
+      if (!title || !content) { window.VyntraToast?.warning('Título y contenido requeridos'); return }
       var fd = new FormData(); fd.append('titulo',title); fd.append('contenido',content)
       var file = document.getElementById('notice-file').files[0]
       if (file) fd.append('file',file)
-      try { await fetch(API+'/api/admin/notices',{method:'POST',body:fd,headers:{'Authorization':'Bearer '+token}}); loadAllData() } catch(e) {}
+      try { await vfetch(API, '/api/admin/notices',{method:'POST',body:fd}); loadAllData() } catch(e) { window.VyntraToast?.error('Error publicando aviso: ' + (e?.message || 'Reintente')) }
     }
 
-    window.exportCSV = function() { alert('Exportar CSV') }
+    window.exportCSV = function() { window.VyntraToast?.info('Exportación CSV próximamente') }
 
     // Init
     loadAllData()

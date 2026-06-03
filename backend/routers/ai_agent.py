@@ -8,7 +8,6 @@ import os
 import re
 import time
 import uuid
-from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Any, AsyncGenerator
 
@@ -116,7 +115,10 @@ class ChatRequest(BaseModel):
         return self
 
 
-in_memory_history: dict[str, list[dict[str, str]]] = OrderedDict()
+# In-memory conversation cache (DB is primary storage, cache reduces latency)
+_conversation_cache: dict[str, list[dict[str, str]]] = {}
+CONVERSATION_CACHE_MAX = 100
+
 rate_limit_store: dict[str, list[float]] = {}
 tool_usage_counters: dict[str, dict[str, int]] = {}
 
@@ -143,34 +145,48 @@ def _get_db() -> Client:
     return next(get_db())
 
 
-def _get_conversation_key(role: str, user_id: str) -> str:
-    return f"{role}:{user_id}"
+def _cache_put(role: str, user_id: str, messages: list[dict[str, str]]) -> None:
+    """Store conversation in in-memory cache (LRU, max CONVERSATION_CACHE_MAX)."""
+    key = f"{role}:{user_id}"
+    _conversation_cache[key] = messages
+    if len(_conversation_cache) > CONVERSATION_CACHE_MAX:
+        oldest = next(iter(_conversation_cache))
+        del _conversation_cache[oldest]
+
+
+def _cache_get(role: str, user_id: str) -> list[dict[str, str]] | None:
+    return _conversation_cache.get(f"{role}:{user_id}")
+
+
+def _cache_evict(role: str, user_id: str) -> None:
+    _conversation_cache.pop(f"{role}:{user_id}", None)
 
 
 def _load_conversation(role: str, user_id: str) -> list[dict[str, str]]:
-    key = _get_conversation_key(role, user_id)
-    if key in in_memory_history:
-        return in_memory_history[key]
+    cached = _cache_get(role, user_id)
+    if cached is not None:
+        return cached
     try:
         db = _get_db()
-        result = db.table("conversations").select("messages").eq("user_id", user_id).eq("role", role).order("created_at", desc=True).limit(1).execute()
+        result = db.table("conversations").select("messages")\
+            .eq("user_id", user_id).eq("role", role)\
+            .order("created_at", desc=True).limit(1).execute()
         if result.data:
             msgs = result.data[0].get("messages", [])
-            in_memory_history[key] = msgs
+            _cache_put(role, user_id, msgs)
             return msgs
     except Exception as e:
-        logger.debug("db load error: %s", e)
+        logger.debug("conversation db load error: %s", e)
     return []
 
 
 def _save_conversation(role: str, user_id: str, messages: list[dict[str, str]]) -> None:
-    key = _get_conversation_key(role, user_id)
-    in_memory_history[key] = messages
-    if len(in_memory_history) > 1000:
-        in_memory_history.popitem(last=False)
+    _cache_put(role, user_id, messages)
     try:
         db = _get_db()
-        existing = db.table("conversations").select("id").eq("user_id", user_id).eq("role", role).order("created_at", desc=True).limit(1).execute()
+        existing = db.table("conversations").select("id")\
+            .eq("user_id", user_id).eq("role", role)\
+            .order("created_at", desc=True).limit(1).execute()
         now = datetime.now(timezone.utc).isoformat()
         doc = {"user_id": user_id, "role": role, "messages": messages, "updated_at": now}
         if existing.data:
@@ -179,7 +195,7 @@ def _save_conversation(role: str, user_id: str, messages: list[dict[str, str]]) 
             doc["created_at"] = now
             db.table("conversations").insert(doc).execute()
     except Exception as e:
-        logger.debug("db save error: %s", e)
+        logger.warning("conversation db save error: %s", e)
 
 
 def _estimate_tokens(messages: list[dict[str, str]]) -> int:
@@ -913,8 +929,7 @@ router.post("/admin-assistant")(admin_assistant)
 
 @router.post("/conversation/clear")
 async def clear_conversation(role: str = "student", user_id: str = Depends(auth_dependency)) -> dict[str, str]:
-    key = _get_conversation_key(role, user_id)
-    in_memory_history.pop(key, None)
+    _cache_evict(role, user_id)
     try:
         db = _get_db()
         existing = db.table("conversations").select("id").eq("user_id", user_id).eq("role", role).order("created_at", desc=True).limit(1).execute()

@@ -40,12 +40,28 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
       - run: pip install -r requirements.txt && pip install -r tests/requirements-test.txt
-      - run: pytest tests/ -v --asyncio-mode=auto
+      - run: pytest tests/ -v --asyncio-mode=auto --cov=. --cov-report=term
         env:
           JWT_SECRET: test-secret
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+  test-frontend:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npx playwright test --project=ci
+        env:
+          PUBLIC_API_URL: http://localhost:8000
 
   build-frontend:
     name: Build Frontend
@@ -62,15 +78,18 @@ jobs:
           PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL || 'http://localhost:8000' }}
 
   deploy:
-    name: Deploy to Vercel
-    needs: [test-backend, build-frontend]
+    name: Deploy to Netlify
+    needs: [test-backend, build-frontend, test-frontend]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: amondnet/vercel-action@v25
+      - uses: nwtgck/actions-netlify@v3
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: --prod
+          publish-dir: ./dist
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from CI"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

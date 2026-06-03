@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from supabase import Client
 
 from config.database import get_db
-from dependencies import TOKEN_EXPIRY_HOURS, encode_jwt, set_jwt_cookie
+from dependencies import TOKEN_EXPIRY_HOURS, encode_jwt, set_jwt_cookie, set_csrf_cookie
 
 logger = logging.getLogger("siee.google_oauth")
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -80,4 +80,5 @@ async def google_auth(data: GoogleAuthRequest) -> JSONResponse:
         },
     })
     set_jwt_cookie(response, token)
+    set_csrf_cookie(response)
     return response

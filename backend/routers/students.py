@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from supabase import Client
 
@@ -15,70 +15,84 @@ router = APIRouter(prefix="/api", tags=["students"])
 
 
 @router.get("/students")
-async def list_students(request: Request, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def list_students(
+    request: Request,
+    grade: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=200),
+    user_id: str = Depends(auth_dependency),
+) -> JSONResponse:
     db: Client = next(get_db())
-    grade = request.query_params.get("grade")
-    meta_col = request.query_params.get("column", "grade")
-    query = db.table("profiles").select("id, login_credential, fullname, role, is_active")
+    query = db.table("profiles").select("id, login_credential, fullname, role, is_active", count="exact")
+    query = query.eq("role", "student")
     if grade:
-        query = query.eq("role", "student")
-    result = query.execute()
-    students: list[dict[str, Any]] = []
-    for s in result.data:
-        students.append({
+        query = query.eq("grade", grade)
+    offset = (page - 1) * per_page
+    result = query.range(offset, offset + per_page - 1).execute()
+    students = [
+        {
             "profile_id": s["id"],
             "login_credential": s["login_credential"],
             "fullname": s["fullname"],
             "role": s["role"],
             "is_active": s.get("is_active", True),
-        })
-    return JSONResponse(content=students)
+        }
+        for s in (result.data or [])
+    ]
+    total = getattr(result, 'count', None) or len(students)
+    return JSONResponse(content={
+        "data": students,
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "pages": (total + per_page - 1) // per_page,
+    })
 
 
 @router.get("/students/risk")
 async def get_risk_students(user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("grades").select("student_id, score").execute()
-    risk_map: dict[str, float] = {}
-    count_map: dict[str, int] = {}
+    if not result.data:
+        return JSONResponse(content=[])
+    score_map: dict[str, list[float]] = {}
     for g in result.data:
         sid = g.get("student_id")
         if sid:
-            risk_map[sid] = risk_map.get(sid, 0) + float(g.get("score", 0))
-            count_map[sid] = count_map.get(sid, 0) + 1
-    risk_ids = {sid for sid in risk_map if (risk_map[sid] / count_map[sid]) < 3.5}
-    students = []
-    for rid in risk_ids:
-        p = db.table("profiles").select("*").eq("id", rid).execute()
-        if p.data:
-            profile = p.data[0]
-            students.append({
-                "profile_id": rid,
-                "login_credential": profile.get("login_credential"),
-                "fullname": profile.get("fullname"),
-                "avg_score": round(risk_map[rid] / count_map[rid], 1),
-                "status": "En Riesgo",
-            })
+            score_map.setdefault(sid, []).append(float(g.get("score", 0)))
+    risk_ids = [sid for sid, scores in score_map.items() if (sum(scores) / len(scores)) < 3.5]
+    if not risk_ids:
+        return JSONResponse(content=[])
+    profiles = db.table("profiles").select("id, login_credential, fullname").in_("id", risk_ids).execute()
+    profile_map = {p["id"]: p for p in (profiles.data or [])}
+    students = [
+        {
+            "profile_id": rid,
+            "login_credential": profile_map.get(rid, {}).get("login_credential", ""),
+            "fullname": profile_map.get(rid, {}).get("fullname", ""),
+            "avg_score": round(sum(score_map[rid]) / len(score_map[rid]), 1),
+            "status": "En Riesgo",
+        }
+        for rid in risk_ids if rid in profile_map
+    ]
     return JSONResponse(content=students)
 
 
 @router.get("/students/{profile_id}")
 async def get_student(profile_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())
-    result = db.table("profiles").select("*").eq("id", profile_id).execute()
-    if not result.data:
+    profile = db.table("profiles").select("id, login_credential, fullname, role, is_active").eq("id", profile_id).execute()
+    if not profile.data:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
-    profile = result.data[0]
-
-    meta_result = db.table("student_metadata").select("*").eq("profile_id", profile_id).execute()
-    metadata = meta_result.data[0] if meta_result.data else {}
-
+    p = profile.data[0]
+    meta = db.table("student_metadata").select("months_in_arrears, financial_override, total_balance, current_status, guardian_info").eq("profile_id", profile_id).execute()
+    metadata = meta.data[0] if meta.data else {}
     return JSONResponse(content={
-        "profile_id": profile["id"],
-        "login_credential": profile["login_credential"],
-        "fullname": profile["fullname"],
-        "role": profile["role"],
-        "is_active": profile.get("is_active", True),
+        "profile_id": p["id"],
+        "login_credential": p["login_credential"],
+        "fullname": p["fullname"],
+        "role": p["role"],
+        "is_active": p.get("is_active", True),
         "metadata": {
             "months_in_arrears": metadata.get("months_in_arrears", 0),
             "financial_override": metadata.get("financial_override", False),
@@ -90,58 +104,60 @@ async def get_student(profile_id: str, user_id: str = Depends(auth_dependency)) 
 
 
 @router.get("/students/{student_id}/grades")
-async def get_student_grades(student_id: str, request: Request, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def get_student_grades(
+    student_id: str,
+    request: Request,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=200),
+    user_id: str = Depends(auth_dependency),
+) -> JSONResponse:
     db: Client = next(get_db())
-    # IDOR guard: student can only view own grades; teachers/admins can view any
     role: str = getattr(request.state, "user_role", "")
     if role == "student" and user_id != student_id:
         raise HTTPException(status_code=403, detail="No tienes permiso para ver las notas de otro estudiante")
-    result = db.table("grades").select("*").eq("student_id", student_id).order("created_at", desc=True).execute()
-    grades: list[dict[str, Any]] = []
-    for g in result.data:
-        grades.append({
+    result = db.table("grades").select("subject_id, project_id, score, observations, created_at", count="exact").eq("student_id", student_id).order("created_at", desc=True).execute()
+    total = getattr(result, 'count', None) or len(result.data or [])
+    grades = [
+        {
             "subject_id": g.get("subject_id"),
             "project_id": g.get("project_id"),
             "score": float(g.get("score", 0)),
             "observations": g.get("observations", ""),
             "created_at": str(g.get("created_at", "")),
-        })
-    return JSONResponse(content=grades)
+        }
+        for g in (result.data or [])
+    ]
+    return JSONResponse(content={"data": grades, "total": total})
 
 
 @router.get("/students/{student_id}/report")
 async def get_student_report(student_id: str, request: Request, user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())
-    # IDOR guard
     role: str = getattr(request.state, "user_role", "")
     if role == "student" and user_id != student_id:
         raise HTTPException(status_code=403, detail="No tienes permiso para ver el reporte de otro estudiante")
     if is_financial_locked_path("/api/students/report"):
         req = type("_R", (), {"query_params": {"student_id": student_id}})()
         await financial_guard(req)
-
-    profile_result = db.table("profiles").select("*").eq("id", student_id).execute()
-    if not profile_result.data:
+    profile = db.table("profiles").select("fullname").eq("id", student_id).execute()
+    if not profile.data:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
-    profile = profile_result.data[0]
-
-    meta_result = db.table("student_metadata").select("*").eq("profile_id", student_id).execute()
-    metadata = meta_result.data[0] if meta_result.data else {}
-
-    grades_result = db.table("grades").select("*").eq("student_id", student_id).order("created_at", desc=True).execute()
-    grades: list[dict[str, Any]] = []
-    for g in grades_result.data:
-        grades.append({
+    meta = db.table("student_metadata").select("current_status, months_in_arrears, financial_override").eq("profile_id", student_id).execute()
+    metadata = meta.data[0] if meta.data else {}
+    grades_result = db.table("grades").select("subject_id, project_id, score, observations, created_at").eq("student_id", student_id).order("created_at", desc=True).execute()
+    grades = [
+        {
             "subject_id": g.get("subject_id"),
             "project_id": g.get("project_id"),
             "score": float(g.get("score", 0)),
             "observations": g.get("observations", ""),
             "created_at": str(g.get("created_at", "")),
-        })
-
+        }
+        for g in (grades_result.data or [])
+    ]
     avg_score = sum(g["score"] for g in grades) / len(grades) if grades else 0.0
     return JSONResponse(content={
-        "student": profile.get("fullname"),
+        "student": profile.data[0].get("fullname"),
         "grade": metadata.get("current_status", ""),
         "is_on_time": metadata.get("months_in_arrears", 0) < 2 or metadata.get("financial_override", False),
         "promedio": round(avg_score, 1),
@@ -165,11 +181,9 @@ async def update_student(profile_id: str, data: StudentUpdate, user_id: str = De
 @router.post("/admin/students/{profile_id}/toggle-payment")
 async def toggle_payment(profile_id: str, data: StudentMetadataSchema, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
-    meta_result = db.table("student_metadata").select("*").eq("profile_id", profile_id).execute()
+    meta_result = db.table("student_metadata").select("id").eq("profile_id", profile_id).execute()
     if not meta_result.data:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
-
-    meta = meta_result.data[0]
     new_status = "AL_DIA" if data.months_in_arrears < 2 else "EN_MORA"
     db.table("student_metadata").update({
         "months_in_arrears": data.months_in_arrears,
@@ -183,44 +197,37 @@ async def toggle_payment(profile_id: str, data: StudentMetadataSchema, user_id: 
 @router.get("/students/{profile_id}/financial-status")
 async def check_financial_status(profile_id: str, request: Request, user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())
-    # IDOR guard: students can only check own status
     role: str = getattr(request.state, "user_role", "")
     if role == "student" and user_id != profile_id:
         raise HTTPException(status_code=403, detail="No tienes permiso para ver el estado financiero de otro estudiante")
-    meta_result = db.table("student_metadata").select("*").eq("profile_id", profile_id).execute()
-    if not meta_result.data:
+    meta = db.table("student_metadata").select("months_in_arrears, financial_override, current_status").eq("profile_id", profile_id).execute()
+    if not meta.data:
         return JSONResponse(content={"is_blocked": False, "reason": "No metadata found"})
-    meta = meta_result.data[0]
-    months = meta.get("months_in_arrears", 0)
-    override = meta.get("financial_override", False)
-    is_blocked = months >= 2 and not override
+    m = meta.data[0]
+    months = m.get("months_in_arrears", 0)
+    override = m.get("financial_override", False)
     return JSONResponse(content={
-        "is_blocked": is_blocked,
+        "is_blocked": months >= 2 and not override,
         "months_in_arrears": months,
         "financial_override": override,
-        "current_status": meta.get("current_status", "AL_DIA"),
+        "current_status": m.get("current_status", "AL_DIA"),
     })
 
 
 @router.post("/students/{profile_id}/bypass-override")
 async def toggle_financial_override(profile_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
-
-    meta_result = db.table("student_metadata").select("*").eq("profile_id", profile_id).execute()
-    if not meta_result.data:
+    meta = db.table("student_metadata").select("financial_override").eq("profile_id", profile_id).execute()
+    if not meta.data:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
-
-    current = meta_result.data[0].get("financial_override", False)
+    current = meta.data[0].get("financial_override", False)
     db.table("student_metadata").update({
         "financial_override": not current,
         "financial_override_by": user_id,
         "financial_override_at": datetime.now(timezone.utc).isoformat(),
     }).eq("profile_id", profile_id).execute()
     audit.log("financial_override_toggle", user_id, profile_id, f"new_value={not current}")
-    return JSONResponse(content={
-        "message": "Override toggled",
-        "financial_override": not current,
-    })
+    return JSONResponse(content={"message": "Override toggled", "financial_override": not current})
 
 
 @router.delete("/admin/students/{profile_id}")
@@ -236,8 +243,7 @@ async def delete_student(profile_id: str, user_id: str = Depends(admin_dependenc
 async def report_outage(data: OutageReport, user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     now = datetime.now(timezone.utc).isoformat()
-
-    progress = db.table("exam_progress").select("*").eq("student_id", data.student_id).eq("exam_id", data.exam_id).execute()
+    progress = db.table("exam_progress").select("id, current_responses, answers, time_elapsed_seconds").eq("student_id", data.student_id).eq("exam_id", data.exam_id).execute()
     if progress.data:
         existing = progress.data[0]
         current_answers = existing.get("current_responses", existing.get("answers", {}))
@@ -247,14 +253,12 @@ async def report_outage(data: OutageReport, user_id: str = Depends(auth_dependen
             "last_saved_at": now,
             "time_elapsed_seconds": existing.get("time_elapsed_seconds", 0),
         }).eq("id", existing["id"]).execute()
-
     doc = data.model_dump()
     doc["incident_type"] = "power_outage"
     doc["severity"] = "high"
     doc["description"] = data.description or "Posible fallo técnico (Corte de fluido/red)"
     doc["created_at"] = now
     db.table("incident_reports").insert(doc).execute()
-
     return JSONResponse(content={
         "status": "outage_logged",
         "message": "Progreso guardado. Tus respuestas están a salvo.",
@@ -267,18 +271,15 @@ async def report_outage(data: OutageReport, user_id: str = Depends(auth_dependen
 async def get_behavior_logs(student_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     try:
-        result = db.table("behavior_logs").select("*").eq("student_id", student_id).order("created_at", desc=True).limit(50).execute()
-        logs = []
-        for r in result.data:
-            logs.append({
-                "id": r.get("id"),
-                "student_id": r.get("student_id"),
-                "log_type": r.get("log_type", "positive"),
-                "description": r.get("description", ""),
-                "recorded_by": r.get("recorded_by", ""),
-                "created_at": str(r.get("created_at", "")),
-            })
-        return JSONResponse(content=logs)
+        result = db.table("behavior_logs").select("id, student_id, log_type, description, recorded_by, created_at").eq("student_id", student_id).order("created_at", desc=True).limit(50).execute()
+        return JSONResponse(content=[{
+            "id": r.get("id"),
+            "student_id": r.get("student_id"),
+            "log_type": r.get("log_type", "positive"),
+            "description": r.get("description", ""),
+            "recorded_by": r.get("recorded_by", ""),
+            "created_at": str(r.get("created_at", "")),
+        } for r in (result.data or [])])
     except Exception as e:
         logger.warning("behavior logs fetch error: %s", e)
         return JSONResponse(content=[])
@@ -296,28 +297,22 @@ async def get_student_materials(student_id: str, user_id: str = Depends(auth_dep
         if not course.data:
             return JSONResponse(content=[])
         grade_id = course.data[0]["name"]
-
-        mats = db.table("class_materials").select("*").eq("grade_id", grade_id).order("created_at", desc=True).execute()
-        subject_ids = {m["subject_id"] for m in mats.data if m.get("subject_id")}
+        mats = db.table("class_materials").select("id, subject_id, grade_id, file_url, file_type, uploaded_by, created_at").eq("grade_id", grade_id).order("created_at", desc=True).execute()
+        subject_ids = {m["subject_id"] for m in (mats.data or []) if m.get("subject_id")}
         subjects_map = {}
         if subject_ids:
             subs = db.table("subjects").select("id, name").in_("id", list(subject_ids)).execute()
-            for s in subs.data:
-                subjects_map[s["id"]] = s.get("name", "")
-
-        materials = []
-        for m in mats.data:
-            materials.append({
-                "id": m.get("id"),
-                "subject_id": m.get("subject_id", ""),
-                "subject_name": subjects_map.get(m.get("subject_id", ""), ""),
-                "grade_id": m.get("grade_id", ""),
-                "file_url": m.get("file_url", ""),
-                "file_type": m.get("file_type", "md"),
-                "uploaded_by": m.get("uploaded_by", ""),
-                "created_at": str(m.get("created_at", "")),
-            })
-        return JSONResponse(content=materials)
+            subjects_map = {s["id"]: s.get("name", "") for s in (subs.data or [])}
+        return JSONResponse(content=[{
+            "id": m.get("id"),
+            "subject_id": m.get("subject_id", ""),
+            "subject_name": subjects_map.get(m.get("subject_id", ""), ""),
+            "grade_id": m.get("grade_id", ""),
+            "file_url": m.get("file_url", ""),
+            "file_type": m.get("file_type", "md"),
+            "uploaded_by": m.get("uploaded_by", ""),
+            "created_at": str(m.get("created_at", "")),
+        } for m in (mats.data or [])])
     except Exception as e:
         logger.warning("student materials fetch error: %s", e)
         return JSONResponse(content=[])

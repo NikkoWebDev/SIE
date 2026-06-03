@@ -71,19 +71,21 @@ async def admin_stats() -> JSONResponse:
 async def mora_students() -> JSONResponse:
     db: Client = next(get_db())
     meta_result = db.table("student_metadata").select("profile_id, months_in_arrears, total_balance, current_status").gte("months_in_arrears", 2).execute()
-    students = []
-    for m in meta_result.data:
-        p = db.table("profiles").select("login_credential, fullname").eq("id", m["profile_id"]).execute()
-        profile = p.data[0] if p.data else {}
-        students.append({
-            "profile_id": m["profile_id"],
-            "login_credential": profile.get("login_credential", ""),
-            "fullname": profile.get("fullname", ""),
-            "months_in_arrears": m.get("months_in_arrears", 0),
-            "total_balance": float(m.get("total_balance", 0)),
-            "current_status": m.get("current_status", ""),
-        })
-    return JSONResponse(content=students)
+    if not meta_result.data:
+        return JSONResponse(content=[])
+    profile_ids = [m["profile_id"] for m in meta_result.data if m.get("profile_id")]
+    profile_map = {}
+    if profile_ids:
+        profiles = db.table("profiles").select("id, login_credential, fullname").in_("id", profile_ids).execute()
+        profile_map = {p["id"]: p for p in (profiles.data or [])}
+    return JSONResponse(content=[{
+        "profile_id": m["profile_id"],
+        "login_credential": profile_map.get(m["profile_id"], {}).get("login_credential", ""),
+        "fullname": profile_map.get(m["profile_id"], {}).get("fullname", ""),
+        "months_in_arrears": m.get("months_in_arrears", 0),
+        "total_balance": float(m.get("total_balance", 0)),
+        "current_status": m.get("current_status", ""),
+    } for m in meta_result.data])
 
 
 @router.post("/candidates", status_code=201)
@@ -344,25 +346,36 @@ async def cast_vote(data: VoteRequest, user_id: str = Depends(auth_dependency)) 
 
 
 @router.get("/students")
-async def admin_list_students(user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def admin_list_students(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=200),
+    user_id: str = Depends(auth_dependency),
+) -> JSONResponse:
     db: Client = next(get_db())
-    profiles = db.table("profiles").select("*").eq("role", "student").execute()
-    students: list[dict[str, Any]] = []
-    for p in profiles.data:
-        meta = db.table("student_metadata").select("*").eq("profile_id", p["id"]).execute()
-        m = meta.data[0] if meta.data else {}
-        months = m.get("months_in_arrears", 0)
-        is_paid = months < 2 or m.get("financial_override", False)
-        students.append({
+    count_result = db.table("profiles").select("id", count="exact").eq("role", "student").execute()
+    total = getattr(count_result, 'count', None) or 0
+    offset = (page - 1) * per_page
+    profiles = db.table("profiles").select("id, login_credential, fullname").eq("role", "student").range(offset, offset + per_page - 1).execute()
+    profile_ids = [p["id"] for p in (profiles.data or [])]
+    meta_map = {}
+    if profile_ids:
+        metas = db.table("student_metadata").select("profile_id, months_in_arrears, financial_override, current_status").in_("profile_id", profile_ids).execute()
+        for m in (metas.data or []):
+            meta_map[m["profile_id"]] = m
+    return JSONResponse(content={
+        "data": [{
             "_id": p["id"],
             "document_id": p.get("login_credential", ""),
             "fullname": p["fullname"],
             "nombre": p["fullname"],
-            "grado": m.get("current_status", ""),
-            "grade": m.get("current_status", ""),
-            "is_paid": is_paid,
-        })
-    return JSONResponse(content=students)
+            "grado": meta_map.get(p["id"], {}).get("current_status", ""),
+            "grade": meta_map.get(p["id"], {}).get("current_status", ""),
+            "is_paid": (meta_map.get(p["id"], {}).get("months_in_arrears", 0) < 2 or meta_map.get(p["id"], {}).get("financial_override", False)),
+        } for p in (profiles.data or [])],
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+    })
 
 
 @router.patch("/students/{profile_id}/financial")
@@ -382,26 +395,24 @@ async def admin_toggle_financial(profile_id: str, body: FinancialToggleSchema, u
 async def risk_students() -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("grades").select("student_id, score").execute()
-    risk_map: dict[str, float] = {}
-    count_map: dict[str, int] = {}
+    if not result.data:
+        return JSONResponse(content=[])
+    score_map: dict[str, list[float]] = {}
     for g in result.data:
         sid = g.get("student_id")
         if sid:
-            risk_map[sid] = risk_map.get(sid, 0) + float(g.get("score", 0))
-            count_map[sid] = count_map.get(sid, 0) + 1
-    risk_ids = {sid for sid in risk_map if (risk_map[sid] / count_map[sid]) < 3.5}
-
-    students = []
-    for rid in risk_ids:
-        p = db.table("profiles").select("login_credential, fullname").eq("id", rid).execute()
-        if p.data:
-            students.append({
-                "profile_id": rid,
-                "login_credential": p.data[0].get("login_credential"),
-                "fullname": p.data[0].get("fullname"),
-                "avg_score": round(risk_map[rid] / count_map[rid], 1),
-            })
-    return JSONResponse(content=students)
+            score_map.setdefault(sid, []).append(float(g.get("score", 0)))
+    risk_ids = [sid for sid, scores in score_map.items() if (sum(scores) / len(scores)) < 3.5]
+    if not risk_ids:
+        return JSONResponse(content=[])
+    profiles = db.table("profiles").select("id, login_credential, fullname").in_("id", risk_ids).execute()
+    profile_map = {p["id"]: p for p in (profiles.data or [])}
+    return JSONResponse(content=[{
+        "profile_id": rid,
+        "login_credential": profile_map.get(rid, {}).get("login_credential"),
+        "fullname": profile_map.get(rid, {}).get("fullname"),
+        "avg_score": round(sum(score_map[rid]) / len(score_map[rid]), 1),
+    } for rid in risk_ids if rid in profile_map])
 
 
 # ── Financial Summary ──────────────────────────────────────────────
@@ -447,42 +458,37 @@ async def financial_summary() -> JSONResponse:
 @router.get("/incidents")
 async def list_incidents(limit: int = Query(50, ge=1, le=200)) -> JSONResponse:
     db: Client = next(get_db())
-    result = db.table("incident_reports").select("*").order("created_at", desc=True).limit(limit).execute()
-    incidents = []
-    for inc in result.data:
-        student_name = ""
-        if inc.get("student_id"):
-            p = db.table("profiles").select("fullname").eq("id", inc["student_id"]).execute()
-            if p.data:
-                student_name = p.data[0].get("fullname", "")
-        exam_title = ""
-        if inc.get("exam_id"):
-            e = db.table("exams").select("title").eq("id", inc["exam_id"]).execute()
-            if e.data:
-                exam_title = e.data[0].get("title", "")
-
-        incident_type = inc.get("incident_type", "unknown")
-        status_map = {
-            "network_loss": "Interrumpido por Red — Progreso a Salvo",
-            "power_loss": "Interrumpido por Fluido Eléctrico — Progreso a Salvo",
-            "suspicious": "Comportamiento Anómalo Detectado",
-            "tab_switch": "Cambio de Ventana Registrado",
-        }
-        status = status_map.get(incident_type, f"Incidente: {incident_type}")
-
-        incidents.append({
-            "id": inc.get("id"),
-            "student_id": inc.get("student_id"),
-            "student_name": student_name,
-            "exam_id": inc.get("exam_id"),
-            "exam_title": exam_title,
-            "incident_type": incident_type,
-            "status": status,
-            "severity": inc.get("severity", "low"),
-            "description": inc.get("description", ""),
-            "created_at": str(inc.get("created_at", "")),
-        })
-    return JSONResponse(content=incidents)
+    result = db.table("incident_reports").select("id, student_id, exam_id, incident_type, severity, description, created_at").order("created_at", desc=True).limit(limit).execute()
+    if not result.data:
+        return JSONResponse(content=[])
+    student_ids = list({inc.get("student_id") for inc in result.data if inc.get("student_id")})
+    exam_ids = list({inc.get("exam_id") for inc in result.data if inc.get("exam_id")})
+    profile_map = {}
+    if student_ids:
+        profiles = db.table("profiles").select("id, fullname").in_("id", student_ids).execute()
+        profile_map = {p["id"]: p.get("fullname", "") for p in (profiles.data or [])}
+    exam_map = {}
+    if exam_ids:
+        exams = db.table("exams").select("id, title").in_("id", exam_ids).execute()
+        exam_map = {e["id"]: e.get("title", "") for e in (exams.data or [])}
+    status_map = {
+        "network_loss": "Interrumpido por Red — Progreso a Salvo",
+        "power_loss": "Interrumpido por Fluido Eléctrico — Progreso a Salvo",
+        "suspicious": "Comportamiento Anómalo Detectado",
+        "tab_switch": "Cambio de Ventana Registrado",
+    }
+    return JSONResponse(content=[{
+        "id": inc.get("id"),
+        "student_id": inc.get("student_id"),
+        "student_name": profile_map.get(inc.get("student_id"), ""),
+        "exam_id": inc.get("exam_id"),
+        "exam_title": exam_map.get(inc.get("exam_id"), ""),
+        "incident_type": inc.get("incident_type", "unknown"),
+        "status": status_map.get(inc.get("incident_type"), f"Incidente: {inc.get('incident_type', 'unknown')}"),
+        "severity": inc.get("severity", "low"),
+        "description": inc.get("description", ""),
+        "created_at": str(inc.get("created_at", "")),
+    } for inc in result.data])
 
 
 # ── ABP Project Linker ─────────────────────────────────────────────
@@ -491,29 +497,27 @@ async def list_incidents(limit: int = Query(50, ge=1, le=200)) -> JSONResponse:
 async def list_abp_projects() -> JSONResponse:
     db: Client = next(get_db())
     try:
-        result = db.table("abp_projects").select("*").order("created_at", desc=True).execute()
+        result = db.table("abp_projects").select("id, name, description, linked_subject_ids, is_active, project_trigger_keyword, created_at").order("created_at", desc=True).execute()
     except Exception as exc:
         logger.warning("abp_projects table not accessible: %s", exc)
         return JSONResponse(content=[])
-    projects = []
-    for p in result.data:
-        subjects_raw = p.get("linked_subject_ids") or []
-        subject_names = []
-        for sid in subjects_raw:
-            s = db.table("subjects").select("name").eq("id", sid).execute()
-            if s.data:
-                subject_names.append(s.data[0].get("name", sid))
-        projects.append({
-            "id": p.get("id"),
-            "name": p.get("name"),
-            "description": p.get("description", ""),
-            "linked_subject_ids": subjects_raw,
-            "linked_subject_names": subject_names,
-            "is_active": p.get("is_active", True),
-            "project_trigger_keyword": p.get("project_trigger_keyword", "abp"),
-            "created_at": str(p.get("created_at", "")),
-        })
-    return JSONResponse(content=projects)
+    if not result.data:
+        return JSONResponse(content=[])
+    all_subject_ids = list({sid for p in result.data for sid in (p.get("linked_subject_ids") or [])})
+    subject_map = {}
+    if all_subject_ids:
+        subs = db.table("subjects").select("id, name").in_("id", all_subject_ids).execute()
+        subject_map = {s["id"]: s.get("name", "") for s in (subs.data or [])}
+    return JSONResponse(content=[{
+        "id": p.get("id"),
+        "name": p.get("name"),
+        "description": p.get("description", ""),
+        "linked_subject_ids": p.get("linked_subject_ids") or [],
+        "linked_subject_names": [subject_map.get(sid, sid) for sid in (p.get("linked_subject_ids") or [])],
+        "is_active": p.get("is_active", True),
+        "project_trigger_keyword": p.get("project_trigger_keyword", "abp"),
+        "created_at": str(p.get("created_at", "")),
+    } for p in result.data])
 
 
 @router.post("/abp-projects", status_code=201)
@@ -616,14 +620,14 @@ async def identity_directory(search: str = Query("", max_length=100)) -> JSONRes
     items = profiles.data or []
     if search:
         q = search.lower()
-        items = [
-            p for p in items
-            if q in (p.get("fullname") or "").lower()
-            or q in (p.get("login_credential") or "").lower()
-        ]
+        items = [p for p in items if q in (p.get("fullname") or "").lower() or q in (p.get("login_credential") or "").lower()]
+    profile_ids = [p["id"] for p in items if p.get("role") == "student"]
+    meta_map = {}
+    if profile_ids:
+        metas = db.table("student_metadata").select("profile_id, current_status").in_("profile_id", profile_ids).execute()
+        meta_map = {m["profile_id"]: m.get("current_status", "") for m in (metas.data or [])}
     for p in items:
-        meta = db.table("student_metadata").select("current_status").eq("profile_id", p["id"]).execute()
-        p["grade"] = (meta.data[0] or {}).get("current_status", "") if meta.data else ""
+        p["grade"] = meta_map.get(p["id"], "")
     return JSONResponse(content=items)
 
 

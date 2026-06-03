@@ -1,0 +1,33 @@
+#!/bin/sh
+# Pre-commit hook: detect service account keys and other secrets
+# Install: git config core.hooksPath .githooks
+
+RED='\033[0;31m'
+NC='\033[0m'
+BLOCKED=0
+
+# Check for Google Cloud service account keys
+for file in $(git diff --cached --name-only); do
+  if [ -f "$file" ] && echo "$file" | grep -q '\.json$'; then
+    if grep -q '"type": "service_account"' "$file" 2>/dev/null; then
+      echo "${RED}[SECURITY]${NC} '$file' contiene una clave de service account de Google. NO COMMITEAR."
+      BLOCKED=1
+    fi
+  fi
+
+  # Check for private keys in non-test files
+  if [ -f "$file" ] && ! echo "$file" | grep -qE '\.(md|test\.)' && echo "$file" | grep -qE '\.(py|js|ts|env|json|yaml|yml)$'; then
+    if grep -q 'BEGIN \(RSA\|EC\|DSA\|PRIVATE\|OPENSSH\) KEY' "$file" 2>/dev/null; then
+      echo "${RED}[SECURITY]${NC} '$file' contiene una clave privada. NO COMMITEAR."
+      BLOCKED=1
+    fi
+  fi
+done
+
+if [ "$BLOCKED" -eq 1 ]; then
+  echo ""
+  echo "${RED}Commit bloqueado por seguridad. Revisa los archivos listados arriba.${NC}"
+  exit 1
+fi
+
+exit 0

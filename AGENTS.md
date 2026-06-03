@@ -1,111 +1,89 @@
 # VYNTRA Academic — Agent Guide
 
 ## Project Overview
-Full-stack Academic Platform (VYNTRA) — Sogamoso, Boyacá, Colombia.
-- **Framework**: Astro v5 (static site generation)
-- **UI**: Unified CSS design system (`src/styles/theme.css`) + Tailwind v3 (layout utilities only)
-- **Deployment**: Vercel (static + serverless)
+Full-stack Academic Platform (VYNTRA Solaris v5.0) — Sogamoso, Boyacá, Colombia.
+- **Framework**: Astro v5 (static + serverless SSR)
+- **UI**: Tailwind CSS v3 + CSS design tokens (`src/styles/theme.css`)
+- **Deployment**: Netlify (primary) + Vercel (secondary)
 - **Backend**: FastAPI (Python, hosted on Render)
 - **Database**: Supabase (Postgres)
 - **Auth**: JWT (stored in localStorage)
 - **AI**: OpenRouter API streaming chat (VYNTRA Tutor)
 
-## Design System — "Apple Editorial"
+## Design System — "Solar Technocratic"
 
 ### Theme
-- **Dual theme**: Light (`#ffffff` bg) and Dark (`#000000` bg)
+- **Dual theme**: Light (`#FFFBF0` — solar cream) and Dark (`#0D0A08` — warm charcoal)
 - **Toggle**: Class-based on `<html>`, persisted to `localStorage('vyntra-theme')`, respects `prefers-color-scheme`
-- **Brand colors**: Maroon `#800000`, Gold `#FDC003`, colors used as accents only — background is always neutral
-- **Typography**: Syne (display headings), Sora (body) — loaded from Google Fonts via `<link>` in Layout.astro `<head>`
-- **Atmosphere**: Subtle CSS noise overlay (SVG fractalNoise, 1.5% opacity), grid dots background on hero pages
+- **Brand colors**: Maroon `#6B1A1A`, Gold `#F5A623`, Solar Amber `#FF8C00`
+- **Typography**: Fraunces (display headings), DM Sans (body), Syne (accent), Azeret Mono (data/technical)
+- **Atmosphere**: CSS noise overlay (SVG fractalNoise), solar orbs, grid dots, construction diagram SVGs
+- **Motion**: Staggered reveals (IntersectionObserver), spring easing, section-enter animations, toast slide-in
 
 ### Shared CSS (`src/styles/theme.css`)
-- **Design tokens**: CSS custom properties for spacing, radius, easing, colors, shadows
-- **Cards**: `.card-float` — white/black bg, subtle border, shadow, hover elevation
-- **Inputs**: `.input-apple` — minimal border, focus ring in maroon
-- **Buttons**: `.btn-apple` + `.btn-primary|secondary|ghost|gold` — spring scale on active
-- **Glass**: `.glass` + `.nav-blur` — backdrop-filter blur for nav/topbar
-- **Skeleton**: `.shimmer` — animated gradient shimmer for loading states
-- **Badge**: `.badge` + `.badge-maroon|gold|green|red` — pill labels
-- **Sidebar**: `.sidebar` — fixed left, 240px, responsive overlay on mobile
-- **Topbar**: `.topbar` — sticky, blur backdrop, border-bottom
-- **Stats**: `.stats-grid` + `.stat-card` + `.stat-value` — auto-fit grid
-- **Tabs**: `.tab-bar` + `.tab-btn` — border-bottom active indicator
+- **Design tokens**: CSS custom properties for bg, text, border, shadow, glass, input, skeleton, scrollbar, glow
+- **Section transitions**: `.section-enter` / `.section-enter-fast` — fade+slide-up on dashboard navigation
+- **Sidebar glow**: Active section indicator with inset box-shadow
+- **Solar flare**: Radial gradient overlay for hero sections
+- **Skeleton variants**: `skeleton-shimmer` (basic), `skeleton-table-row`, `skeleton-card`, `skeleton-stat`
+- **Responsive**: Table overflow wrappers, full-width mobile toasts, 44px touch targets (≤640px)
+- **Accessibility**: `:focus-visible` gold ring, `prefers-reduced-motion` disable, `::selection` maroon/gold
 
-## Pages
+### Component Architecture
+- **BaseLayout.astro** — Root layout: CSP headers, SEO meta, Google Fonts, theme init script, noise overlay, `window.__API_URL__`
+- **DashboardShell.astro** — Unified dashboard wrapper: Sidebar + Topbar + Toast + LoadingOverlay + shared dashboard lib (inline)
+- **Sidebar.astro** — Role-aware sidebar (student/teacher/admin), hardcoded navigation configs, mobile overlay, theme toggle, logout
+- **Topbar.astro** — Responsive topbar with hamburger menu, live breadcrumb, user avatar
+- **AIChat.astro** — Floating chat bubble, 3 role configs, SSE streaming, localStorage persistence, contextual suggestions
+- **WsRiskAlert.astro** — WebSocket client, audio alerts (Web Audio API), slide-in toast
+- **UI components**: Button, Card, Input, Badge, Modal, Toast, Skeleton, LoadingOverlay
 
-### Public
-- **`index.astro`** — Landing page. Lightweight hero with grid dots and subtle maroon orb, stats grid, feature cards, notices section. Dual theme.
-- **`login.astro`** — Split layout: left 45% brand panel, right 55% Apple-style form. Segmented tab control (Estudiante / Personal). JWT auth. Dual theme.
-- **`dashboard.astro`** — Auth-based redirect page. Reads `userRole` from localStorage, routes to `/estudiante`, `/docente`, or `/admin`.
+### Pages
 
-### Dashboards (standalone sidebars, no `Layout.astro`)
-- **`estudiante.astro`** (1154 lines) — Student panel. Claude Apple-style design merged with all features: dashboard stats, grades chart (Chart.js), secure exam modal (fullscreen/strikes/timer), voting, AIChat, WsRiskAlert, schedule, task upload (FormData), PDF boletin, live clock, online indicator, **Pruebas Saber** (6 areas × 4 bimestres study materials + practice tests). Uses `AIChat` + `WsRiskAlert`.
-- **`docente.astro`** (~950 lines) — Teacher standalone sidebar. Dashboard stats, **P1-P4 planilla** (per-period inputs with auto-average), **Guías y Tareas** (upload PDF guides + student deliveries inbox), **Exámenes** (question builder + publish), **Incidentes de Seguridad** (monitor exam strikes, reset), Horario semanal, Subir Material (AI-powered PDF/Word), Alertas de Riesgo, ABP propagation banner, jsPDF export. Uses `AIChat`.
-- **`admin.astro`** (~640 lines) — Admin standalone sidebar. Dashboard stats (Grados/Estudiantes/Docentes/Avisos), Student CRUD + CSV export + filters, Teacher CRUD + subject assignment + director grade, Subjects config with IA links, Notices with file upload, Elections with Chart.js bar chart, Admin management. No pension/mora tracking. Uses `AIChat`.
+#### Public
+- **`index.astro`** — Landing page. Solar particles canvas, animated orbs, grid dots, construction SVG lines, staggered reveals (IntersectionObserver), 4-stat grid from API, 3 features, notices grid, footer.
+- **`login.astro`** — Split panel (45/55), solar glow + construction diagrams, segmented role tab (Estudiante/Personal) with spring slider, input focus glow, forgot password modal 2-step flow.
+- **`dashboard.astro`** — Role-based redirect. Reads `userRole` from localStorage, routes to `/estudiante`, `/docente`, or `/admin`.
 
-### Shared layout
-- **`Layout.astro`** — Base HTML shell with theme injection, sidebar nav, glass topbar, content area. Used only by `dashboard.astro`.
-- **No dashboard pages use `Layout.astro` directly** — `estudiante.astro`, `docente.astro`, and `admin.astro` each have their own standalone sidebar + topbar inline (not using `Sidebar.astro` component).
+#### Dashboards (all use BaseLayout + DashboardShell + Sidebar + Topbar)
+- **`estudiante.astro`** — 9 sections: Inicio, Notas (Chart.js), Exámenes (anti-fraud modal), Horarios, Tareas, Pruebas Saber (6 areas × 4 bimestres), Biblioteca, Votaciones, Perfil. Includes WsRiskAlert + AIChat.
+- **`docente.astro`** — 7 sections: Dashboard stats, Control de Notas (P1-P4 planilla with auto-average), Guías y Tareas (upload + inbox), Exámenes (question builder), Horario, Incidentes de Seguridad, Alertas de Riesgo.
+- **`admin.astro`** — 7 sections: Dashboard stats, Gestión de Alumnos (CRUD + filters + CSV export), Cuerpo Docente, Materias e IA, Avisos, Elecciones (Chart.js), Administradores. Includes modal forms for CRUD.
 
-### Components
-- **`WsRiskAlert.astro`** — WebSocket client for real-time risk alerts. Fixed top-right toast notifications. Audio alert (Web Audio API oscillator).
-- **`AIChat.astro`** — Role-based AI tutor. Supports student/teacher/admin roles via `role` prop. Streaming SSE chat. Context-aware (grades, risk status, financial state). Uses CSS custom properties for accent colors.
-
-## AI System (VYNTRA Tutor)
-
-### Backend (`backend/routers/ai_agent.py`)
-- **Router**: `/api/ai`, tags: `["ai"]`
-- **3 endpoints**, each with role-specific system prompt, API key, temperature, and max_tokens:
-
-| Endpoint | Auth | API Key | Temperature | Max Tokens | Prompt |
-|---|---|---|---|---|---|
-| `POST /api/ai/student-tutor` | `auth_dependency` | `OPENROUTER_STUDENT_KEY` | 0.7 | 1024 | Empathic tutor for ABP subjects |
-| `POST /api/ai/teacher-tutor` | `teacher_dependency` | `OPENROUTER_TEACHER_KEY` | 0.6 | 2048 | Analytical assistant for pedagogy |
-| `POST /api/ai/admin-assistant` | `admin_dependency` | `OPENROUTER_ADMIN_KEY` | 0.5 | 2048 | Executive advisor for financial strategy |
-
-- **Model**: `OPENROUTER_MODEL` env var (default: `openrouter/free`)
-- **Conversation memory**: In-memory `OrderedDict`, last 10 messages per user, capped at 1000 users
-- **Streaming**: SSE via `StreamingResponse`, each token yielded as `data: {"token": "..."}`
-- **Error handling**: Logged with role, user_id, and status code; client receives SSE error event
-
-### Role-based Auth Dependencies (`backend/dependencies.py`)
-- `auth_dependency` — Validates JWT, sets `request.state.user_role`, returns `sub`
-- `teacher_dependency` — Calls `auth_dependency`, validates role is `teacher`/`profesor`
-- `admin_dependency` — Calls `auth_dependency`, validates role is `admin`/`rector`
-
-### Docker Compose (`backend/docker-compose.yml`)
-- Requires: `OPENROUTER_STUDENT_KEY`, `OPENROUTER_TEACHER_KEY`, `OPENROUTER_ADMIN_KEY`, `OPENROUTER_MODEL`
+#### Shared
+- **`AIChat.astro`** — Inline SSE streaming chat, 3 role configs, typing indicator, localStorage persistence, contextual suggestion chips. Loaded on all 3 dashboards.
+- **`WsRiskAlert.astro`** — WebSocket risk alert client, audio + toast notifications, auto-dismiss. Loaded on student dashboard.
+- **404.astro** — Solar eclipse themed error page.
 
 ## API Integration
-- **Auth**: `POST /api/auth/login` → JWT token stored in localStorage (fields: `access_token`, `userId`, `userRole`, `userName`)
+- **Auth**: `POST /api/auth/login` → JWT token → localStorage (`access_token`, `userId`, `userRole`, `userName`)
 - **Grades**: `GET /api/grades?student_id=X`, `GET /api/grades?teacher_id=X`, `POST /api/teacher/submit-grade`
 - **Financial**: `GET /api/students/X/financial-status`, `PATCH /api/admin/students/X/financial`
-- **Risk**: `GET /api/students/risk` (returns `profile_id`, `fullname`, `login_credential`, `avg_score`, `status`), WebSocket at `ws://.../ws?token=JWT`
-- **Notices**: `GET /api/notices`
+- **Risk**: `GET /api/students/risk`, WebSocket at `ws://.../ws?token=JWT`
+- **Notices**: `GET /api/notices`, `POST /api/admin/notices`
 - **Stats**: `GET /api/admin/stats`
+- **Candidates**: `GET/POST/DELETE /api/admin/candidates`, `POST /api/admin/election-reset`
+- **AI**: `POST /api/ai/student-tutor`, `POST /api/ai/teacher-tutor`, `POST /api/ai/admin-assistant` (SSE streaming)
 - **PDF**: `GET /api/grades/download-pdf?student_id=X`
-- **Shared fetch**: Use `apiFetch()` from `src/scripts/api.ts` for automatic 401 redirect
-
-### DB Schema Notes
-- `grades.student_id` and `grades.subject_id` are UUID columns referencing `profiles.id` and `subjects.id` respectively
-- When submitting grades, the backend must resolve `login_credential` → UUID for `student_id` and subject `name` → UUID for `subject_id`
-- ABP propagation: when `project_id` contains "abp" or "proyecto", the grade is copied to all subjects in `_abp_propagated_subjects`
+- **URL**: Centralized via `import.meta.env.PUBLIC_API_URL` (set in `.env` local, `netlify.toml` deploy)
 
 ## Build & Run
 ```bash
-npm run dev      # astro dev
-npm run build    # astro build
-npm run preview  # astro preview
-npm run check    # astro check (type/lint)
+npm install          # Install dependencies (includes terser + lightningcss for minification)
+npm run dev          # astro dev
+npm run build        # astro build
+npm run preview      # astro preview
 ```
 
-## Conventions for New Pages
-1. Use `Layout.astro` (with sidebar) for student/general pages; use `Sidebar.astro` for standalone admin/docente pages
-2. Include `WsRiskAlert` only on student dashboard
-3. Include `AIChat` on pages needing AI assistant, pass `role` prop
-4. Use CSS custom properties from `theme.css` instead of hardcoded colors
-5. Use `apiFetch()` from `src/scripts/api.ts` for all API calls
-6. Auth check: redirect to `/login` if no token
-7. Fonts: always use `font-family: var(--font-body)` or `var(--font-display)` CSS vars
-8. Theme: support both light and dark modes via `var(--bg)`, `var(--text)`, etc.
+## Conventions
+1. All dashboard pages use `BaseLayout` + `<DashboardShell role={role}>` wrapper pattern
+2. `Sidebar.astro` uses `define:vars` for role-specific IDs (sidebar-username-{role}, sidebar-metadata-{role})
+3. Theme toggle: `window.setVyntraTheme(dark)` available via shared dashboard lib
+4. API calls: use inline `fetch` with `Authorization: Bearer ${token}` header; 401 → redirect
+5. Error handling: use `window.VyntraToast?.error()` (available on all DashboardShell pages)
+6. Section navigation: `window.showSection(id)` — dispatches `vyntra:navigate` CustomEvent for sidebar sync
+7. Fonts: loaded from Google Fonts CDN in BaseLayout `<head>`; use Tailwind font classes
+8. CSS: all styling via Tailwind utilities; theme tokens only in CSS custom properties
+9. Responsive: 6 breakpoints (xs:380px through 2xl:1440px), mobile-first, 44px touch targets
+10. Animation: `prefers-reduced-motion` disables all animations, `section-enter` for dashboard transitions
+11. Security: VyntraToast HTML-escapes messages, login uses `.textContent` not `.innerHTML`, CDN scripts use SRI integrity

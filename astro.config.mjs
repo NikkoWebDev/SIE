@@ -9,11 +9,20 @@ export default defineConfig({
   integrations: [tailwind(), sitemap()],
   site: 'https://colegiociudaddelsol.edu.co',
   build: {
-    inlineStylesheets: 'always',
+    inlineStylesheets: 'never',
   },
   vite: {
     build: {
-      minify: 'esbuild',
+      minify: 'terser',
+      cssMinify: 'lightningcss',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            chartjs: ['chart.js'],
+            jspdf: ['jspdf', 'jspdf-autotable'],
+          },
+        },
+      },
     },
   },
 })

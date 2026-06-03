@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
 from supabase import Client
 
@@ -15,21 +15,28 @@ router = APIRouter(prefix="/api", tags=["notices"])
 
 @router.get("/notices")
 async def list_notices(
-    categoria: Optional[str] = None,
-    limit: int = 50,
+    categoria: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
 ) -> JSONResponse:
     db: Client = next(get_db())
-    query = db.table("notices").select("*")
+    query = db.table("notices").select("id, titulo, contenido, categoria, archivo_url, fecha, created_at", count="exact")
     if categoria:
         query = query.eq("categoria", categoria)
-    result = query.order("created_at", desc=True).limit(limit).execute()
-    return JSONResponse(content=result.data)
+    offset = (page - 1) * per_page
+    result = query.order("created_at", desc=True).range(offset, offset + per_page - 1).execute()
+    return JSONResponse(content={
+        "data": result.data or [],
+        "page": page,
+        "per_page": per_page,
+        "total": getattr(result, 'count', None) or len(result.data or []),
+    })
 
 
 @router.get("/notices/{notice_id}")
 async def get_notice(notice_id: str) -> JSONResponse:
     db: Client = next(get_db())
-    result = db.table("notices").select("*").eq("id", notice_id).execute()
+    result = db.table("notices").select("id, titulo, contenido, categoria, archivo_url, fecha, created_at").eq("id", notice_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Aviso no encontrado")
     return JSONResponse(content=result.data[0])

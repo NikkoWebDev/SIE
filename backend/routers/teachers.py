@@ -510,22 +510,22 @@ async def get_skill_badges(user_id: str = Depends(teacher_dependency)) -> JSONRe
     if not results.data:
         return JSONResponse(content=[])
 
+    student_ids = list({r.get("student_id") for r in results.data if r.get("student_id")})
+    if not student_ids:
+        return JSONResponse(content=[])
+    profiles = db.table("profiles").select("id, fullname, login_credential").in_("id", student_ids).execute()
+    profile_map = {p["id"]: p for p in (profiles.data or [])}
+
     badges: dict[str, dict[str, Any]] = {}
     for r in results.data:
         sid = r.get("student_id")
         if not sid:
             continue
         score = float(r.get("score", 0))
-        if score >= 4.0:
-            badge = "Oro"
-        elif score >= 3.0:
-            badge = "Plata"
-        else:
-            badge = "Bronce"
+        badge = "Oro" if score >= 4.0 else "Plata" if score >= 3.0 else "Bronce"
         if sid not in badges:
-            p = db.table("profiles").select("fullname, login_credential").eq("id", sid).execute()
-            name = p.data[0]["fullname"] if p.data else sid
-            badges[sid] = {"student_id": sid, "fullname": name, "badges": []}
+            p = profile_map.get(sid, {})
+            badges[sid] = {"student_id": sid, "fullname": p.get("fullname", sid), "badges": []}
         badges[sid]["badges"].append({
             "subject_id": r.get("subject_id", ""),
             "score": score,
@@ -706,27 +706,23 @@ async def get_teacher_exam_incidents(teacher_id: str, user_id: str = Depends(aut
     teacher = db.table("profiles").select("id").eq("login_credential", teacher_id).execute()
     if not teacher.data:
         return JSONResponse(content=[])
-    tid = teacher.data[0]["id"]
     teacher_exams = db.table("exams").select("id").eq("teacher_id", teacher_id).execute()
-    exam_ids = [e["id"] for e in teacher_exams.data]
-    if not exam_ids:
-        incidents_list = db.table("incident_reports").select("*").order("created_at", desc=True).limit(50).execute()
-    else:
-        incidents_list = db.table("incident_reports").select("*").in_("exam_id", exam_ids).order("created_at", desc=True).limit(50).execute()
-    formatted = []
-    for inc in incidents_list.data:
-        student_name = ""
-        if inc.get("student_id"):
-            p = db.table("profiles").select("fullname").eq("id", inc["student_id"]).execute()
-            if p.data:
-                student_name = p.data[0].get("fullname", "")
-        formatted.append({
-            "_id": inc.get("id"),
-            "student_id": inc.get("student_id", ""),
-            "student_name": student_name,
-            "exam_id": inc.get("exam_id", ""),
-            "strikes": inc.get("strikes", 1),
-            "reason": inc.get("description", inc.get("incident_type", "Desconocido")),
-            "created_at": str(inc.get("created_at", "")),
-        })
-    return JSONResponse(content=formatted)
+    exam_ids = [e["id"] for e in (teacher_exams.data or [])]
+    q = db.table("incident_reports").select("id, student_id, exam_id, strikes, description, incident_type, created_at")
+    if exam_ids:
+        q = q.in_("exam_id", exam_ids)
+    incidents_list = q.order("created_at", desc=True).limit(50).execute()
+    student_ids = list({inc.get("student_id") for inc in (incidents_list.data or []) if inc.get("student_id")})
+    profile_map = {}
+    if student_ids:
+        profiles = db.table("profiles").select("id, fullname").in_("id", student_ids).execute()
+        profile_map = {p["id"]: p.get("fullname", "") for p in (profiles.data or [])}
+    return JSONResponse(content=[{
+        "_id": inc.get("id"),
+        "student_id": inc.get("student_id", ""),
+        "student_name": profile_map.get(inc.get("student_id", ""), ""),
+        "exam_id": inc.get("exam_id", ""),
+        "strikes": inc.get("strikes", 1),
+        "reason": inc.get("description", inc.get("incident_type", "Desconocido")),
+        "created_at": str(inc.get("created_at", "")),
+    } for inc in (incidents_list.data or [])])

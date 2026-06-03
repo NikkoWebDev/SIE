@@ -3,23 +3,25 @@ FROM python:3.11-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcairo2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf-2.0-0 \
+    libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+RUN find . -type f -name "*.pyc" -delete && \
+    find . -type d -name "__pycache__" -delete && \
+    mkdir -p /app/_secrets && \
+    chmod 755 /app
 
 RUN useradd -m -u 1001 vyntra && chown -R vyntra:vyntra /app
 USER vyntra
 
 EXPOSE 10000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=8s --retries=3 \
     CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:10000/api/health')" || exit 1
 
 CMD uvicorn main:app \
@@ -27,6 +29,10 @@ CMD uvicorn main:app \
     --port 10000 \
     --workers 1 \
     --loop uvloop \
+    --http httptools \
     --ws-ping-interval 25 \
     --ws-ping-timeout 10 \
-    --timeout-keep-alive 120
+    --timeout-keep-alive 120 \
+    --limit-concurrency 256 \
+    --backlog 2048 \
+    --no-access-log

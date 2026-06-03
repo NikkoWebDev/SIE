@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from supabase import Client
 
 from config.database import get_db
-from dependencies import encode_jwt, set_jwt_cookie, clear_jwt_cookie, TOKEN_EXPIRY_HOURS
+from dependencies import encode_jwt, set_jwt_cookie, clear_jwt_cookie, set_csrf_cookie, clear_csrf_cookie, TOKEN_EXPIRY_HOURS
 from models import LoginRequest, UserCreate, UserLogin
 
 logger = logging.getLogger("siee.auth")
@@ -135,6 +135,7 @@ async def login(data: UserLogin, request: Request) -> JSONResponse:
         },
     })
     set_jwt_cookie(response, token)
+    set_csrf_cookie(response)
     return response
 
 
@@ -177,6 +178,7 @@ async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
             },
         })
         set_jwt_cookie(response, token)
+        set_csrf_cookie(response)
         return response
 
     raise HTTPException(status_code=401, detail="Credenciales inválidas")
@@ -186,4 +188,5 @@ async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
 async def logout() -> JSONResponse:
     response = JSONResponse(content={"message": "Sesión cerrada"})
     clear_jwt_cookie(response)
+    clear_csrf_cookie(response)
     return response

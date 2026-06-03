@@ -41,7 +41,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     </div>
 
     <!-- Messages -->
-    <div id="chat-messages" class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3"></div>
+    <div id="chat-messages" class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3" role="log" aria-live="polite" aria-label="Mensajes del chat"></div>
 
     <!-- Typing + Tool Status -->
     <div id="chat-typing" class="hidden px-3 sm:px-4 pb-2">

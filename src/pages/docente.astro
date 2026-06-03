@@ -50,10 +50,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
         <div class="overflow-x-auto">
           <table class="w-full text-xs min-w-[650px]">
             <thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold">
-              <th class="text-left p-2 border-b border-border">Estudiante</th>
-              <th class="text-center p-2 border-b border-border w-14">P1</th><th class="text-center p-2 border-b border-border w-14">P2</th>
-              <th class="text-center p-2 border-b border-border w-14">P3</th><th class="text-center p-2 border-b border-border w-14">P4</th>
-              <th class="text-center p-2 border-b border-border w-16">Prom.</th><th class="text-left p-2 border-b border-border">Obs.</th><th class="text-center p-2 border-b border-border w-12"></th>
+              <th scope="col" class="text-left p-2 border-b border-border">Estudiante</th>
+              <th scope="col" class="text-center p-2 border-b border-border w-14">P1</th><th scope="col" class="text-center p-2 border-b border-border w-14">P2</th>
+              <th scope="col" class="text-center p-2 border-b border-border w-14">P3</th><th scope="col" class="text-center p-2 border-b border-border w-14">P4</th>
+              <th scope="col" class="text-center p-2 border-b border-border w-16">Prom.</th><th scope="col" class="text-left p-2 border-b border-border">Obs.</th><th scope="col" class="text-center p-2 border-b border-border w-12"></th>
             </tr></thead>
             <tbody id="grades-tbody"><tr><td colspan="8" class="text-center py-8 text-text-tertiary">Selecciona grado y materia</td></tr></tbody>
           </table>
@@ -159,44 +159,26 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     if (!['PROFESOR','TEACHER','DOCENTE'].includes(role)) { window.location.href = '/'; return }
     var userId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
     var userName = localStorage.getItem('userName') || 'Docente'
-    var teacherData = null
 
     document.getElementById('teacher-name').textContent = userName
     var sbName = document.getElementById('sidebar-username-teacher'); if (sbName) sbName.textContent = userName
     var sbMeta = document.getElementById('sidebar-metadata-teacher'); if (sbMeta) sbMeta.textContent = 'Docente'
 
-    // Theme
-    document.getElementById('theme-toggle-teacher')?.addEventListener('click', function() {
-      var dark = !document.documentElement.classList.contains('dark')
-      document.documentElement.classList.toggle('dark', dark)
-      localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
+    document.getElementById('theme-toggle-teacher')?.addEventListener('click', function() { window.setVyntraTheme(!document.documentElement.classList.contains('dark')) })
+
+    window.showSection = window.createShowSection({
+      titles: { inicio:'Panel Docente', notas:'Control de Notas', contenidos:'Guías y Tareas', examenes:'Exámenes', horario:'Horario Semanal', incidentes:'Incidentes de Seguridad', alertas:'Alertas de Riesgo' },
+      subs: { inicio:'Vista general', notas:'Registrar calificaciones', contenidos:'Subir guías y revisar entregas', examenes:'Crear y publicar evaluaciones', horario:'Clases programadas', incidentes:'Monitoreo de seguridad', alertas:'Estudiantes con rendimiento crítico' },
+      onNavigate: function(id) { if (id === 'contenidos') { loadGuides(); loadTasks() }; if (id === 'examenes') loadMyExams(); if (id === 'incidentes') loadIncidents() }
     })
 
-    // Navigation
-    var titles = { inicio:'Panel Docente', notas:'Control de Notas', contenidos:'Guías y Tareas', examenes:'Exámenes', horario:'Horario Semanal', incidentes:'Incidentes de Seguridad', alertas:'Alertas de Riesgo' }
-    var subs = { inicio:'Vista general', notas:'Registrar calificaciones', contenidos:'Subir guías y revisar entregas', examenes:'Crear y publicar evaluaciones', horario:'Clases programadas', incidentes:'Monitoreo de seguridad', alertas:'Estudiantes con rendimiento crítico' }
-    window.showSection = function(id) {
-      document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none' })
-      var sec = document.getElementById('sec-'+id)
-      if (sec) sec.style.display = ''
-      var t = document.querySelector('.topbar h1')
-      var s = document.querySelector('.topbar p')
-      if (t) t.textContent = titles[id] || 'Panel Docente'
-      if (s) s.textContent = subs[id] || ''
-      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id }}))
-      if (id === 'contenidos') { loadGuides(); loadTasks() }
-      if (id === 'examenes') loadMyExams()
-      if (id === 'incidentes') loadIncidents()
-    }
-
-    // Load data
     async function loadData() {
       try {
         var [gradesRes, riskRes] = await Promise.all([
-          fetch(API+'/api/grades?teacher_id='+userId, { headers:{'Authorization':'Bearer '+token} }),
-          fetch(API+'/api/students/risk', { headers:{'Authorization':'Bearer '+token} }).catch(function(){return null})
+          vfetch(API, '/api/grades?teacher_id='+userId),
+          vfetch(API, '/api/students/risk').catch(function(){return null})
         ])
-        if (gradesRes.ok) {
+        if (gradesRes && gradesRes.ok) {
           var data = await gradesRes.json()
           var grades = Array.isArray(data) ? data : []
           var students = new Set(), subjSet = new Set()
@@ -211,8 +193,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           if (sbMeta) sbMeta.textContent = subjSet.size + ' materias'
           document.getElementById('recent-grades-list').innerHTML = grades.slice(-10).reverse().map(function(g) {
             return '<div class="flex justify-between items-center py-2.5 border-b border-border last:border-0">'+
-              '<div><strong class="text-xs">'+(g.student_name||'')+'</strong><span class="text-[11px] text-text-tertiary"> · '+(g.subject_name||'')+'</span></div>'+
-              '<span class="font-bold text-xs '+(g.score>=3.5?'text-success':'text-brand-danger')+'">'+parseFloat(g.score).toFixed(1)+'</span></div>'
+              '<div><strong class="text-xs">'+window.escapeHtml(g.student_name)+'</strong><span class="text-[11px] text-text-tertiary"> · '+window.escapeHtml(g.subject_name)+'</span></div>'+
+              '<span class="font-bold text-xs '+(g.score>=3.5?'text-success':'text-brand-danger')+'">'+window.formatNum(g.score,1)+'</span></div>'
           }).join('') || 'No hay calificaciones recientes.'
         }
         if (riskRes && riskRes.ok) {
@@ -222,14 +204,13 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           var riskList = document.getElementById('risk-alerts-list')
           riskList.innerHTML = riskStudents.length ? riskStudents.map(function(s) {
             return '<div class="flex justify-between items-center p-3 bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl border-l-3 border-l-brand-danger">'+
-              '<div><div class="text-xs font-medium">'+(s.fullname||s.student_name||'')+'</div><div class="text-[10px] text-text-tertiary">Promedio: '+(s.avg_score||'0')+'</div></div>'+
+              '<div><div class="text-xs font-medium">'+window.escapeHtml(s.fullname||s.student_name)+'</div><div class="text-[10px] text-text-tertiary">Promedio: '+window.formatNum(s.avg_score,1)+'</div></div>'+
               '<span class="px-2 py-0.5 rounded-full bg-brand-danger/10 text-brand-danger text-[10px] font-semibold">En riesgo</span></div>'
           }).join('') : '<div class="text-center py-4 text-success text-xs">No hay estudiantes en riesgo</div>'
         }
-        // Schedule
         try {
-          var schedRes = await fetch(API+'/api/teacher/schedule?teacher_id='+userId, { headers:{'Authorization':'Bearer '+token} })
-          if (schedRes.ok) {
+          var schedRes = await vfetch(API, '/api/teacher/schedule?teacher_id='+userId)
+          if (schedRes && schedRes.ok) {
             var sched = await schedRes.json()
             document.getElementById('teacher-schedule-grade').textContent = 'Grado: ' + (sched.grado || sched.grade_name || 'No asignado')
             var tbody = document.getElementById('teacher-schedule-body')
@@ -240,25 +221,24 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
                 weekdays.map(function(d){return'<th class="p-2 text-center border-b border-border">'+d.charAt(0).toUpperCase()+d.slice(1)+'</th>'}).join('')+'</tr></thead><tbody>'+
                 hours.map(function(h,hi){
                   return '<tr><td class="p-2 text-text-tertiary font-medium">'+(h.time||h.hour||('H'+(hi+1)))+'</td>'+
-                    weekdays.map(function(d){return'<td class="p-2 text-center border border-border/50">'+(sched.days[d]&&sched.days[d][hi]?'<div class="font-semibold">'+(sched.days[d][hi].subject||'')+'</div>':'<span class="opacity-20">---</span>')+'</td>'}).join('')+'</tr>'
+                    weekdays.map(function(d){return'<td class="p-2 text-center border border-border/50">'+(sched.days[d]&&sched.days[d][hi]?'<div class="font-semibold">'+window.escapeHtml(sched.days[d][hi].subject)+'</div>':'<span class="opacity-20">---</span>')+'</td>'}).join('')+'</tr>'
                 }).join('')+'</tbody></table>'
             }
           }
         } catch(e) {}
-      } catch(e) { console.error(e) }
+      } catch(e) { window.VyntraToast?.error('Error cargando datos del panel'); console.error(e) }
     }
 
-    // Grade sheet
     function loadGradesSheet() {
       var val = document.getElementById('filter-subject-notas').value
       if (!val) return
       var parts = val.split('|'), subject = parts[0], grade = parts[1]
       var tbody = document.getElementById('grades-tbody')
-      fetch(API+'/api/admin/students', { headers:{'Authorization':'Bearer '+token} }).then(function(r){return r.json()}).then(function(students) {
+      vfetch(API, '/api/admin/students').then(function(r){return r.json()}).then(function(students) {
         var filtered = (Array.isArray(students) ? students : []).filter(function(s){ return (s.grade||s.grado)==grade })
         tbody.innerHTML = filtered.map(function(s){
           return '<tr>'+
-            '<td class="font-semibold p-2 border-b border-border text-xs">'+(s.fullname||'')+'</td>'+
+            '<td class="font-semibold p-2 border-b border-border text-xs">'+window.escapeHtml(s.fullname)+'</td>'+
             ['P1','P2','P3','P4'].map(function(){return '<td class="p-1 text-center border-b border-border"><input type="number" class="w-full text-center bg-[var(--input-bg)] border border-[var(--input-border)] rounded px-2 py-1 text-xs min-w-[50px]" min="0" max="5" step="0.1" placeholder="0.0" oninput="calcAvg(this)"></td>'}).join('')+
             '<td class="text-center font-bold text-xs p-2 border-b border-border avg-cell text-brand-gold">0.00</td>'+
             '<td class="p-1 border-b border-border"><input class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded px-2 py-1 text-xs" placeholder="Obs."></td>'+
@@ -288,53 +268,48 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           body:JSON.stringify({
             student_id:String(studentId),subject:String(subject),
             p1:inputs[0]?.value||'0',p2:inputs[1]?.value||'0',p3:inputs[2]?.value||'0',p4:inputs[3]?.value||'0',
-            final_grade:parseFloat(avg?.textContent||'0').toFixed(1),observations:obs?.value||'',
+            final_grade:window.formatNum(avg?.textContent,1),observations:obs?.value||'',
             teacher_id:userId
           })
         })
         btn.textContent = '✓'; btn.classList.add('bg-success')
         Array.from(inputs).forEach(function(i){ i.disabled = true })
-      } catch(e) { alert('Error al guardar') }
+      } catch(e) { window.VyntraToast?.error('Error al guardar calificación: ' + (e?.message || 'Reintente')) }
     }
 
-    window.exportGradesPDF = function() { alert('Exportar PDF') }
+    window.exportGradesPDF = function() { window.VyntraToast?.info('Exportación PDF no disponible aún') }
 
-    // Guide upload
     window.uploadGuide = async function() {
       var title = document.getElementById('guide-title').value.trim()
       var subjectVal = document.getElementById('guide-subject').value
       var file = document.getElementById('guide-file').files[0]
-      if (!title || !subjectVal || !file) { alert('Campos requeridos'); return }
+      if (!title || !subjectVal || !file) { window.VyntraToast?.warning('Todos los campos son requeridos'); return }
       var parts = subjectVal.split('|'), subject=parts[0], grade=parts[1]
       var fd = new FormData()
       fd.append('title',title); fd.append('subject_name',subject); fd.append('grade',grade)
       fd.append('teacher_id',userId); fd.append('file',file)
       try {
         await fetch(API+'/api/teacher/guides', { method:'POST', headers:{'Authorization':'Bearer '+token}, body:fd })
-        alert('Guía publicada')
+        window.VyntraToast?.success('Guía publicada')
         loadGuides()
-      } catch(e) {}
+      } catch(e) { window.VyntraToast?.error('Error publicando guía: ' + (e?.message || 'Reintente')) }
     }
 
     async function loadGuides() {
       var list = document.getElementById('guides-list')
       if (!list) return
       try {
-        var data = await fetch(API+'/api/teacher/guides/'+userId, { headers:{'Authorization':'Bearer '+token} }).then(function(r){return r.json()})
-        list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(g){ return '<div class="flex justify-between p-2.5 border-b border-border"><div><strong class="text-xs">'+(g.title||'')+'</strong><br><span class="text-[10px] text-text-tertiary">'+(g.subject_name||'')+' · Grado '+(g.grade||'')+'</span></div>'+(g.file_url?'<a href="'+g.file_url+'" target="_blank" class="text-xs text-brand-maroon">Ver</a>':'')+'</div>' }).join('') : '<p class="py-4">No hay guías.</p>'
-      } catch(e) {}
-    }
-
-    async function loadTasks() {
+        var data = await vfetch(API, '/api/teacher/guides/'+userId).then(function(r){return r.json()})
+        list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(g){ return '<div class="flex justify-between p-2.5 border-b border-border"><div><strong class="text-xs">'+window.escapeHtml(g.title)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(g.subject_name)+' · Grado '+window.escapeHtml(g.grade)+'</span></div>'+(g.file_url?'<a href="'+g.file_url+'" target="_blank" class="text-xs text-brand-maroon">Ver</a>':'')+'</div>' }).join('') : '<p class="py-4">No hay guías.</p>'
+      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando guías</p>' } {
       var list = document.getElementById('tasks-list')
       if (!list) return
       try {
-        var data = await fetch(API+'/api/teacher/deliveries/'+userId, { headers:{'Authorization':'Bearer '+token} }).then(function(r){return r.json()})
-        list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(t){ return '<div class="flex justify-between p-2.5 border-b border-border"><div><strong class="text-xs">'+(t.student_name||'')+'</strong><br><span class="text-[10px] text-text-tertiary">'+(t.subject||'')+'</span></div>'+(t.file_url?'<a href="'+t.file_url+'" target="_blank" class="text-xs text-brand-maroon">Ver</a>':'')+'</div>' }).join('') : '<p class="py-4">Buzón vacío.</p>'
-      } catch(e) {}
+        var data = await vfetch(API, '/api/teacher/deliveries/'+userId).then(function(r){return r.json()})
+        list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(t){ return '<div class="flex justify-between p-2.5 border-b border-border"><div><strong class="text-xs">'+window.escapeHtml(t.student_name)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(t.subject)+'</span></div>'+(t.file_url?'<a href="'+t.file_url+'" target="_blank" class="text-xs text-brand-maroon">Ver</a>':'')+'</div>' }).join('') : '<p class="py-4">Buzón vacío.</p>'
+      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando entregas</p>' }
     }
 
-    // Exams
     window.addQuestion = function() {
       var area = document.getElementById('questions-area')
       var count = area.querySelectorAll('.q-card').length + 1
@@ -351,7 +326,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var title = document.getElementById('exam-title-input').value.trim()
       var subjectVal = document.getElementById('exam-subject').value
       var qCards = document.querySelectorAll('.q-card')
-      if (!title || !subjectVal || !qCards.length) { alert('Campos requeridos'); return }
+      if (!title || !subjectVal || !qCards.length) { window.VyntraToast?.warning('Título, materia y al menos una pregunta requeridos'); return }
       var questions = []
       qCards.forEach(function(card) {
         var inputs = card.querySelectorAll('input[type="text"]')
@@ -361,37 +336,35 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var parts = subjectVal.split('|'), subject=parts[0], grade=parts[1]
       try {
         await fetch(API+'/api/teacher/exams', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({ title,subject_name:subject,grade,teacher_id:userId,questions,duration_minutes:30 }) })
-        alert('Examen publicado')
+        window.VyntraToast?.success('Examen publicado')
         loadMyExams()
-      } catch(e) {}
+      } catch(e) { window.VyntraToast?.error('Error publicando examen: ' + (e?.message || 'Reintente')) }
     }
 
     async function loadMyExams() {
       var list = document.getElementById('my-exams-list')
       if (!list) return
       try {
-        var data = await fetch(API+'/api/teacher/exams/'+userId, { headers:{'Authorization':'Bearer '+token} }).then(function(r){return r.json()})
-        list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(e){ return '<div class="p-3 border border-border rounded-xl mb-2"><strong class="text-xs">'+(e.title||'')+'</strong><br><span class="text-[10px] text-text-tertiary">'+(e.subject_name||'')+' · '+(e.questions?e.questions.length:0)+' preguntas</span></div>' }).join('') : '<p class="py-4">No hay exámenes.</p>'
-      } catch(e) {}
+        var data = await vfetch(API, '/api/teacher/exams/'+userId).then(function(r){return r.json()})
+        list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(e){ return '<div class="p-3 border border-border rounded-xl mb-2"><strong class="text-xs">'+window.escapeHtml(e.title)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(e.subject_name)+' · '+(e.questions?e.questions.length:0)+' preguntas</span></div>' }).join('') : '<p class="py-4">No hay exámenes.</p>'
+      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando exámenes</p>' }
     }
 
     async function loadIncidents() {
       var tbody = document.getElementById('incidents-tbody')
       if (!tbody) return
       try {
-        var data = await fetch(API+'/api/teacher/incidents', { headers:{'Authorization':'Bearer '+token} }).then(function(r){return r.json()})
-        tbody.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(i){ return '<tr class="border-b border-border"><td class="p-2 text-xs">'+(i.student_name||'')+'</td><td class="p-2 text-xs">'+(i.exam_title||'')+'</td><td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold '+(i.strikes>=3?'bg-brand-danger/10 text-brand-danger':'bg-brand-gold/10 text-brand-gold')+'">'+i.strikes+'</span></td><td class="p-2 text-xs">'+(i.incident_type||'')+'</td></tr>' }).join('') : '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">Sin incidentes registrados.</td></tr>'
-      } catch(e) {}
+        var data = await vfetch(API, '/api/teacher/incidents').then(function(r){return r.json()})
+        tbody.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(i){ return '<tr class="border-b border-border"><td class="p-2 text-xs">'+window.escapeHtml(i.student_name)+'</td><td class="p-2 text-xs">'+window.escapeHtml(i.exam_title)+'</td><td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold '+(i.strikes>=3?'bg-brand-danger/10 text-brand-danger':'bg-brand-gold/10 text-brand-gold')+'">'+i.strikes+'</span></td><td class="p-2 text-xs">'+window.escapeHtml(i.incident_type)+'</td></tr>' }).join('') : '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">Sin incidentes registrados.</td></tr>'
+      } catch(e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">Error cargando incidentes</td></tr>' }
     }
 
-    // Init
     loadData()
     document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') s.style.display = 'none' })
     document.querySelectorAll('[data-section-id]').forEach(function(btn) {
       btn.addEventListener('click', function() { window.showSection(this.getAttribute('data-section-id')) })
     })
 
-    // Guide drop zone
     var guideDrop = document.getElementById('guide-drop-zone')
     var guideFile = document.getElementById('guide-file')
     if (guideDrop) {

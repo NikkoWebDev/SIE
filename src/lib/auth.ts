@@ -1,7 +1,3 @@
-// ════════════════════════════════════════════════════════════════
-// VYNTRA SOLARIS — Auth Helpers
-// ════════════════════════════════════════════════════════════════
-
 import type { AuthUser, UserRole } from './types'
 
 const ROLE_ROUTES: Record<string, string> = {
@@ -14,29 +10,17 @@ const ROLE_ROUTES: Record<string, string> = {
   TEACHER: '/docente',
 }
 
-function getCookie(name: string): string | null {
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
-  return match ? decodeURIComponent(match[2]) : null
-}
-
 export function getToken(): string | null {
-  try {
-    // Prefer cookie (httpOnly, set by backend)
-    const cookieToken = getCookie('access_token')
-    if (cookieToken) return cookieToken
-    return localStorage.getItem('access_token')
-  } catch {
-    return null
-  }
+  return null // httpOnly cookie — not readable from JS, browser sends it automatically
 }
 
 export function getUser(): AuthUser | null {
   try {
-    const token = getToken()
-    if (!token) return null
+    const userId = localStorage.getItem('userId')
+    if (!userId) return null
     return {
-      access_token: token,
-      userId: localStorage.getItem('userId') || '',
+      access_token: '',
+      userId,
       profile_id: localStorage.getItem('profile_id') || '',
       userRole: localStorage.getItem('userRole') || '',
       userName: localStorage.getItem('userName') || '',
@@ -57,22 +41,24 @@ export function getRole(): UserRole | null {
 }
 
 export function isAuthenticated(): boolean {
-  return !!getToken()
+  try {
+    return !!localStorage.getItem('userId')
+  } catch {
+    return false
+  }
 }
 
 export function login(user: AuthUser): void {
-  localStorage.setItem('access_token', user.access_token)
+  // Token is stored in httpOnly cookie by backend — not in localStorage
   localStorage.setItem('userRole', user.userRole)
   localStorage.setItem('userName', user.userName)
   localStorage.setItem('userId', user.userId)
   if (user.profile_id) localStorage.setItem('profile_id', user.profile_id)
   if (user.userGrade) localStorage.setItem('userGrade', user.userGrade)
-  if (user.refresh_token) localStorage.setItem('refresh_token', user.refresh_token)
 }
 
 export function logout(): void {
   localStorage.clear()
-  // Also clear the httpOnly cookie by pinging the logout endpoint
   const API_URL = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
   fetch(`${API_URL}/api/auth/logout`, {
     method: 'POST',

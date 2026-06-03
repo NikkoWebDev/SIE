@@ -94,7 +94,7 @@ import BaseLayout from '@layouts/BaseLayout.astro'
     <!-- STATS -->
     <section class="relative py-16 sm:py-24 border-t border-border" id="stats-section">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-12">
+        <div class="text-center mb-12 opacity-0 reveal-on-scroll">
           <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-3" style="font-family:'Fraunces',serif">Ecosistema Académico</h2>
           <p class="text-text-secondary">Estado actual de la institución en tiempo real</p>
         </div>
@@ -105,7 +105,7 @@ import BaseLayout from '@layouts/BaseLayout.astro'
             { id: 'stat-mora', label: 'En Mora', icon: 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182', value: '0', color: 'from-brand-danger to-red-600 border-brand-danger/20' },
             { id: 'stat-avisos', label: 'Comunicados', icon: 'M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09', value: '--', color: 'from-brand-info to-blue-500 border-brand-info/20' },
           ].map((stat, i) => (
-            <div class="group relative bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 sm:p-7 text-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card-hover dark:hover:shadow-card-dark-hover" style={`animation-delay:${i * 0.08}s`}>
+            <div class="group relative bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 sm:p-7 text-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card-hover dark:hover:shadow-card-dark-hover opacity-0 reveal-on-scroll" data-reveal-delay={`${i * 0.08}s`}>
               <div class={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color}`}></div>
               <div class="w-9 h-9 mx-auto mb-3 rounded-lg bg-brand-maroon/8 dark:bg-brand-gold/8 flex items-center justify-center">
                 <svg class="h-4 w-4 text-brand-maroon dark:text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={stat.icon}/></svg>
@@ -131,7 +131,7 @@ import BaseLayout from '@layouts/BaseLayout.astro'
             { title: 'Analítica en Vivo', desc: 'Monitoreo en tiempo real de métricas académicas, financieras y alertas tempranas automatizadas.', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9' },
             { title: 'Asistente IA', desc: 'Chat inteligente multi-rol que analiza datos, genera reportes y sugiere estrategias pedagógicas.', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14' },
           ].map((f, i) => (
-            <div class="group relative bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-gold/30 hover:shadow-card-hover dark:hover:shadow-card-dark-hover" style={`animation-delay:${i * 0.1}s`}>
+            <div class="group relative bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-gold/30 hover:shadow-card-hover dark:hover:shadow-card-dark-hover opacity-0 reveal-on-scroll" data-reveal-delay={`${i * 0.1}s`}>
               <div class="w-10 h-10 rounded-xl bg-brand-maroon/8 dark:bg-brand-gold/8 flex items-center justify-center mb-4 group-hover:bg-brand-gold/15 transition-colors">
                 <svg class="h-5 w-5 text-brand-maroon dark:text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={f.icon}/></svg>
               </div>
@@ -257,6 +257,26 @@ import BaseLayout from '@layouts/BaseLayout.astro'
       themeBtn?.addEventListener('click', function() {
         setTheme(!document.documentElement.classList.contains('dark'))
       })
+    })
+
+    // ── SCROLL REVEALS ──
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!('IntersectionObserver' in window)) {
+        document.querySelectorAll('.reveal-on-scroll').forEach(function(el) { el.classList.remove('opacity-0') })
+        return
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var el = entry.target
+            var delay = el.getAttribute('data-reveal-delay') || '0s'
+            el.style.animation = 'fadeUp 0.6s cubic-bezier(0.19,1,0.22,1) ' + delay + ' both'
+            el.classList.remove('opacity-0')
+            observer.unobserve(el)
+          }
+        })
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' })
+      document.querySelectorAll('.reveal-on-scroll').forEach(function(el) { observer.observe(el) })
     })
 
     // ── LOAD DATA ──

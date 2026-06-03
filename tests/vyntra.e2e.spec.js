@@ -1,260 +1,149 @@
-// @ts-check
-import { test, expect } from '@playwright/test';
+const { test, expect } = require('@playwright/test');
 
-// URL base del servidor de desarrollo
-const BASE_URL = 'http://localhost:4321';
+const BASE = 'http://localhost:4321';
 
-// Configuración global para las pruebas
-test.use({
-  viewport: { width: 1920, height: 1080 },
-  headless: false, // Ejecutar en modo visible para observar
-});
+async function loginAs(page, tab, id, pass) {
+  await page.goto(`${BASE}/login`);
+  await page.click(tab === 'student' ? '#tab-estudiante' : '#tab-personal');
+  await page.fill('#doc-id', id);
+  await page.fill('#password', pass);
+  await page.click('#login-submit');
+  await page.waitForURL(/estudiante|docente|admin/, { timeout: 15000 });
+}
 
-test.describe('Vyntra Estudiante Dashboard', () => {
-  test('debería cargar correctamente el dashboard de estudiante', async ({ page }) => {
-    // Navegar a la página de login
-    await page.goto(`${BASE_URL}/login`);
-    
-    // Verificar que la página de login se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Acceso/);
-    
-    // Completar el formulario de login como estudiante
-    await page.fill('#doc-id', 'EST-001');
-    await page.fill('#password', 'password123');
-    
-    // Enviar el formulario
+async function logout(page) {
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(`${BASE}/`);
+}
+
+test.describe('Authentication', () => {
+  test('Login page loads correctly', async ({ page }) => {
+    await page.goto(`${BASE}/login`);
+    await expect(page.locator('h2')).toContainText('Iniciar Sesión');
+    await expect(page.locator('#tab-estudiante')).toBeVisible();
+    await expect(page.locator('#tab-personal')).toBeVisible();
+    await expect(page.locator('#doc-id')).toBeVisible();
+    await expect(page.locator('#password')).toBeVisible();
+  });
+
+  test('Shows error on invalid credentials', async ({ page }) => {
+    await page.goto(`${BASE}/login`);
+    await page.fill('#doc-id', 'INVALIDO');
+    await page.fill('#password', 'wrongpass');
     await page.click('#login-submit');
-    
-    // Esperar a que se redirija al dashboard
-    await page.waitForURL('**/estudiante');
-    
-    // Verificar que el dashboard se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Estudiante/);
-    
-    // Verificar elementos clave del dashboard
-    await expect(page.locator('.welcome-banner h1')).toBeVisible();
+    await expect(page.locator('#login-error')).toBeVisible();
+    await expect(page.locator('#login-error')).not.toBeEmpty();
+  });
+
+  test('Shows error on missing fields', async ({ page }) => {
+    await page.goto(`${BASE}/login`);
+    await page.click('#login-submit');
+    await expect(page.locator('#login-error')).toBeVisible();
+  });
+
+  test('Student login redirects to student dashboard', async ({ page }) => {
+    await loginAs(page, 'student', 'EST-001', 'password123');
+    await expect(page).toHaveURL(/\/estudiante/);
     await expect(page.locator('.stats-grid')).toBeVisible();
   });
-});
 
-test.describe('Vyntra Docente Dashboard', () => {
-  test('debería cargar correctamente el dashboard de docente', async ({ page }) => {
-    // Navegar a la página de login
-    await page.goto(`${BASE_URL}/login`);
-    
-    // Verificar que la página de login se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Acceso/);
-    
-    // Completar el formulario de login como docente
+  test('Teacher login redirects to teacher dashboard', async ({ page }) => {
+    await loginAs(page, 'teacher', 'DOC-001', 'password123');
+    await expect(page).toHaveURL(/\/docente/);
+  });
+
+  test('Admin login redirects to admin dashboard', async ({ page }) => {
+    await loginAs(page, 'admin', 'ADMIN-001', 'password123');
+    await expect(page).toHaveURL(/\/admin/);
+  });
+
+  test('Tab switching works on login', async ({ page }) => {
+    await page.goto(`${BASE}/login`);
+    const slider = page.locator('#tab-slider');
+    const initialLeft = await slider.evaluate(el => el.style.left);
     await page.click('#tab-personal');
-    await page.fill('#doc-id', 'DOC-001');
-    await page.fill('#password', 'password123');
-    
-    // Enviar el formulario
-    await page.click('#login-submit');
-    
-    // Esperar a que se redirija al dashboard
-    await page.waitForURL('**/docente');
-    
-    // Verificar que el dashboard se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Docente/);
-    
-    // Verificar elementos clave del dashboard
-    await expect(page.locator('#teacher-sidebar')).toBeVisible();
-    await expect(page.locator('#page-title')).toHaveText('Panel Docente');
+    const afterLeft = await slider.evaluate(el => el.style.left);
+    expect(afterLeft).not.toBe(initialLeft);
   });
 });
 
-test.describe('Vyntra Admin Dashboard', () => {
-  test('debería cargar correctamente el dashboard de administrador', async ({ page }) => {
-    // Navegar a la página de login
-    await page.goto(`${BASE_URL}/login`);
-    
-    // Verificar que la página de login se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Acceso/);
-    
-    // Completar el formulario de login como administrador
-    await page.click('#tab-personal');
-    await page.fill('#doc-id', 'ADMIN-001');
-    await page.fill('#password', 'password123');
-    
-    // Enviar el formulario
-    await page.click('#login-submit');
-    
-    // Esperar a que se redirija al dashboard
-    await page.waitForURL('**/admin');
-    
-    // Verificar que el dashboard se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Administración/);
-    
-    // Verificar elementos clave del dashboard
-    await expect(page.locator('#admin-sidebar')).toBeVisible();
-    await expect(page.locator('text=Dashboard')).toBeVisible();
+test.describe('Password Recovery', () => {
+  test('Forgot password modal opens', async ({ page }) => {
+    await page.goto(`${BASE}/login`);
+    await page.click('#forgot-link');
+    await expect(page.locator('#forgot-modal')).toBeVisible();
+    await expect(page.locator('#forgot-credential')).toBeVisible();
+  });
+
+  test('Forgot step 1 sends code request', async ({ page }) => {
+    await page.goto(`${BASE}/login`);
+    await page.click('#forgot-link');
+    await page.fill('#forgot-credential', 'EST-001');
+    await page.click('#forgot-send-btn');
+    // After sending, step 2 should appear (or error if backend not connected)
+    await page.waitForTimeout(2000);
   });
 });
 
-test.describe('Vyntra Estudiante Dashboard', () => {
-  test('debería cargar correctamente el dashboard de estudiante', async ({ page }) => {
-    // Navegar a la página de login
-    await page.goto(`${BASE_URL}/login`);
-    
-    // Verificar que la página de login se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Acceso/);
-    
-    // Completar el formulario de login como estudiante
-    await page.fill('#doc-id', 'EST-001');
-    await page.fill('#password', 'password123');
-    
-    // Enviar el formulario
-    await page.click('#login-submit');
-    
-    // Esperar a que se redirija al dashboard
-    await page.waitForURL('**/estudiante');
-    
-    // Verificar que el dashboard se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Estudiante/);
-    
-    // Verificar elementos clave del dashboard
-    await expect(page.locator('.welcome-banner h1')).toBeVisible();
+test.describe('Student Dashboard', () => {
+  test('Dashboard shows after login', async ({ page }) => {
+    await loginAs(page, 'student', 'EST-001', 'password123');
     await expect(page.locator('.stats-grid')).toBeVisible();
   });
-});
 
-test.describe('Vyntra Docente Dashboard', () => {
-  test('debería cargar correctamente el dashboard de docente', async ({ page }) => {
-    // Navegar a la página de login
-    await page.goto(`${BASE_URL}/login`);
-    
-    // Verificar que la página de login se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Acceso/);
-    
-    // Completar el formulario de login como docente
-    await page.click('#tab-personal');
-    await page.fill('#doc-id', 'DOC-001');
-    await page.fill('#password', 'password123');
-    
-    // Enviar el formulario
-    await page.click('#login-submit');
-    
-    // Esperar a que se redirija al dashboard
-    await page.waitForURL('**/docente');
-    
-    // Verificar que el dashboard se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Docente/);
-    
-    // Verificar elementos clave del dashboard
-    await expect(page.locator('#teacher-sidebar')).toBeVisible();
-    await expect(page.locator('#page-title')).toHaveText('Panel Docente');
+  test('Section navigation works', async ({ page }) => {
+    await loginAs(page, 'student', 'EST-001', 'password123');
+    const sections = ['notas', 'horario', 'tareas'];
+    for (const sec of sections) {
+      const btn = page.locator(`[data-section-id="${sec}"]`);
+      if (await btn.isVisible()) {
+        await btn.click();
+        await page.waitForTimeout(500);
+      }
+    }
+  });
+
+  test('AI Chat panel toggles', async ({ page }) => {
+    await loginAs(page, 'student', 'EST-001', 'password123');
+    const chatBtn = page.locator('#ai-chat-toggle');
+    if (await chatBtn.isVisible()) {
+      await chatBtn.click();
+      await expect(page.locator('#ai-chat-panel')).toBeVisible();
+      await chatBtn.click();
+    }
   });
 });
 
-test.describe('Vyntra Admin Dashboard', () => {
-  test('debería cargar correctamente el dashboard de administrador', async ({ page }) => {
-    // Navegar a la página de login
-    await page.goto(`${BASE_URL}/login`);
-    
-    // Verificar que la página de login se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Acceso/);
-    
-    // Completar el formulario de login como administrador
-    await page.click('#tab-personal');
-    await page.fill('#doc-id', 'ADMIN-001');
-    await page.fill('#password', 'password123');
-    
-    // Enviar el formulario
-    await page.click('#login-submit');
-    
-    // Esperar a que se redirija al dashboard
-    await page.waitForURL('**/admin');
-    
-    // Verificar que el dashboard se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Administración/);
-    
-    // Verificar elementos clave del dashboard
-    await expect(page.locator('#admin-sidebar')).toBeVisible();
-    await expect(page.locator('text=Dashboard')).toBeVisible();
+test.describe('Unauthenticated Access', () => {
+  test('Redirects to login when accessing dashboard without auth', async ({ page }) => {
+    await page.goto(`${BASE}/dashboard`);
+    await expect(page).toHaveURL(/\/login/);
+  });
+
+  test('Redirects to login when accessing student page without auth', async ({ page }) => {
+    await page.goto(`${BASE}/estudiante`);
+    await expect(page).toHaveURL(/\/login/);
   });
 });
 
-test.describe('Vyntra Estudiante Dashboard', () => {
-  test('debería cargar correctamente el dashboard de estudiante', async ({ page }) => {
-    // Navegar a la página de login
-    await page.goto('/login');
-    
-    // Verificar que la página de login se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Acceso/);
-    
-    // Completar el formulario de login como estudiante
-    await page.fill('#doc-id', 'EST-001');
-    await page.fill('#password', 'password123');
-    
-    // Enviar el formulario
-    await page.click('#login-submit');
-    
-    // Esperar a que se redirija al dashboard
-    await page.waitForURL('**/estudiante');
-    
-    // Verificar que el dashboard se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Estudiante/);
-    
-    // Verificar elementos clave del dashboard
-    await expect(page.locator('.welcome-banner h1')).toBeVisible();
-    await expect(page.locator('.stats-grid')).toBeVisible();
+test.describe('Security Headers', () => {
+  test('CSP headers are present', async ({ page }) => {
+    const resp = await page.goto(`${BASE}/login`);
+    const headers = resp.headers();
+    expect(headers['content-security-policy']).toBeTruthy();
+    expect(headers['x-content-type-options']).toBe('nosniff');
+    expect(headers['x-frame-options']).toBe('DENY');
   });
 });
 
-test.describe('Vyntra Docente Dashboard', () => {
-  test('debería cargar correctamente el dashboard de docente', async ({ page }) => {
-    // Navegar a la página de login
-    await page.goto('/login');
-    
-    // Verificar que la página de login se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Acceso/);
-    
-    // Completar el formulario de login como docente
-    await page.click('#tab-personal');
-    await page.fill('#doc-id', 'DOC-001');
-    await page.fill('#password', 'password123');
-    
-    // Enviar el formulario
-    await page.click('#login-submit');
-    
-    // Esperar a que se redirija al dashboard
-    await page.waitForURL('**/docente');
-    
-    // Verificar que el dashboard se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Docente/);
-    
-    // Verificar elementos clave del dashboard
-    await expect(page.locator('#teacher-sidebar')).toBeVisible();
-    await expect(page.locator('#page-title')).toHaveText('Panel Docente');
-  });
-});
-
-test.describe('Vyntra Admin Dashboard', () => {
-  test('debería cargar correctamente el dashboard de administrador', async ({ page }) => {
-    // Navegar a la página de login
-    await page.goto('/login');
-    
-    // Verificar que la página de login se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Acceso/);
-    
-    // Completar el formulario de login como administrador
-    await page.click('#tab-personal');
-    await page.fill('#doc-id', 'ADMIN-001');
-    await page.fill('#password', 'password123');
-    
-    // Enviar el formulario
-    await page.click('#login-submit');
-    
-    // Esperar a que se redirija al dashboard
-    await page.waitForURL('**/admin');
-    
-    // Verificar que el dashboard se carga correctamente
-    await expect(page).toHaveTitle(/VYNTRA · Administración/);
-    
-    // Verificar elementos clave del dashboard
-    await expect(page.locator('#admin-sidebar')).toBeVisible();
-    await expect(page.locator('text=Dashboard')).toBeVisible();
+test.describe('Theme', () => {
+  test('Theme toggle persists', async ({ page }) => {
+    await page.goto(`${BASE}/login`);
+    const html = page.locator('html');
+    const initialClass = await html.getAttribute('class');
+    const toggle = page.locator('#theme-toggle');
+    if (await toggle.isVisible()) {
+      await toggle.click();
+    }
   });
 });

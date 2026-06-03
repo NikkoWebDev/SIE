@@ -5,8 +5,7 @@
 [build.environment]
   NODE_VERSION = "20"
   PUBLIC_API_URL = "https://sie-8agt.onrender.com"
-  # GOOGLE_CLIENT_ID is public by design — set via Netlify UI env vars
-  PUBLIC_GOOGLE_CLIENT_ID = "456201263142-u1r9mr35dccoj6u2ukcp1cn88af883cd.apps.googleusercontent.com"
+  # GOOGLE_CLIENT_ID is public by design — set via Netlify UI env vars (not here)
 
 [[redirects]]
   from = "/*"
@@ -14,6 +13,16 @@
   status = 200
 
 # ── Security Headers ──
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -23,3 +32,4 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Cache-Control = "public, max-age=3600, must-revalidate"

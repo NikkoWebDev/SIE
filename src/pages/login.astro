@@ -61,10 +61,10 @@ const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
           </div>
 
           <!-- Segmented control -->
-          <div class="relative flex h-10 rounded-full bg-[var(--input-bg)] p-1 mb-6">
+          <div class="relative flex h-10 rounded-full bg-[var(--input-bg)] p-1 mb-6" role="tablist" aria-label="Tipo de usuario">
             <div id="tab-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-r from-brand-maroon to-brand-maroon-dark rounded-full transition-all duration-400 ease-spring z-0 left-1"></div>
-            <button id="tab-estudiante" class="flex-1 relative z-10 flex items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 text-text" data-tab="estudiante">Estudiante</button>
-            <button id="tab-personal" class="flex-1 relative z-10 flex items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 text-text-tertiary" data-tab="personal">Personal</button>
+            <button id="tab-estudiante" class="flex-1 relative z-10 flex items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 text-text" data-tab="estudiante" role="tab" aria-selected="true" aria-controls="panel-estudiante">Estudiante</button>
+            <button id="tab-personal" class="flex-1 relative z-10 flex items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 text-text-tertiary" data-tab="personal" role="tab" aria-selected="false" aria-controls="panel-personal">Personal</button>
           </div>
 
           <form id="login-form" class="space-y-4" novalidate>
@@ -154,6 +154,8 @@ const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
         slider.style.left = tab === 'estudiante' ? '4px' : 'calc(50% + 2px)'
         tabEst.style.color = tab === 'estudiante' ? 'var(--text)' : 'var(--text-tertiary)'
         tabPer.style.color = tab === 'personal' ? 'var(--text)' : 'var(--text-tertiary)'
+        tabEst.setAttribute('aria-selected', tab === 'estudiante' ? 'true' : 'false')
+        tabPer.setAttribute('aria-selected', tab === 'personal' ? 'true' : 'false')
       }
       tabEst.addEventListener('click', function() { setTab('estudiante') })
       tabPer.addEventListener('click', function() { setTab('personal') })
@@ -179,16 +181,14 @@ const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
             throw new Error(res.status === 401 ? 'Credenciales inválidas.' : (ed.mensaje || ed.detail || ed.error || 'Error.'))
           }
           var data = await res.json()
-          var token = data.access_token || data.token || ''
           var usuario = data.usuario || {}
           var role = (usuario.rol || data.rol || currentTab).toUpperCase()
-          localStorage.setItem('access_token', token)
+          // Token is stored in httpOnly cookie by backend — not in localStorage
           localStorage.setItem('userRole', role)
           localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
           localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || docId)
           if (usuario.profile_id) localStorage.setItem('profile_id', usuario.profile_id)
           if (data.grado || data.grade) localStorage.setItem('userGrade', data.grado || data.grade)
-          if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
 
           submitText.textContent = '¡Bienvenido!'
           var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }

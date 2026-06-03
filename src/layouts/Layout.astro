@@ -27,6 +27,7 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script>
     (function() {
@@ -38,7 +39,7 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
       } catch(e) {}
     })()
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer crossorigin="anonymous" integrity="sha512-Ml0dpc6HKA1y1cXn3oGNIJmpC+6rVG5zrIlCQBeFRLVM3gnmBQa9q1XaQjcR01MUT5d6Hm3S1KprFGgYDJgKog=="></script>
   <script src="/js/session.js" defer></script>
 </head>
 <body>
@@ -120,21 +121,16 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
     const themeLabel = document.getElementById('theme-label')
     const skipLink = document.getElementById('skip-link')
 
-    // ── Skip link keyboard access ──
     skipLink?.addEventListener('focus', () => { skipLink.style.top = '0' })
     skipLink?.addEventListener('blur', () => { skipLink.style.top = '-100%' })
-
-    // ── Mobile menu ──
     menuBtn?.addEventListener('click', () => sidebar?.classList.toggle('open'))
     overlay?.addEventListener('click', () => sidebar?.classList.remove('open'))
 
-    // ── Theme ──
     function setTheme(isDark) {
       document.documentElement.classList.toggle('dark', isDark)
       localStorage.setItem('vyntra-theme', isDark ? 'dark' : 'light')
       if (themeLabel) themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro'
     }
-
     themeBtn?.addEventListener('click', () => {
       setTheme(!document.documentElement.classList.contains('dark'))
     })

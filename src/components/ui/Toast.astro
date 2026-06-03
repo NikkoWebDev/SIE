@@ -1,4 +1,4 @@
-<div id="toast-container" class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col gap-2 pointer-events-none" style="max-width:calc(100vw - 2rem)">
+<div id="toast-container" class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col gap-2 pointer-events-none" style="max-width:calc(100vw - 2rem)" role="status" aria-live="polite" aria-atomic="true">
   <slot />
 </div>
 
@@ -13,6 +13,7 @@
       document.body.appendChild(container)
     }
 
+    /** @param {string} message @param {'success'|'error'|'warning'|'info'} type @param {number} duration */
     function show(message, type, duration) {
       type = type || 'info'
       duration = duration || 4000
@@ -31,10 +32,10 @@
       }
       el.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl backdrop-blur-xl border shadow-lg text-sm font-medium w-80 sm:w-96 animate-toast-slide-in'
       el.style.cssText = 'animation:toastSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;'
-      var color = colors[type] || colors.info
+      var color = colors[/** @type {'success'|'error'|'warning'|'info'} */ (type)] || colors.info
       el.classList.add(...color.split(' '))
-      el.innerHTML = '<span class="shrink-0">'+(icons[type]||icons.info)+'</span><span class="flex-1 leading-tight">'+String(message).replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>'
-      container.appendChild(el)
+      el.innerHTML = '<span class="shrink-0">'+(icons[/** @type {'success'|'error'|'warning'|'info'} */ (type)]||icons.info)+'</span><span class="flex-1 leading-tight">'+String(message).replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>'
+      if (container) container.appendChild(el)
       setTimeout(function() {
         el.style.animation = 'toastSlideOut 0.3s ease-in forwards'
         setTimeout(function() { el.remove() }, 300)

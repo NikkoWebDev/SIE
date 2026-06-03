@@ -6,8 +6,10 @@
       "@components/*": ["src/components/*"],
       "@layouts/*": ["src/layouts/*"],
       "@lib/*": ["src/lib/*"],
-      "@scripts/*": ["src/scripts/*"]
+      "@assets/*": ["src/assets/*"]
     },
     "types": ["astro/client"]
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "venv", ".venv", "dist", ".astro", ".netlify", "tests"]
 }

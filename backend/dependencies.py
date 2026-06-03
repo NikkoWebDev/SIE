@@ -151,6 +151,62 @@ async def financial_guard(request: Request) -> None:
         )
 
 
+# ── CSRF Protection ──────────────────────────────────────────────
+
+CSRF_SKIP_PATHS: frozenset[str] = frozenset({
+    "/api/auth/login", "/api/auth/register", "/api/auth/forgot-password",
+    "/api/auth/reset-password", "/api/auth/google", "/api/auth/logout",
+    "/api/health",
+})
+
+
+def set_csrf_cookie(response: Response) -> str:
+    """Set a CSRF token cookie (non-httpOnly so JS can read it for header)."""
+    token = secrets.token_hex(32)
+    is_secure = os.getenv("ENV", "development") == "production"
+    response.set_cookie(
+        key="csrf_token",
+        value=token,
+        max_age=TOKEN_EXPIRY_HOURS * 3600,
+        httponly=False,
+        secure=is_secure,
+        samesite="strict",
+        path="/",
+    )
+    return token
+
+
+def clear_csrf_cookie(response: Response) -> None:
+    is_secure = os.getenv("ENV", "development") == "production"
+    response.delete_cookie(
+        key="csrf_token", path="/", httponly=False,
+        secure=is_secure, samesite="strict",
+    )
+
+
+def validate_csrf(request: Request) -> None:
+    """Validate CSRF token for mutating requests using cookie auth.
+
+    Uses Double Submit Cookie pattern: cookie value must match X-CSRF-Token header.
+    Skips validation if Authorization header is present (Bearer token, not vulnerable to CSRF).
+    """
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        return
+    path = request.url.path
+    if any(path.startswith(p) for p in CSRF_SKIP_PATHS):
+        return
+    # If request uses Authorization header, no CSRF check needed
+    if request.headers.get("Authorization", "").startswith("Bearer "):
+        return
+    cookie_token = request.cookies.get("csrf_token", "")
+    header_token = request.headers.get("X-CSRF-Token", "")
+    if not cookie_token or not header_token or cookie_token != header_token:
+        raise HTTPException(
+            status_code=403,
+            detail="CSRF validation failed. Recarga la página e intenta de nuevo.",
+        )
+
+
 def is_financial_locked_path(path: str) -> bool:
     return any(path.startswith(p) for p in FINANCIAL_LOCKED_PATHS)
 

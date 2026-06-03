@@ -13,9 +13,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
   <WsRiskAlert />
   <AIChat role="student" />
 
-  <!-- SECTIONS -->
   <div class="space-y-5">
-    <!-- INICIO -->
     <section id="sec-inicio" class="section-active space-y-5">
       <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-maroon via-brand-maroon-dark to-terracotta-800 text-white p-5 sm:p-8">
         <div class="absolute right-0 top-1/2 -translate-y-1/2 text-[120px] font-extrabold text-white/[0.04] select-none pointer-events-none" style="font-family:'Fraunces',serif">V</div>
@@ -29,7 +27,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
           </div>
         </div>
       </div>
-
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {[
           { id:'stat-avg',label:'Promedio General',icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9',color:'from-brand-maroon to-brand-maroon-dark' },
@@ -47,7 +44,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
           </div>
         ))}
       </div>
-
       <div class="grid lg:grid-cols-2 gap-4 sm:gap-5">
         <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
           <h3 class="font-bold text-sm mb-4">Rendimiento por Asignatura</h3>
@@ -58,7 +54,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
           <div id="notices-list" class="text-xs text-text-secondary">Cargando...</div>
         </div>
       </div>
-
       <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h3 class="font-bold text-sm mb-4">Calendario — <span id="cal-month-label">Este mes</span></h3>
         <div class="grid grid-cols-7 gap-1 text-center" id="calGrid">
@@ -67,7 +62,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       </div>
     </section>
 
-    <!-- NOTAS -->
     <section id="sec-notas" class="hidden space-y-5">
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Registro de Notas</h2>
       <div class="flex flex-wrap gap-2 items-center" id="period-filters">
@@ -102,7 +96,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       </div>
     </section>
 
-    <!-- EXAMENES -->
     <section id="sec-examenes" class="hidden space-y-5">
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Exámenes</h2>
       <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
@@ -110,7 +103,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       </div>
     </section>
 
-    <!-- HORARIOS -->
     <section id="sec-horarios" class="hidden space-y-5">
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Horario Semanal</h2>
       <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 overflow-x-auto">
@@ -118,7 +110,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       </div>
     </section>
 
-    <!-- TAREAS -->
     <section id="sec-tareas" class="hidden space-y-5">
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Tareas</h2>
       <div class="grid lg:grid-cols-2 gap-5">
@@ -145,7 +136,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       </div>
     </section>
 
-    <!-- PRUEBAS SABER -->
     <section id="sec-saber" class="hidden space-y-5">
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Pruebas Saber</h2>
       <div class="flex flex-wrap gap-2" id="saber-area-tabs">
@@ -172,7 +162,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       </div>
     </section>
 
-    <!-- BIBLIOTECA -->
     <section id="sec-biblioteca" class="hidden space-y-5">
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Biblioteca</h2>
       <select id="biblio-period" class="w-48 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon mb-4">
@@ -182,13 +171,11 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       <div id="library-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"><p class="text-sm text-text-tertiary col-span-full">Cargando biblioteca...</p></div>
     </section>
 
-    <!-- VOTACIONES -->
     <section id="sec-votaciones" class="hidden space-y-5">
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Votación Estudiantil</h2>
       <div id="candidates-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
-    <!-- PERFIL -->
     <section id="sec-perfil" class="hidden space-y-5">
       <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Mi Perfil</h2>
       <div class="grid lg:grid-cols-2 gap-5">
@@ -224,7 +211,6 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
     </section>
   </div>
 
-  <!-- Exam Modal -->
   <div id="exam-modal" class="fixed inset-0 z-[9999] bg-[#040405] hidden flex-col">
     <div class="flex items-center justify-between px-4 sm:px-6 py-3 bg-white/5 border-b border-white/5">
       <div>
@@ -244,396 +230,364 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
 </BaseLayout>
 
 <script define:vars={{ apiUrl, wsUrl }}>
-  // ════════════════════════════════════════════════════════════════
-  // STUDENT DASHBOARD — All features preserved from original
-  // ════════════════════════════════════════════════════════════════
-  (function(){
-    var token = localStorage.getItem('access_token')
-    if (!token) { window.location.href = '/login'; return }
-    var studentId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
-    var userGrade = localStorage.getItem('userGrade') || ''
-    var userName = localStorage.getItem('userName') || 'Estudiante'
-    var currentSection = 'inicio'
+(function(){
+  var token = localStorage.getItem('access_token')
+  if (!token) { window.location.href = '/login'; return }
+  var studentId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
+  var userGrade = localStorage.getItem('userGrade') || ''
+  var userName = localStorage.getItem('userName') || 'Estudiante'
+  var currentSection = 'inicio'
 
-    // Update sidebar info
-    var sbNameEl = document.getElementById('sidebar-username-student')
-    var sbMetaEl = document.getElementById('sidebar-metadata-student')
-    if (sbNameEl) sbNameEl.textContent = userName
-    if (sbMetaEl) sbMetaEl.textContent = userGrade || ''
+  var sbNameEl = document.getElementById('sidebar-username-student')
+  var sbMetaEl = document.getElementById('sidebar-metadata-student')
+  if (sbNameEl) sbNameEl.textContent = userName
+  if (sbMetaEl) sbMetaEl.textContent = userGrade || ''
 
-    function apiFetch(path, opts) {
-      var url = apiUrl.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
-      var merged = Object.assign({ headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } }, opts || {})
-      if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) merged.body = JSON.stringify(merged.body)
-      return fetch(url, merged).then(function(r) {
-        if (r.status === 401) { localStorage.clear(); window.location.href = '/login' }
-        return r.json().catch(function(){ return {} })
-      })
-    }
-
-    // ── THEME (shared across dashboards) ──
-    window.setVyntraTheme = function(dark) {
-      document.documentElement.classList.toggle('dark', dark)
-      localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
-    }
-    window.setVyntraTheme(localStorage.getItem('vyntra-theme') === 'dark' || (!localStorage.getItem('vyntra-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches))
-    document.getElementById('theme-toggle-student')?.addEventListener('click', function() {
-      window.setVyntraTheme(!document.documentElement.classList.contains('dark'))
+  function apiFetch(path, opts) {
+    var url = apiUrl.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+    var merged = Object.assign({ headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } }, opts || {})
+    if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) merged.body = JSON.stringify(merged.body)
+    if (merged.body instanceof FormData) delete merged.headers['Content-Type']
+    return fetch(url, merged).then(function(r) {
+      if (r.status === 401) { localStorage.clear(); window.location.href = '/login'; return {} }
+      return r.json().catch(function(){ return {} })
     })
+  }
 
-    // ── NAVIGATION ──
-    var pageTitles = { inicio:'Inicio', notas:'Registro de Notas', examenes:'Exámenes', horarios:'Horarios', tareas:'Tareas', saber:'Pruebas Saber', biblioteca:'Biblioteca', votaciones:'Votaciones', perfil:'Perfil' }
-    var pageSubs = { inicio:'Panel de rendimiento académico', notas:'Ver y exportar calificaciones', examenes:'Evaluaciones disponibles', horarios:'Horario semanal', tareas:'Subir y gestionar entregas', saber:'Material de estudio tipo ICFES', biblioteca:'Recursos por asignatura', votaciones:'Elecciones estudiantiles', perfil:'Información personal' }
-    window.showSection = function(id) {
-      currentSection = id
-      document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none' })
-      var sec = document.getElementById('sec-' + id)
-      if (sec) sec.style.display = ''
-      var titleEl = document.querySelector('.topbar h1')
-      var subEl = document.querySelector('.topbar p')
-      if (titleEl) titleEl.textContent = pageTitles[id] || id
-      if (subEl) subEl.textContent = pageSubs[id] || ''
-      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id }}))
-      if (id === 'notas') { loadGrades(); loadChartData() }
-      if (id === 'examenes') loadExams()
-      if (id === 'horarios') loadSchedule()
-      if (id === 'tareas') { loadSubjects(); loadHomeworkHistory() }
-      if (id === 'saber') loadSaberContent()
-      if (id === 'biblioteca') loadLibrary()
-      if (id === 'votaciones') loadCandidates()
-      if (id === 'perfil') { loadGrades(); loadRecentActivity() }
-    }
+  function setTheme(dark) {
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
+  }
+  setTheme(localStorage.getItem('vyntra-theme') === 'dark' || (!localStorage.getItem('vyntra-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches))
+  document.getElementById('theme-toggle-student')?.addEventListener('click', function() {
+    setTheme(!document.documentElement.classList.contains('dark'))
+  })
 
-    // ── CLOCK ──
-    setInterval(function() {
-      var el = document.getElementById('live-clock')
-      if (el) el.textContent = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
-    }, 1000)
+  var pageTitles = { inicio:'Inicio', notas:'Registro de Notas', examenes:'Exámenes', horarios:'Horarios', tareas:'Tareas', saber:'Pruebas Saber', biblioteca:'Biblioteca', votaciones:'Votaciones', perfil:'Perfil' }
+  var pageSubs = { inicio:'Panel de rendimiento académico', notas:'Ver y exportar calificaciones', examenes:'Evaluaciones disponibles', horarios:'Horario semanal', tareas:'Subir y gestionar entregas', saber:'Material de estudio tipo ICFES', biblioteca:'Recursos por asignatura', votaciones:'Elecciones estudiantiles', perfil:'Información personal' }
 
-    // ── WELCOME DATA ──
-    function loadWelcomeData() {
-      if (!studentId) return
-      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function(data) {
-        var grades = Array.isArray(data) ? data : []
-        var subjectMap = {}
-        grades.forEach(function(g) {
-          var sid = g.subject_name || g.subject_id || 'General'
-          if (!subjectMap[sid]) subjectMap[sid] = []
-          subjectMap[sid].push(parseFloat(g.score) || 0)
-        })
-        var labels = Object.keys(subjectMap)
-        var values = labels.map(function(sid) {
-          var vals = subjectMap[sid]; return vals.reduce(function(a,b){return a+b},0) / vals.length
-        })
-        var overallAvg = values.length ? values.reduce(function(a,b){return a+b},0)/values.length : 0
-        var passing = values.filter(function(v){return v>=3.5}).length
+  window.showSection = function(id) {
+    currentSection = id
+    document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none'; s.classList.remove('section-enter') })
+    var sec = document.getElementById('sec-' + id)
+    if (sec) { sec.style.display = ''; sec.classList.add('section-enter') }
+    var titleEl = document.querySelector('.topbar h1')
+    var subEl = document.querySelector('.topbar p')
+    if (titleEl) titleEl.textContent = pageTitles[id] || id
+    if (subEl) subEl.textContent = pageSubs[id] || ''
+    window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id }}))
+    if (id === 'notas') { loadGrades(); loadChartData() }
+    if (id === 'examenes') loadExams()
+    if (id === 'horarios') loadSchedule()
+    if (id === 'tareas') { loadSubjects(); loadHomeworkHistory() }
+    if (id === 'saber') loadSaberContent()
+    if (id === 'biblioteca') loadLibrary()
+    if (id === 'votaciones') loadCandidates()
+    if (id === 'perfil') { loadGrades(); loadRecentActivity() }
+  }
 
-        document.getElementById('student-name').textContent = userName
-        document.getElementById('student-meta').textContent = userGrade || 'Panel de rendimiento'
-        document.getElementById('welcome-badge-grade').innerHTML = userGrade || 'Cargando...'
-        document.getElementById('welcome-badge-avg').innerHTML = 'Promedio: ' + (overallAvg ? overallAvg.toFixed(1) : '--') + ' / 5.0'
-        document.getElementById('welcome-badge-risk').innerHTML = passing + ' aprobadas'
+  setInterval(function() {
+    var el = document.getElementById('live-clock')
+    if (el) el.textContent = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+  }, 1000)
 
-        document.getElementById('stat-avg').textContent = overallAvg ? overallAvg.toFixed(1) : '--'
-        document.getElementById('stat-subjects').textContent = labels.length
-        document.getElementById('stat-passing').textContent = passing
-        document.getElementById('stat-bimestre').textContent = getCurrentBimester()
-
-        document.getElementById('perf-list').innerHTML = labels.slice(0,6).map(function(sid,i) {
-          var v = values[i], pct = Math.min((v/5)*100, 100)
-          var barColor = 'bg-brand-maroon'; if (v >= 4) barColor = 'bg-success'; else if (v >= 3.5) barColor = 'bg-brand-gold'
-          return '<div class="flex items-center justify-between mb-2"><span class="text-xs font-medium">' + sid + '</span><span class="text-xs font-bold">' + v.toFixed(1) + '</span></div>' +
-            '<div class="h-1.5 bg-[var(--border)] rounded-full mb-3 overflow-hidden"><div class="h-full rounded-full ' + barColor + ' transition-all duration-700 ease-out" style="width:' + pct + '%"></div></div>'
-        }).join('') || '<span class="text-text-tertiary">Sin datos</span>'
+  function loadWelcomeData() {
+    if (!studentId) return
+    apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function(data) {
+      var grades = Array.isArray(data) ? data : (data.data || [])
+      var subjectMap = {}
+      grades.forEach(function(g) {
+        var sid = g.subject_name || g.subject_id || 'General'
+        if (!subjectMap[sid]) subjectMap[sid] = []
+        subjectMap[sid].push(parseFloat(g.score) || 0)
       })
-    }
-
-    function getCurrentBimester() {
-      var m = new Date().getMonth() + 1
-      return m <= 3 ? 'P1' : m <= 6 ? 'P2' : m <= 9 ? 'P3' : 'P4'
-    }
-
-    function loadNotices() {
-      apiFetch('/api/notices').then(function(data) {
-        var el = document.getElementById('notices-list')
-        if (!Array.isArray(data) || !data.length) { el.innerHTML = 'Sin avisos recientes.'; return }
-        el.innerHTML = data.slice(0,4).map(function(n) {
-          var hasImg = n.archivo_url && n.archivo_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-          return '<div class="pb-3 mb-3 border-b border-border last:border-0">' +
-            '<strong class="text-xs">' + (n.titulo || '') + '</strong>' +
-            '<span class="block text-[10px] text-text-tertiary">' + (n.fecha || '') + '</span>' +
-            (hasImg ? '<img src="' + n.archivo_url + '" class="mt-2 max-h-32 rounded-lg object-cover cursor-pointer" onclick="window.open(this.src)">' : '') +
-            (n.archivo_url && !hasImg ? '<a href="' + n.archivo_url + '" target="_blank" class="inline-block mt-1 text-xs text-brand-maroon">Ver adjunto</a>' : '') +
-            '</div>'
-        }).join('')
+      var labels = Object.keys(subjectMap)
+      var values = labels.map(function(sid) {
+        var vals = subjectMap[sid]; return vals.reduce(function(a,b){return a+b},0) / vals.length
       })
-    }
-
-    function loadGrades() {
-      if (!studentId) return
-      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function(grades) {
-        grades = Array.isArray(grades) ? grades : []
-        var tbody = document.getElementById('grades-table-body')
-        var subjectMap = {}
-        grades.forEach(function(g) {
-          var sid = g.subject_name || g.subject_id || 'General'
-          if (!subjectMap[sid]) subjectMap[sid] = {p1:[],p2:[],p3:[],p4:[],all:[]}
-          if (g.period === 'P1') subjectMap[sid].p1.push(g.score)
-          else if (g.period === 'P2') subjectMap[sid].p2.push(g.score)
-          else if (g.period === 'P3') subjectMap[sid].p3.push(g.score)
-          else if (g.period === 'P4') subjectMap[sid].p4.push(g.score)
-          subjectMap[sid].all.push(g.score)
-        })
-        if (!Object.keys(subjectMap).length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-text-tertiary">Sin calificaciones registradas</td></tr>'; return }
-        tbody.innerHTML = Object.keys(subjectMap).map(function(sid) {
-          var d = subjectMap[sid]
-          function avg(arr) { return arr.length ? (arr.reduce(function(a,b){return a+b},0)/arr.length).toFixed(1) : '-' }
-          var overall = avg(d.all), p1=avg(d.p1), p2=avg(d.p2), p3=avg(d.p3), p4=avg(d.p4)
-          var status = parseFloat(overall) >= 4 ? 'Sobresaliente' : parseFloat(overall) >= 3.5 ? 'Aceptable' : 'En Riesgo'
-          var stColor = parseFloat(overall) >= 4 ? 'text-success' : parseFloat(overall) >= 3.5 ? 'text-brand-gold' : 'text-brand-danger'
-          return '<tr class="border-b border-border hover:bg-brand-gold/[0.02] transition-colors"><td class="py-2.5 px-2 font-medium text-xs">' + sid + '</td>' +
-            '<td class="py-2.5 px-2 text-center text-xs">' + p1 + '</td><td class="py-2.5 px-2 text-center text-xs">' + p2 + '</td><td class="py-2.5 px-2 text-center text-xs">' + p3 + '</td><td class="py-2.5 px-2 text-center text-xs">' + p4 + '</td>' +
-            '<td class="py-2.5 px-2 text-center font-bold text-xs">' + overall + '</td>' +
-            '<td class="py-2.5 px-2 text-center"><span class="text-[11px] font-semibold ' + stColor + '">' + status + '</span></td></tr>'
-        }).join('')
-
-        // Update bars
-        var barsP1 = document.getElementById('bar-p1'), barsP2 = document.getElementById('bar-p2'), barsP3 = document.getElementById('bar-p3'), barsP4 = document.getElementById('bar-p4')
-        ;[{bar:barsP1,id:'bar-p1-val'},{bar:barsP2,id:'bar-p2-val'},{bar:barsP3,id:'bar-p3-val'},{bar:barsP4,id:'bar-p4-val'}].forEach(function(o,i) {
-          if (!o.bar) return
-          var pad = 'P' + (i+1)
-          var vals = []
-          Object.values(subjectMap).forEach(function(d) { vals.push.apply(vals, d['p'+(i+1)]) })
-          var avg = vals.length ? vals.reduce(function(a,b){return a+b},0)/vals.length : 0
-          o.bar.style.height = Math.max((avg/5)*100, 2) + '%'
-          document.getElementById(o.id).textContent = avg.toFixed(1)
-        })
-      })
-    }
-
-    function loadChartData() {
-      if (!studentId) return
-      if (typeof Chart === 'undefined') { setTimeout(loadChartData, 200); return }
-      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function(grades) {
-        grades = Array.isArray(grades) ? grades : []
-        var subjectMap = {}
-        grades.forEach(function(g) {
-          var sid = g.subject_name || g.subject_id || 'General'
-          if (!subjectMap[sid]) subjectMap[sid] = []
-          subjectMap[sid].push(parseFloat(g.score)||0)
-        })
-        var labels = Object.keys(subjectMap)
-        var values = labels.map(function(k){var v=subjectMap[k];return v.reduce(function(a,b){return a+b},0)/v.length})
-        var ctx = document.getElementById('myGradesChart'); if (!ctx) return
-        var existing = Chart.getChart(ctx)
-        if (existing) existing.destroy()
-        new Chart(ctx, {
-          type:'bar', data:{labels:labels,datasets:[{data:values,backgroundColor:['#6B1A1A','#8B2A2A','#A04040','#C06020','#D89030','#F5A623','#FFD166','#C08030'],borderRadius:6,borderSkipped:false}]},
-          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'var(--text-secondary)'}},y:{min:0,max:5,ticks:{stepSize:1,color:'var(--text-tertiary)'}}}}
-        })
-      })
-    }
-
-    // ── EXAMS ──
-    function loadExams() {
-      apiFetch('/api/exams?student_grade=' + encodeURIComponent(userGrade)).then(function(exams) {
-        var el = document.getElementById('available-exams')
-        if (!Array.isArray(exams) || !exams.length) { el.innerHTML = '<div class="text-center py-8 text-text-tertiary">No hay exámenes disponibles.</div>'; return }
-        el.innerHTML = exams.map(function(ex) {
-          return '<div class="flex items-center justify-between p-4 border border-border rounded-xl mb-3 hover:border-brand-gold/30 transition-colors cursor-pointer" onclick="startExam(\'' + ex.id + '\',\'' + (ex.title||'') + '\',' + (ex.duration_minutes||30) + ')">' +
-            '<div><strong class="text-sm">' + (ex.title||'Examen') + '</strong><br><span class="text-xs text-text-tertiary">' + (ex.subject_name||'') + ' · ' + (ex.duration_minutes||30) + ' min</span></div>' +
-            '<span class="px-3 py-1.5 bg-brand-maroon text-white text-xs font-semibold rounded-lg">Iniciar</span></div>'
-        }).join('')
-      })
-    }
-
-    // ── SABER ──
-    var saberArea = 'matematicas', saberBimestre = '1'
-    function loadSaberContent() {
-      var materials = {
-        matematicas:{1:'Álgebra básica, operaciones y ecuaciones lineales',2:'Funciones, gráficas y sistemas de ecuaciones',3:'Trigonometría y geometría analítica',4:'Cálculo diferencial y estadística'},
-        lenguaje:{1:'Comprensión lectora y gramática',2:'Análisis de textos narrativos',3:'Textos argumentativos y ensayos',4:'Literatura colombiana y universal'},
-        ciencias:{1:'Método científico y ecosistemas',2:'Química orgánica e inorgánica',3:'Física: mecánica y ondas',4:'Biología molecular y genética'},
-        sociales:{1:'Historia de Colombia precolombina',2:'Colonia e independencia',3:'Siglo XX y conflicto armado',4:'Geopolítica y economía global'},
-        ingles:{1:'Present simple, vocabulary',2:'Past tense, reading comprehension',3:'Conditionals, writing',4:'Advanced grammar, listening'},
-        icfes:{1:'Simulacro completo ICFES 1',2:'Simulacro completo ICFES 2',3:'Simulacro completo ICFES 3',4:'Simulacro completo ICFES 4'}
-      }
-      document.getElementById('saber-content').innerHTML = '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 mt-4">' +
-        '<h3 class="font-bold text-sm mb-2">' + saberArea.charAt(0).toUpperCase() + saberArea.slice(1) + ' — Bimestre ' + saberBimestre + '</h3>' +
-        '<p class="text-xs text-text-secondary">' + (materials[saberArea]?.[saberBimestre] || 'Contenido no disponible') + '</p>' +
-        '<div class="mt-4 flex gap-2"><button class="px-3 py-1.5 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="iniciarSimulacroSaber()">Estudiar Ahora</button></div>' +
-        '</div>'
-    }
-
-    // Saber tab listeners
-    document.getElementById('saber-area-tabs')?.addEventListener('click', function(e) {
-      if (e.target.dataset.area) { saberArea = e.target.dataset.area; loadSaberContent() }
+      var overallAvg = values.length ? values.reduce(function(a,b){return a+b},0)/values.length : 0
+      var passing = values.filter(function(v){return v>=3.5}).length
+      document.getElementById('student-name').textContent = userName
+      document.getElementById('student-meta').textContent = userGrade || 'Panel de rendimiento'
+      document.getElementById('welcome-badge-grade').innerHTML = userGrade || 'Cargando...'
+      document.getElementById('welcome-badge-avg').innerHTML = 'Promedio: ' + (overallAvg ? overallAvg.toFixed(1) : '--') + ' / 5.0'
+      document.getElementById('welcome-badge-risk').innerHTML = passing + ' aprobadas'
+      document.getElementById('stat-avg').textContent = overallAvg ? overallAvg.toFixed(1) : '--'
+      document.getElementById('stat-subjects').textContent = labels.length
+      document.getElementById('stat-passing').textContent = passing
+      document.getElementById('stat-bimestre').textContent = getCurrentBimester()
+      document.getElementById('perf-list').innerHTML = labels.slice(0,6).map(function(sid,i) {
+        var v = values[i], pct = Math.min((v/5)*100, 100)
+        var barColor = v >= 4 ? 'bg-success' : v >= 3.5 ? 'bg-brand-gold' : 'bg-brand-maroon'
+        return '<div class="flex items-center justify-between mb-2"><span class="text-xs font-medium">' + sid + '</span><span class="text-xs font-bold">' + v.toFixed(1) + '</span></div>' +
+          '<div class="h-1.5 bg-[var(--border)] rounded-full mb-3 overflow-hidden"><div class="h-full rounded-full ' + barColor + ' transition-all duration-700 ease-out" style="width:' + pct + '%"></div></div>'
+      }).join('') || '<span class="text-text-tertiary">Sin datos</span>'
     })
-    document.getElementById('saber-period-tabs')?.addEventListener('click', function(e) {
-      if (e.target.dataset.bimestre) { saberBimestre = e.target.dataset.bimestre; loadSaberContent() }
+  }
+
+  function getCurrentBimester() {
+    var m = new Date().getMonth() + 1
+    return m <= 3 ? 'P1' : m <= 6 ? 'P2' : m <= 9 ? 'P3' : 'P4'
+  }
+
+  function loadNotices() {
+    apiFetch('/api/notices').then(function(data) {
+      var el = document.getElementById('notices-list')
+      var items = Array.isArray(data) ? data : (data.data || [])
+      if (!items.length) { el.innerHTML = 'Sin avisos recientes.'; return }
+      el.innerHTML = items.slice(0,4).map(function(n) {
+        var hasImg = n.archivo_url && n.archivo_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+        return '<div class="pb-3 mb-3 border-b border-border last:border-0">' +
+          '<strong class="text-xs">' + (n.titulo || '') + '</strong>' +
+          '<span class="block text-[10px] text-text-tertiary">' + (n.fecha || '') + '</span>' +
+          (hasImg ? '<img src="' + n.archivo_url + '" class="mt-2 max-h-32 rounded-lg object-cover cursor-pointer" onclick="window.open(this.src)">' : '') +
+          (n.archivo_url && !hasImg ? '<a href="' + n.archivo_url + '" target="_blank" class="inline-block mt-1 text-xs text-brand-maroon">Ver adjunto</a>' : '') +
+          '</div>'
+      }).join('')
     })
+  }
 
-    window.iniciarSimulacroSaber = function() {
-      window.VyntraToast?.info('Simulacro Saber en desarrollo')
-    }
-
-    // Period filter listeners
-    document.getElementById('period-filters')?.addEventListener('click', function(e) {
-      if (e.target.dataset.period) {
-        this.querySelectorAll('button').forEach(function(b){ b.removeAttribute('data-active') })
-        e.target.setAttribute('data-active', '')
-      }
-    })
-
-    // Schedule
-    function loadSchedule() {
-      apiFetch('/api/teacher/schedule').then(function(data) {
-        var el = document.getElementById('schedule-container')
-        if (!data || !data.days) { el.innerHTML = 'No hay horario disponible.'; return }
-        var weekdays = ['lunes','martes','miercoles','jueves','viernes']
-        var html = '<table class="w-full text-xs"><thead><tr class="text-text-tertiary"><th class="p-2 border-b border-border w-16">Hora</th>'
-        weekdays.forEach(function(d){ html += '<th class="p-2 text-center border-b border-border">' + d.charAt(0).toUpperCase() + d.slice(1) + '</th>' })
-        html += '</tr></thead><tbody>'
-        var hours = Array.isArray(data.hours) ? data.hours : (typeof data.hours === 'string' ? JSON.parse(data.hours||'[]') : [])
-        hours.forEach(function(h, hi) {
-          html += '<tr><td class="p-2 text-text-tertiary font-medium">' + (h.time || h.hour || ('H'+(hi+1))) + '</td>'
-          weekdays.forEach(function(d) {
-            html += '<td class="p-2 text-center border border-border/50">'
-            if (data.days[d] && data.days[d][hi]) html += '<div class="font-semibold">' + (data.days[d][hi].subject||'') + '</div>'
-            html += '</td>'
-          })
-          html += '</tr>'
-        })
-        el.innerHTML = html + '</tbody></table>'
+  function loadGrades() {
+    if (!studentId) return
+    apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function(gradesData) {
+      var grades = Array.isArray(gradesData) ? gradesData : (gradesData.data || [])
+      var tbody = document.getElementById('grades-table-body')
+      var subjectMap = {}
+      grades.forEach(function(g) {
+        var sid = g.subject_name || g.subject_id || 'General'
+        if (!subjectMap[sid]) subjectMap[sid] = {p1:[],p2:[],p3:[],p4:[],all:[]}
+        var p = g.period || 'P1'
+        if (subjectMap[sid][p.toLowerCase()]) subjectMap[sid][p.toLowerCase()].push(g.score)
+        subjectMap[sid].all.push(g.score)
       })
-    }
-
-    // Homework
-    var homeworkFile = null
-    function loadSubjects() {
-      apiFetch('/api/subjects').then(function(data) {
-        var sel = document.getElementById('hw-subject')
-        if (sel && Array.isArray(data)) { sel.innerHTML = '<option value="">Seleccionar...</option>' + data.map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>' }).join('') }
-      })
-    }
-    function loadHomeworkHistory() {
-      apiFetch('/api/students/' + studentId + '/homework').then(function(data) {
-        var el = document.getElementById('homework-history')
-        if (!Array.isArray(data) || !data.length) { el.innerHTML = 'Sin entregas registradas.'; return }
-        el.innerHTML = data.map(function(h) {
-          return '<div class="flex items-center justify-between py-2.5 border-b border-border last:border-0">' +
-            '<div><div class="text-xs font-medium">' + (h.title||'Tarea') + '</div><div class="text-[10px] text-text-tertiary">' + (h.subject||'') + '</div></div>' +
-            (h.file_url ? '<a href="' + h.file_url + '" target="_blank" class="text-xs text-brand-maroon">Ver</a>' : '') + '</div>'
-        }).join('')
-      })
-    }
-    document.getElementById('dropzoneArea')?.addEventListener('click', function() { document.getElementById('hw-file').click() })
-    document.getElementById('hw-file')?.addEventListener('change', function(e) {
-      homeworkFile = e.target.files[0]
-      document.getElementById('file-name-display').textContent = homeworkFile ? homeworkFile.name : ''
-    })
-    window.sendHomework = function() {
-      var fd = new FormData()
-      fd.append('subject_id', document.getElementById('hw-subject').value)
-      fd.append('title', document.getElementById('hw-title').value)
-      fd.append('comment', document.getElementById('hw-comment').value)
-      if (homeworkFile) fd.append('file', homeworkFile)
-      apiFetch('/api/students/' + studentId + '/homework', { method:'POST', body:fd }).then(function() {
-        window.VyntraToast?.success('Tarea enviada') || alert('Tarea enviada')
-        loadHomeworkHistory()
-      })
-    }
-
-    // Library
-    function loadLibrary() {
-      apiFetch('/api/subjects').then(function(data) {
-        var el = document.getElementById('library-grid')
-        if (!Array.isArray(data) || !data.length) { el.innerHTML = '<p class="col-span-full text-sm text-text-tertiary">No hay materias disponibles.</p>'; return }
-        el.innerHTML = data.map(function(s) {
-          return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 transition-all hover:-translate-y-1 hover:border-brand-gold/30">' +
-            '<div class="font-bold text-sm mb-1">' + s.name + '</div>' +
-            '<div class="text-xs text-text-secondary mb-3">' + (s.description || 'Materia escolar') + '</div>' +
-            (s.tutor_ai ? '<a href="' + s.tutor_ai + '" target="_blank" class="inline-block px-3 py-1 bg-brand-maroon/10 text-brand-maroon rounded-full text-[11px] font-semibold">Tutor IA</a>' : '') +
-            '</div>'
-        }).join('')
-      })
-    }
-
-    // Elections
-    function loadCandidates() {
-      apiFetch('/api/admin/candidates').then(function(data) {
-        var el = document.getElementById('candidates-list')
-        if (!Array.isArray(data) || !data.length) { el.innerHTML = '<div class="col-span-full text-center py-12 text-text-tertiary">No hay candidatos registrados.</div>'; return }
-        el.innerHTML = data.map(function(c) {
-          return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 text-center hover:border-brand-gold/30 transition-colors cursor-pointer" onclick="voteFor(\'' + c.id + '\')">' +
-            (c.photo_url ? '<img src="' + c.photo_url + '" class="w-14 h-14 rounded-full object-cover mx-auto mb-3">' : '<div class="w-14 h-14 rounded-full bg-brand-maroon/10 mx-auto mb-3 flex items-center justify-center text-xl font-bold text-brand-maroon">' + (c.name||'?').charAt(0) + '</div>') +
-            '<div class="font-bold text-sm">' + c.name + '</div>' +
-            '<div class="text-xs text-text-tertiary mt-1">' + (c.votes||0) + ' votos</div>' +
-            '<button class="mt-3 px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Votar</button></div>'
-        }).join('')
-      })
-    }
-    window.voteFor = async function(candId) {
-      try {
-        await fetch(apiUrl + '/api/vote', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({ candidate_id:candId, student_id:studentId }) })
-        window.VyntraToast?.success('Voto registrado') || alert('Voto registrado')
-        loadCandidates()
-      } catch(e) { window.VyntraToast?.error('Error al votar') }
-    }
-
-    // Profile
-    function loadRecentActivity() {
-      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=5').then(function(data) {
-        var el = document.getElementById('profile-timeline')
-        var grades = Array.isArray(data) ? data.slice(-5) : []
-        if (!grades.length) { el.innerHTML = 'Sin actividad reciente.'; return }
-        el.innerHTML = grades.reverse().map(function(g) {
-          return '<div class="flex items-center justify-between py-2.5 border-b border-border last:border-0">' +
-            '<div><div class="text-xs font-medium">' + (g.subject_name||'Materia') + '</div><div class="text-[10px] text-text-tertiary">' + (g.period||'') + '</div></div>' +
-            '<span class="font-bold text-xs ' + (g.score>=3.5?'text-success':'text-brand-danger') + '">' + parseFloat(g.score).toFixed(1) + '</span></div>'
-        }).join('')
-      })
-
-      document.getElementById('profile-name').textContent = userName
-      document.getElementById('profile-id').textContent = 'Código: ' + (studentId?.substring(0,12) || '--')
-      document.getElementById('profile-avatar-text').textContent = userName.charAt(0).toUpperCase()
-    }
-
-    // ── BOILERPLATE FUNCTIONS (preserved from original) ──
-    window.generarBoletinPDF = function() { window.VyntraToast?.info('Función PDF en desarrollo') }
-    window.intentarSalirManual = function() { document.getElementById('exam-modal').style.display = 'none' }
-
-    // ── INIT ──
-    loadWelcomeData()
-    loadNotices()
-    buildCalendar()
-
-    function buildCalendar() {
-      var now = new Date(), month = now.getMonth(), year = now.getFullYear()
-      var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-      document.getElementById('cal-month-label').textContent = months[month] + ' ' + year
-      var grid = document.getElementById('calGrid')
-      if (!grid) return
-      var firstDay = new Date(year, month, 1).getDay()
-      firstDay = firstDay === 0 ? 6 : firstDay - 1
-      var daysInMonth = new Date(year, month+1, 0).getDate()
-      for (var i = 0; i < firstDay; i++) grid.innerHTML += '<div class="text-xs py-1 text-text-tertiary/30"></div>'
-      for (var d = 1; d <= daysInMonth; d++) {
-        var isToday = d === now.getDate() && month === now.getMonth()
-        grid.innerHTML += '<div class="text-xs py-2 rounded-lg cursor-pointer font-medium ' + (isToday?'bg-brand-maroon text-white':'hover:bg-brand-gold/10') + '">' + d + '</div>'
-      }
-    }
-
-    // ── SECTION NAVIGATION SETUP ──
-    document.querySelectorAll('[data-section-id]').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        window.showSection(this.getAttribute('data-section-id'))
+      if (!Object.keys(subjectMap).length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-text-tertiary">Sin calificaciones registradas</td></tr>'; return }
+      tbody.innerHTML = Object.keys(subjectMap).map(function(sid) {
+        var d = subjectMap[sid]
+        function avg(arr) { return arr.length ? (arr.reduce(function(a,b){return a+b},0)/arr.length).toFixed(1) : '-' }
+        var overall = avg(d.all)
+        var status = parseFloat(overall) >= 4 ? 'Sobresaliente' : parseFloat(overall) >= 3.5 ? 'Aceptable' : 'En Riesgo'
+        var stColor = parseFloat(overall) >= 4 ? 'text-success' : parseFloat(overall) >= 3.5 ? 'text-brand-gold' : 'text-brand-danger'
+        return '<tr class="border-b border-border hover:bg-brand-gold/[0.02] transition-colors"><td class="py-2.5 px-2 font-medium text-xs">' + sid + '</td>' +
+          '<td class="py-2.5 px-2 text-center text-xs">' + avg(d.p1) + '</td><td class="py-2.5 px-2 text-center text-xs">' + avg(d.p2) + '</td><td class="py-2.5 px-2 text-center text-xs">' + avg(d.p3) + '</td><td class="py-2.5 px-2 text-center text-xs">' + avg(d.p4) + '</td>' +
+          '<td class="py-2.5 px-2 text-center font-bold text-xs">' + overall + '</td>' +
+          '<td class="py-2.5 px-2 text-center"><span class="text-[11px] font-semibold ' + stColor + '">' + status + '</span></td></tr>'
+      }).join('')
+      ;['p1','p2','p3','p4'].forEach(function(p,i) {
+        var bar = document.getElementById('bar-' + p)
+        var valEl = document.getElementById('bar-' + p + '-val')
+        if (!bar) { return }
+        var vals = []
+        Object.values(subjectMap).forEach(function(d) { vals.push.apply(vals, d[p] || []) })
+        var avg = vals.length ? vals.reduce(function(a,b){return a+b},0)/vals.length : 0
+        bar.style.height = Math.max((avg/5)*100, 2) + '%'
+        if (valEl) valEl.textContent = avg.toFixed(1)
       })
     })
+  }
 
-    // Hide all sections except inicio initially
-    document.querySelectorAll('[id^="sec-"]').forEach(function(s) {
-      if (s.id !== 'sec-inicio') s.style.display = 'none'
+  function loadChartData() {
+    if (!studentId) return
+    if (typeof Chart === 'undefined') { setTimeout(loadChartData, 500); return }
+    apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function(gradesData) {
+      var grades = Array.isArray(gradesData) ? gradesData : (gradesData.data || [])
+      var subjectMap = {}
+      grades.forEach(function(g) {
+        var sid = g.subject_name || g.subject_id || 'General'
+        if (!subjectMap[sid]) subjectMap[sid] = []
+        subjectMap[sid].push(parseFloat(g.score)||0)
+      })
+      var labels = Object.keys(subjectMap)
+      var values = labels.map(function(k){var v=subjectMap[k];return v.reduce(function(a,b){return a+b},0)/v.length})
+      var ctx = document.getElementById('myGradesChart'); if (!ctx) return
+      var existing = Chart.getChart(ctx)
+      if (existing) existing.destroy()
+      new Chart(ctx, {
+        type:'bar', data:{labels:labels,datasets:[{data:values,backgroundColor:['#6B1A1A','#8B2A2A','#A04040','#C06020','#D89030','#F5A623','#FFD166','#C08030'],borderRadius:6,borderSkipped:false}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'var(--text-secondary)'}},y:{min:0,max:5,ticks:{stepSize:1,color:'var(--text-tertiary)'}}}}
+      })
     })
-  })()
+  }
+
+  function loadExams() {
+    apiFetch('/api/exams?student_grade=' + encodeURIComponent(userGrade)).then(function(exams) {
+      var el = document.getElementById('available-exams')
+      var items = Array.isArray(exams) ? exams : (exams.data || [])
+      if (!items.length) { el.innerHTML = '<div class="text-center py-8 text-text-tertiary">No hay exámenes disponibles.</div>'; return }
+      el.innerHTML = items.map(function(ex) {
+        return '<div class="flex items-center justify-between p-4 border border-border rounded-xl mb-3 hover:border-brand-gold/30 transition-colors cursor-pointer" onclick="startExam(\'' + ex.id + '\',\'' + (ex.title||'') + '\',' + (ex.duration_minutes||30) + ')">' +
+          '<div><strong class="text-sm">' + (ex.title||'Examen') + '</strong><br><span class="text-xs text-text-tertiary">' + (ex.subject_name||'') + ' · ' + (ex.duration_minutes||30) + ' min</span></div>' +
+          '<span class="px-3 py-1.5 bg-brand-maroon text-white text-xs font-semibold rounded-lg">Iniciar</span></div>'
+      }).join('')
+    })
+  }
+
+  var saberArea = 'matematicas', saberBimestre = '1'
+  function loadSaberContent() {
+    var materials = {
+      matematicas:{1:'Álgebra básica, operaciones y ecuaciones lineales',2:'Funciones, gráficas y sistemas de ecuaciones',3:'Trigonometría y geometría analítica',4:'Cálculo diferencial y estadística'},
+      lenguaje:{1:'Comprensión lectora y gramática',2:'Análisis de textos narrativos',3:'Textos argumentativos y ensayos',4:'Literatura colombiana y universal'},
+      ciencias:{1:'Método científico y ecosistemas',2:'Química orgánica e inorgánica',3:'Física: mecánica y ondas',4:'Biología molecular y genética'},
+      sociales:{1:'Historia de Colombia precolombina',2:'Colonia e independencia',3:'Siglo XX y conflicto armado',4:'Geopolítica y economía global'},
+      ingles:{1:'Present simple, vocabulary',2:'Past tense, reading comprehension',3:'Conditionals, writing',4:'Advanced grammar, listening'},
+      icfes:{1:'Simulacro completo ICFES 1',2:'Simulacro completo ICFES 2',3:'Simulacro completo ICFES 3',4:'Simulacro completo ICFES 4'}
+    }
+    document.getElementById('saber-content').innerHTML = '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 mt-4">' +
+      '<h3 class="font-bold text-sm mb-2">' + saberArea.charAt(0).toUpperCase() + saberArea.slice(1) + ' — Bimestre ' + saberBimestre + '</h3>' +
+      '<p class="text-xs text-text-secondary">' + (materials[saberArea]?.[saberBimestre] || 'Contenido no disponible') + '</p>' +
+      '<div class="mt-4 flex gap-2"><button class="px-3 py-1.5 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="iniciarSimulacroSaber()">Estudiar Ahora</button></div></div>'
+  }
+  document.getElementById('saber-area-tabs')?.addEventListener('click', function(e) {
+    if (e.target.dataset.area) { saberArea = e.target.dataset.area; loadSaberContent() }
+  })
+  document.getElementById('saber-period-tabs')?.addEventListener('click', function(e) {
+    if (e.target.dataset.bimestre) { saberBimestre = e.target.dataset.bimestre; loadSaberContent() }
+  })
+  window.iniciarSimulacroSaber = function() { window.VyntraToast?.info('Simulacro Saber en desarrollo') }
+  document.getElementById('period-filters')?.addEventListener('click', function(e) {
+    if (e.target.dataset.period) {
+      this.querySelectorAll('button').forEach(function(b){ b.removeAttribute('data-active') })
+      e.target.setAttribute('data-active', '')
+    }
+  })
+
+  function loadSchedule() {
+    apiFetch('/api/teacher/schedule').then(function(data) {
+      var el = document.getElementById('schedule-container')
+      if (!data || !data.days) { el.innerHTML = 'No hay horario disponible.'; return }
+      var weekdays = ['lunes','martes','miercoles','jueves','viernes']
+      var html = '<table class="w-full text-xs"><thead><tr class="text-text-tertiary"><th class="p-2 border-b border-border w-16">Hora</th>'
+      weekdays.forEach(function(d){ html += '<th class="p-2 text-center border-b border-border">' + d.charAt(0).toUpperCase() + d.slice(1) + '</th>' })
+      html += '</tr></thead><tbody>'
+      var hours = Array.isArray(data.hours) ? data.hours : (typeof data.hours === 'string' ? JSON.parse(data.hours||'[]') : [])
+      hours.forEach(function(h, hi) {
+        html += '<tr><td class="p-2 text-text-tertiary font-medium">' + (h.time || h.hour || ('H'+(hi+1))) + '</td>'
+        weekdays.forEach(function(d) {
+          html += '<td class="p-2 text-center border border-border/50">'
+          if (data.days[d] && data.days[d][hi]) html += '<div class="font-semibold">' + (data.days[d][hi].subject||'') + '</div>'
+          html += '</td>'
+        })
+        html += '</tr>'
+      })
+      el.innerHTML = html + '</tbody></table>'
+    })
+  }
+
+  var homeworkFile = null
+  function loadSubjects() {
+    apiFetch('/api/subjects').then(function(data) {
+      var items = Array.isArray(data) ? data : (data.data || [])
+      var sel = document.getElementById('hw-subject')
+      if (sel) { sel.innerHTML = '<option value="">Seleccionar...</option>' + items.map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>' }).join('') }
+    })
+  }
+  function loadHomeworkHistory() {
+    apiFetch('/api/students/' + studentId + '/homework').then(function(data) {
+      var items = Array.isArray(data) ? data : (data.data || [])
+      var el = document.getElementById('homework-history')
+      if (!items.length) { el.innerHTML = 'Sin entregas registradas.'; return }
+      el.innerHTML = items.map(function(h) {
+        return '<div class="flex items-center justify-between py-2.5 border-b border-border last:border-0">' +
+          '<div><div class="text-xs font-medium">' + (h.title||'Tarea') + '</div><div class="text-[10px] text-text-tertiary">' + (h.subject||'') + '</div></div>' +
+          (h.file_url ? '<a href="' + h.file_url + '" target="_blank" class="text-xs text-brand-maroon">Ver</a>' : '') + '</div>'
+      }).join('')
+    })
+  }
+  document.getElementById('dropzoneArea')?.addEventListener('click', function() { document.getElementById('hw-file').click() })
+  document.getElementById('hw-file')?.addEventListener('change', function(e) {
+    homeworkFile = e.target.files[0]
+    document.getElementById('file-name-display').textContent = homeworkFile ? homeworkFile.name : ''
+  })
+  window.sendHomework = function() {
+    var fd = new FormData()
+    fd.append('subject_id', document.getElementById('hw-subject').value)
+    fd.append('title', document.getElementById('hw-title').value)
+    fd.append('comment', document.getElementById('hw-comment').value)
+    if (homeworkFile) fd.append('file', homeworkFile)
+    apiFetch('/api/students/' + studentId + '/homework', { method:'POST', body:fd }).then(function() {
+      window.VyntraToast?.success('Tarea enviada') || alert('Tarea enviada')
+      loadHomeworkHistory()
+    })
+  }
+
+  function loadLibrary() {
+    apiFetch('/api/subjects').then(function(data) {
+      var items = Array.isArray(data) ? data : (data.data || [])
+      var el = document.getElementById('library-grid')
+      if (!items.length) { el.innerHTML = '<p class="col-span-full text-sm text-text-tertiary">No hay materias disponibles.</p>'; return }
+      el.innerHTML = items.map(function(s) {
+        return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 transition-all hover:-translate-y-1 hover:border-brand-gold/30">' +
+          '<div class="font-bold text-sm mb-1">' + s.name + '</div>' +
+          '<div class="text-xs text-text-secondary mb-3">' + (s.description || 'Materia escolar') + '</div>' +
+          (s.tutor_ai ? '<a href="' + s.tutor_ai + '" target="_blank" class="inline-block px-3 py-1 bg-brand-maroon/10 text-brand-maroon rounded-full text-[11px] font-semibold">Tutor IA</a>' : '') +
+          '</div>'
+      }).join('')
+    })
+  }
+  function loadCandidates() {
+    apiFetch('/api/admin/candidates').then(function(data) {
+      var items = Array.isArray(data) ? data : (data.data || [])
+      var el = document.getElementById('candidates-list')
+      if (!items.length) { el.innerHTML = '<div class="col-span-full text-center py-12 text-text-tertiary">No hay candidatos registrados.</div>'; return }
+      el.innerHTML = items.map(function(c) {
+        return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 text-center hover:border-brand-gold/30 transition-colors cursor-pointer" onclick="voteFor(\'' + c.id + '\')">' +
+          (c.photo_url ? '<img src="' + c.photo_url + '" class="w-14 h-14 rounded-full object-cover mx-auto mb-3">' : '<div class="w-14 h-14 rounded-full bg-brand-maroon/10 mx-auto mb-3 flex items-center justify-center text-xl font-bold text-brand-maroon">' + (c.name||'?').charAt(0) + '</div>') +
+          '<div class="font-bold text-sm">' + c.name + '</div>' +
+          '<div class="text-xs text-text-tertiary mt-1">' + (c.votes||0) + ' votos</div>' +
+          '<button class="mt-3 px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Votar</button></div>'
+      }).join('')
+    })
+  }
+  window.voteFor = async function(candId) {
+    try {
+      await fetch(apiUrl + '/api/vote', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({ candidate_id:candId, student_id:studentId }) })
+      window.VyntraToast?.success('Voto registrado') || alert('Voto registrado')
+      loadCandidates()
+    } catch(e) { window.VyntraToast?.error('Error al votar') }
+  }
+
+  function loadRecentActivity() {
+    apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=5').then(function(data) {
+      var items = Array.isArray(data) ? data : (data.data || [])
+      var el = document.getElementById('profile-timeline')
+      var grades = items.slice(-5)
+      if (!grades.length) { el.innerHTML = 'Sin actividad reciente.'; return }
+      el.innerHTML = grades.reverse().map(function(g) {
+        return '<div class="flex items-center justify-between py-2.5 border-b border-border last:border-0">' +
+          '<div><div class="text-xs font-medium">' + (g.subject_name||'Materia') + '</div><div class="text-[10px] text-text-tertiary">' + (g.period||'') + '</div></div>' +
+          '<span class="font-bold text-xs ' + (g.score>=3.5?'text-success':'text-brand-danger') + '">' + parseFloat(g.score).toFixed(1) + '</span></div>'
+      }).join('')
+    })
+    document.getElementById('profile-name').textContent = userName
+    document.getElementById('profile-id').textContent = 'Código: ' + (studentId?.substring(0,12) || '--')
+    document.getElementById('profile-avatar-text').textContent = userName.charAt(0).toUpperCase()
+  }
+
+  window.generarBoletinPDF = function() { window.VyntraToast?.info('Función PDF en desarrollo') }
+  window.intentarSalirManual = function() { document.getElementById('exam-modal').style.display = 'none' }
+
+  loadWelcomeData()
+  loadNotices()
+  buildCalendar()
+
+  function buildCalendar() {
+    var now = new Date(), month = now.getMonth(), year = now.getFullYear()
+    var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    document.getElementById('cal-month-label').textContent = months[month] + ' ' + year
+    var grid = document.getElementById('calGrid')
+    if (!grid) return
+    var firstDay = new Date(year, month, 1).getDay()
+    firstDay = firstDay === 0 ? 6 : firstDay - 1
+    var daysInMonth = new Date(year, month+1, 0).getDate()
+    for (var i = 0; i < firstDay; i++) grid.innerHTML += '<div class="text-xs py-1 text-text-tertiary/30"></div>'
+    for (var d = 1; d <= daysInMonth; d++) {
+      var isToday = d === now.getDate() && month === now.getMonth()
+      grid.innerHTML += '<div class="text-xs py-2 rounded-lg cursor-pointer font-medium ' + (isToday?'bg-brand-maroon text-white':'hover:bg-brand-gold/10') + '">' + d + '</div>'
+    }
+  }
+
+  document.querySelectorAll('[data-section-id]').forEach(function(btn) {
+    btn.addEventListener('click', function() { window.showSection(this.getAttribute('data-section-id')) })
+  })
+  document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') s.style.display = 'none' })
+})()
 </script>

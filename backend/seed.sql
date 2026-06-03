@@ -235,14 +235,44 @@ CREATE TABLE IF NOT EXISTS public.mobile_push_tokens (
 
 CREATE TABLE IF NOT EXISTS public.conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
-  role VARCHAR(20) NOT NULL,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('student', 'teacher', 'admin')),
   messages JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_conversations_user_role ON public.conversations(user_id, role);
+CREATE INDEX IF NOT EXISTS idx_conversations_updated ON public.conversations(updated_at DESC);
+
+CREATE OR REPLACE FUNCTION public.update_conversations_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_conversations_updated ON public.conversations;
+CREATE TRIGGER trg_conversations_updated
+    BEFORE UPDATE ON public.conversations
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_conversations_timestamp();
+
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS conversations_self ON public.conversations;
+CREATE POLICY conversations_self ON public.conversations
+    FOR ALL
+    USING (user_id = auth.uid()::uuid);
+
+DROP POLICY IF EXISTS conversations_admin ON public.conversations;
+CREATE POLICY conversations_admin ON public.conversations
+    FOR ALL
+    USING (EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid()::uuid AND role IN ('admin', 'rector')
+    ));
 
 CREATE TABLE IF NOT EXISTS public.guides (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

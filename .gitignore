@@ -1,11 +1,24 @@
 node_modules/
 dist/
 .env
+.env.local
 __pycache__/
 *.pyc
 *.pyo
 .astro/
 .vercel/
 .netlify/
+venv/
+.venv/
+*.egg-info/
+*.egg/
+.DS_Store
+*.log
+.idea/
+*.swp
+*.swo
+*~
+test-results/
+playwright-report/
 backend/_secrets/
 

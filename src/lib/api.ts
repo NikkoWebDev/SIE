@@ -1,114 +1,60 @@
-// ════════════════════════════════════════════════════════════════
-// VYNTRA SOLARIS — Unified API Client
-// ════════════════════════════════════════════════════════════════
+const API = (import.meta as any).env?.PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://localhost:8000'
 
-const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
-
-function apiUrl(): string {
-  return (API_BASE as string).replace(/\/+$/, '')
+function getCookie(name: string): string {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+  return match ? decodeURIComponent(match[2]) : ''
 }
 
-function getToken(): string {
-  try {
-    return localStorage.getItem('access_token') || ''
-  } catch {
-    return ''
+export function apiFetch(path: string, opts?: RequestInit): Promise<any> {
+  const csrf = getCookie('csrf_token')
+  const url = `${API}/${path.replace(/^\/+/, '')}`
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (csrf) headers['X-CSRF-Token'] = csrf
+  const merged: RequestInit = {
+    headers,
+    credentials: 'include',
+    ...opts,
+  } as any
+  if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) {
+    merged.body = JSON.stringify(merged.body)
   }
+  if ((merged.headers as any)['Content-Type'] === 'application/json' && merged.body instanceof FormData) {
+    delete (merged.headers as any)['Content-Type']
+  }
+  return fetch(url, merged).then(r => {
+    if (r.status === 401) { localStorage.clear(); window.location.href = '/login'; return {} }
+    return r.json().catch(() => ({}))
+  })
 }
 
-function authHeaders(contentType = 'application/json'): Record<string, string> {
-  const token = getToken()
-  const headers: Record<string, string> = {
-    'Content-Type': contentType,
-  }
-  // Send Authorization header if token exists (for cookie auth, backend reads cookie as fallback)
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
-  return headers
+export function getToken(): string | null {
+  return null // httpOnly cookie — browser sends it automatically
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (res.status === 401) {
-    typeof localStorage !== 'undefined' && localStorage.clear()
-    window.location.href = '/login'
-    throw new Error('Sesión expirada')
-  }
-  if (res.status === 429) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.detail || 'Demasiadas solicitudes. Intenta de nuevo en un minuto.')
-  }
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.detail || err.mensaje || err.error || `Error ${res.status}`)
-  }
-  return res.json()
+export function getUserId(): string | null {
+  return localStorage.getItem('profile_id') || localStorage.getItem('userId')
 }
 
-export const api = {
-  get: async <T>(path: string): Promise<T> => {
-    const res = await fetch(`${apiUrl()}${path}`, {
-      headers: authHeaders(),
-      credentials: 'include',
-    })
-    return handleResponse<T>(res)
-  },
+export function getUserRole(): string {
+  return (localStorage.getItem('userRole') || '').toUpperCase()
+}
 
-  post: async <T>(path: string, body?: unknown): Promise<T> => {
-    const res = await fetch(`${apiUrl()}${path}`, {
-      method: 'POST',
-      headers: authHeaders(),
-      credentials: 'include',
-      body: body ? JSON.stringify(body) : undefined,
-    })
-    return handleResponse<T>(res)
-  },
+export function getUserName(): string {
+  return localStorage.getItem('userName') || 'Usuario'
+}
 
-  put: async <T>(path: string, body?: unknown): Promise<T> => {
-    const res = await fetch(`${apiUrl()}${path}`, {
-      method: 'PUT',
-      headers: authHeaders(),
-      credentials: 'include',
-      body: body ? JSON.stringify(body) : undefined,
-    })
-    return handleResponse<T>(res)
-  },
+export function getUserGrade(): string {
+  return localStorage.getItem('userGrade') || ''
+}
 
-  patch: async <T>(path: string, body?: unknown): Promise<T> => {
-    const res = await fetch(`${apiUrl()}${path}`, {
-      method: 'PATCH',
-      headers: authHeaders(),
-      credentials: 'include',
-      body: body ? JSON.stringify(body) : undefined,
-    })
-    return handleResponse<T>(res)
-  },
+export function authRedirect(): boolean {
+  const hasSession = !!localStorage.getItem('userId')
+  if (!hasSession) { window.location.href = '/login'; return false }
+  return true
+}
 
-  delete: async <T>(path: string): Promise<T> => {
-    const res = await fetch(`${apiUrl()}${path}`, {
-      method: 'DELETE',
-      headers: authHeaders(),
-      credentials: 'include',
-    })
-    return handleResponse<T>(res)
-  },
-
-  upload: async <T>(path: string, formData: FormData): Promise<T> => {
-    const token = getToken()
-    const headers: Record<string, string> = {}
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-    const res = await fetch(`${apiUrl()}${path}`, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: formData,
-    })
-    return handleResponse<T>(res)
-  },
-
-  get raw() {
-    return apiUrl()
-  },
+export function roleCheck(allowed: string[]): boolean {
+  const role = getUserRole()
+  if (!allowed.includes(role)) { window.location.href = '/'; return false }
+  return true
 }
