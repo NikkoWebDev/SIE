@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import html
 import json
 import logging
@@ -19,6 +20,9 @@ from supabase import Client
 
 from config.database import get_db
 from dependencies import admin_dependency, auth_dependency, teacher_dependency
+from routers.guardrails import guardrails
+from routers.cache import CACHEABLE_TOOLS, tool_cache
+from routers.ai_search import search_materials as _tool_search_materials
 
 logger = logging.getLogger("siee.ai_agent")
 router = APIRouter(prefix="/api/ai", tags=["ai"])
@@ -32,6 +36,9 @@ TOOL_RESULT_MAX_CHARS = 2000
 TOKEN_BUDGET_MAX = 12000
 RETRY_MAX_ATTEMPTS = 2
 RETRY_BASE_DELAY = 1.0
+
+CIRCUIT_BREAKER_MAX_ERRORS = 3
+ITERATION_TIMEOUT_SECONDS = 45
 
 FALLBACK_MODEL = "openrouter/auto"
 
@@ -192,6 +199,11 @@ def _sanitize_output(text: str) -> str:
     return html.escape(text)
 
 
+async def _stream_error(message: str) -> AsyncGenerator[str, None]:
+    yield f"data: {json.dumps({'error': message})}\n\n"
+    yield "data: [DONE]\n\n"
+
+
 def _get_available_for_role(role: str) -> list[dict[str, str]]:
     tools = [
         {
@@ -224,6 +236,11 @@ def _get_available_for_role(role: str) -> list[dict[str, str]]:
             "description": "Obtiene los materiales educativos (guías PDF, enlaces, markdown) asociados a una materia y curso específicos. Incluye contenido generado por IA.",
             "parameters": {"subject_name": {"type": "string", "description": "Nombre exacto de la materia"}, "grade": {"type": "string", "description": "Curso (ej: 11-A)"}},
         },
+        {
+            "name": "search_materials",
+            "description": "Busca materiales educativos y guías por texto. Útil cuando el estudiante pregunta sobre un tema específico (ej: 'fracciones', 'células', 'revolución industrial') y no sabes qué materia o curso es. Devuelve fragmentos relevantes con enlaces.",
+            "parameters": {"query": {"type": "string", "description": "Término de búsqueda (mínimo 3 caracteres)"}, "max_results": {"type": "integer", "description": "Máximo de resultados (1-10, default 5)"}},
+        },
     ]
     if role == "admin":
         tools.append({
@@ -235,6 +252,11 @@ def _get_available_for_role(role: str) -> list[dict[str, str]]:
             "name": "get_all_students_financial",
             "description": "Obtiene la lista completa de estudiantes con su estado financiero detallado: meses en mora, override, saldo pendiente y estado actual (AL_DIA / EN_MORA).",
             "parameters": {},
+        })
+        tools.append({
+            "name": "run_sql_query",
+            "description": "Ejecuta una consulta SQL de SOLO LECTURA (SELECT) sobre la base de datos. Solo para administradores. Tablas permitidas: profiles, subjects, grades, student_metadata, class_materials, guides, notices, exams, exam_progress, risk_alerts. Útil para responder preguntas que las herramientas existentes no cubren. LIMITA los resultados a 100 filas.",
+            "parameters": {"query": {"type": "string", "description": "Consulta SELECT SQL válida. Solo SELECT. Máximo 500 caracteres."}},
         })
     return tools
 
@@ -361,13 +383,20 @@ async def _tool_get_admin_stats(db: Client, args: dict[str, Any], user_id: str) 
 
 async def _tool_get_all_students_financial(db: Client, args: dict[str, Any], user_id: str) -> str:
     result = db.table("student_metadata").select("profile_id, months_in_arrears, financial_override, total_balance, current_status").execute()
+    if not result.data:
+        return json.dumps({"total": 0, "paid": 0, "unpaid": 0, "students": []}, ensure_ascii=False)
+    profile_ids = [m.get("profile_id") for m in result.data if m.get("profile_id")]
+    profile_map = {}
+    if profile_ids:
+        profiles = db.table("profiles").select("id, fullname, login_credential").in_("id", profile_ids).execute()
+        profile_map = {p["id"]: p for p in profiles.data}
     students = []
     for m in result.data:
-        p = db.table("profiles").select("fullname, login_credential").eq("id", m.get("profile_id")).execute()
-        name = p.data[0].get("fullname", "") if p.data else ""
+        pid = m.get("profile_id")
+        p = profile_map.get(pid) if pid else None
         students.append({
-            "profile_id": m.get("profile_id"),
-            "fullname": name,
+            "profile_id": pid,
+            "fullname": p.get("fullname", "") if p else "",
             "months_in_arrears": m.get("months_in_arrears", 0),
             "financial_override": m.get("financial_override", False),
             "total_balance": float(m.get("total_balance", 0)),
@@ -402,6 +431,42 @@ async def _tool_get_subject_materials(db: Client, args: dict[str, Any], user_id:
     }, ensure_ascii=False)
 
 
+async def _tool_run_sql_query(db: Client, args: dict[str, Any], user_id: str) -> str:
+    if os.getenv("ENABLE_RAW_SQL_QUERIES", "").lower() not in ("true", "1", "yes"):
+        return json.dumps({"error": "La ejecución de SQL directo está deshabilitada por seguridad."}, ensure_ascii=False, default=str)
+    query = args.get("query", "").strip()
+    query_lower = query.strip().lower()
+    if not query_lower.startswith("select"):
+        return json.dumps({"error": "Solo se permiten consultas SELECT."}, ensure_ascii=False, default=str)
+    if query_lower.count(";") > 1:
+        return json.dumps({"error": "Solo se permite una consulta a la vez."}, ensure_ascii=False, default=str)
+    if len(query) > 500:
+        return json.dumps({"error": "Consulta demasiado larga (máximo 500 caracteres)."}, ensure_ascii=False, default=str)
+    allowed_tables = {"profiles", "subjects", "grades", "student_metadata", "class_materials", "guides", "notices", "exams", "exam_progress", "risk_alerts", "conversations"}
+    table_refs = {t for t in allowed_tables if t in query_lower}
+    if not table_refs:
+        return json.dumps({"error": "La consulta no referencia ninguna tabla permitida."}, ensure_ascii=False, default=str)
+
+    # Block dangerous patterns regardless
+    dangerous = re.search(r'(drop|truncate|delete|insert|update|alter|create|grant|revoke|exec|execute|call|fetch|copy)\s', query_lower, re.I)
+    if dangerous:
+        return json.dumps({"error": "Operación no permitida."}, ensure_ascii=False, default=str)
+
+    # Use parameterized query via Supabase RPC if available, otherwise deny
+    try:
+        result = db.rpc("run_readonly_query", {"query_text": query}).execute()
+        data = result.data if hasattr(result, 'data') else result
+        if isinstance(data, list):
+            if len(data) > 100:
+                data = data[:100]
+                return json.dumps({"count": len(data), "truncated": True, "rows": data}, ensure_ascii=False, default=str)
+            return json.dumps({"count": len(data), "rows": data}, ensure_ascii=False, default=str)
+        return json.dumps({"result": str(data)[:2000]}, ensure_ascii=False, default=str)
+    except Exception as e:
+        logger.error("sql query error (rpc fallback): %s", e)
+        return json.dumps({"error": f"Error al ejecutar la consulta: {str(e)[:150]}"}, ensure_ascii=False, default=str)
+
+
 TOOL_FUNCTIONS = {
     "get_student_grades_summary": _tool_get_student_grades_summary,
     "get_financial_status": _tool_get_financial_status,
@@ -411,14 +476,56 @@ TOOL_FUNCTIONS = {
     "get_admin_stats": _tool_get_admin_stats,
     "get_all_students_financial": _tool_get_all_students_financial,
     "get_subject_materials": _tool_get_subject_materials,
+    "search_materials": _tool_search_materials,
+    "run_sql_query": _tool_run_sql_query,
 }
+
+
+def _build_user_context(role: str, user_id: str) -> str:
+    """Auto-build user context from database when none is provided by the client."""
+    try:
+        db = _get_db()
+        parts = []
+        if role == "student":
+            grades = db.table("grades").select("score").eq("student_id", user_id).execute()
+            if grades.data:
+                scores = [float(g["score"]) for g in grades.data]
+                avg = sum(scores) / len(scores)
+                at_risk = sum(1 for s in scores if s < 3.5)
+                parts.append(f"Promedio actual: {avg:.1f}/5.0. Materias en riesgo: {at_risk}.")
+            meta = db.table("student_metadata").select("current_status, months_in_arrears, financial_override").eq("profile_id", user_id).execute()
+            if meta.data and meta.data[0].get("current_status"):
+                parts.append(f"Estado financiero: {meta.data[0]['current_status']}.")
+        elif role == "teacher":
+            risk = db.table("grades").select("student_id, score").execute()
+            score_map: dict[str, list[float]] = {}
+            for g in risk.data:
+                sid = g.get("student_id")
+                if sid:
+                    score_map.setdefault(sid, []).append(float(g["score"]))
+            risk_count = sum(1 for s in score_map.values() if (sum(s) / len(s)) < 3.5)
+            parts.append(f"Estudiantes en riesgo académico: aproximadamente {risk_count}.")
+        elif role == "admin":
+            profiles = db.table("profiles").select("role").execute()
+            total_students = sum(1 for p in profiles.data if p.get("role") == "student")
+            total_teachers = sum(1 for p in profiles.data if p.get("role") == "teacher")
+            parts.append(f"Total estudiantes: {total_students}. Total docentes: {total_teachers}.")
+            meta = db.table("student_metadata").select("current_status").execute()
+            en_mora = sum(1 for m in meta.data if m.get("current_status") == "EN_MORA")
+            al_dia = len(meta.data) - en_mora
+            parts.append(f"Al día: {al_dia}. En mora: {en_mora}.")
+        return " | ".join(parts) if parts else ""
+    except Exception as e:
+        logger.debug("auto-build context error: %s", e)
+        return ""
 
 
 def _build_messages(role: str, user_message: str, context: str, user_id: str) -> list[dict[str, str]]:
     system_prompt = SYSTEM_PROMPTS.get(role, SYSTEM_PROMPTS["student"])
     messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
-    if context:
-        messages.append({"role": "system", "content": f"Datos del usuario:\n{context}"})
+    resolved_context = context or _build_user_context(role, user_id)
+    if resolved_context:
+        messages.append({"role": "system", "content": f"Datos del usuario:\n{resolved_context}"})
     history = _load_conversation(role, user_id)
     for msg in history[-MAX_HISTORY:]:
         messages.append(msg)
@@ -495,7 +602,7 @@ async def _call_openrouter_with_retry(
     raise HTTPException(status_code=502, detail="Error de conexión con el asistente después de reintentos")
 
 
-async def _execute_tool_call(db: Client, tool_call: dict[str, Any], user_id: str) -> str:
+async def _execute_tool_call(db: Client, tool_call: dict[str, Any], user_id: str, role: str = "student") -> str:
     func_name = tool_call.get("function", {}).get("name", "")
     t0 = time.time()
     try:
@@ -503,6 +610,14 @@ async def _execute_tool_call(db: Client, tool_call: dict[str, Any], user_id: str
         args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
     except json.JSONDecodeError:
         args = {}
+    guard_result = guardrails.check_tool_call(func_name, args, role)
+    if guard_result:
+        logger.warning("tool guardrail blocked %s by user=%s role=%s: %s", func_name, user_id, role, guard_result)
+        return json.dumps({"error": guard_result})
+    cached = tool_cache.get(func_name, user_id, args)
+    if cached is not None:
+        logger.info("tool cache hit %s user=%s", func_name, user_id)
+        return cached
     func = TOOL_FUNCTIONS.get(func_name)
     if not func:
         logger.warning("unknown tool called: %s by user=%s", func_name, user_id)
@@ -511,6 +626,8 @@ async def _execute_tool_call(db: Client, tool_call: dict[str, Any], user_id: str
         result = await func(db, args, user_id)
         elapsed = time.time() - t0
         logger.info("tool=%s user=%s elapsed=%.2fs result_len=%d", func_name, user_id, elapsed, len(result))
+        if func_name in CACHEABLE_TOOLS:
+            tool_cache.set(func_name, user_id, args, result)
         # Track usage
         if user_id not in tool_usage_counters:
             tool_usage_counters[user_id] = {}
@@ -548,6 +665,7 @@ async def _stream_with_react(
     iteration = 0
     current_messages = list(payload["messages"])
     used_fallback = False
+    consecutive_errors = 0
 
     while iteration < REACT_MAX_ITERATIONS:
         iteration += 1
@@ -556,34 +674,61 @@ async def _stream_with_react(
         current_payload["stream"] = True
 
         try:
-            resp = await _call_openrouter_with_retry(api_key, current_payload, headers)
-        except HTTPException as e:
-            logger.error("OpenRouter call failed req=%s iter=%s: %s", request_id, iteration, e.detail)
+            resp = await asyncio.wait_for(
+                _call_openrouter_with_retry(api_key, current_payload, headers),
+                timeout=ITERATION_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            consecutive_errors += 1
+            logger.error("timeout req=%s iter=%s consecutive=%d", request_id, iteration, consecutive_errors)
+            if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                yield f"data: {json.dumps({'error': 'El asistente no está respondiendo. Intenta de nuevo más tarde.'})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
             if iteration == 1:
+                yield f"data: {json.dumps({'error': 'El asistente tardó demasiado. Reintentando...'})}\n\n"
+            continue
+        except HTTPException as e:
+            consecutive_errors += 1
+            logger.error("OpenRouter call failed req=%s iter=%s: %s", request_id, iteration, e.detail)
+            if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
                 yield f"data: {json.dumps({'error': 'Error de conexión con el asistente. Intenta de nuevo.'})}\n\n"
                 yield "data: [DONE]\n\n"
-            return
+                return
+            if iteration == 1:
+                yield f"data: {json.dumps({'error': 'Error de conexión con el asistente. Reintentando...'})}\n\n"
+            continue
 
         if resp.status_code != 200:
+            consecutive_errors += 1
+            if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                yield f"data: {json.dumps({'error': 'Error del asistente después de múltiples intentos.'})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
             # Try fallback model
             if not used_fallback:
                 used_fallback = True
                 logger.info("retrying with fallback model req=%s iter=%s", request_id, iteration)
                 current_payload["model"] = FALLBACK_MODEL
                 try:
-                    resp = await _call_openrouter_with_retry(api_key, current_payload, headers)
-                except HTTPException as e:
-                    logger.error("fallback also failed req=%s: %s", request_id, e.detail)
-                    if iteration == 1:
+                    resp = await asyncio.wait_for(
+                        _call_openrouter_with_retry(api_key, current_payload, headers),
+                        timeout=ITERATION_TIMEOUT_SECONDS,
+                    )
+                except (asyncio.TimeoutError, HTTPException) as e:
+                    logger.error("fallback also failed req=%s iter=%s: %s", request_id, iteration, e)
+                    if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
                         yield f"data: {json.dumps({'error': 'Error del asistente. Intenta de nuevo más tarde.'})}\n\n"
                         yield "data: [DONE]\n\n"
-                    return
+                        return
+                    continue
                 if resp.status_code != 200:
                     logger.error("OpenRouter+fallback error req=%s status=%s", request_id, resp.status_code)
-                    if iteration == 1:
+                    if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
                         yield f"data: {json.dumps({'error': 'Error del asistente. Intenta de nuevo más tarde.'})}\n\n"
                         yield "data: [DONE]\n\n"
-                    return
+                        return
+                    continue
             else:
                 logger.error("OpenRouter error req=%s status=%s", request_id, resp.status_code)
                 if iteration == 1:
@@ -591,8 +736,10 @@ async def _stream_with_react(
                     yield "data: [DONE]\n\n"
                 return
 
+        consecutive_errors = 0
         assistant_content = ""
         tool_calls_buffer: dict[int, dict[str, Any]] = {}
+        tool_call_names: list[str] = []
 
         async for line in resp.aiter_lines():
             if not line.startswith("data: "):
@@ -624,6 +771,8 @@ async def _stream_with_react(
                     idx = tc.get("index", 0)
                     if idx not in tool_calls_buffer:
                         tool_calls_buffer[idx] = {"id": tc.get("id", f"call_{idx}"), "type": "function", "function": {"name": "", "arguments": ""}}
+                        if tc.get("function", {}).get("name"):
+                            tool_call_names.append(tc["function"]["name"])
                     buf = tool_calls_buffer[idx]
                     if tc.get("id"):
                         buf["id"] = tc["id"]
@@ -635,6 +784,8 @@ async def _stream_with_react(
                             buf["function"]["arguments"] += fn["arguments"]
 
             if finish_reason == "tool_calls" or (finish_reason == "stop" and tool_calls_buffer):
+                if tool_call_names and iteration == 1:
+                    yield f"data: {json.dumps({'tool_status': f'Consultando datos: {", ".join(tool_call_names)}'})}\n\n"
                 current_messages.append({"role": "assistant", "content": assistant_content or None})
                 tool_calls_list = list(tool_calls_buffer.values())
                 current_messages[-1]["tool_calls"] = [
@@ -642,13 +793,15 @@ async def _stream_with_react(
                     for tc in tool_calls_list
                 ]
                 for tc in tool_calls_list:
-                    tool_result = await _execute_tool_call(db, tc, user_id)
+                    tool_name = tc["function"]["name"]
+                    yield f"data: {json.dumps({'tool_status': f'Consultando {tool_name}...'})}\n\n"
+                    tool_result = await _execute_tool_call(db, tc, user_id, role)
                     current_messages.append({
                         "role": "tool",
                         "tool_call_id": tc["id"],
                         "content": tool_result,
                     })
-                    logger.info("tool=%s user=%s req=%s result_len=%d", tc["function"]["name"], user_id, request_id, len(tool_result))
+                    logger.info("tool=%s user=%s req=%s result_len=%d", tool_name, user_id, request_id, len(tool_result))
                 break
         else:
             if iteration == 1 and not full_assistant_text and not assistant_content:
@@ -658,6 +811,7 @@ async def _stream_with_react(
         if not tool_calls_buffer:
             break
 
+    guardrails.check_output(full_assistant_text)
     yield "data: [DONE]\n\n"
     if full_assistant_text.strip():
         history = _load_conversation(role, user_id)
@@ -726,6 +880,12 @@ def _create_chat_handler(role: str):
     async def handler(req: ChatRequest, user_id: str) -> StreamingResponse:
         request_id = uuid.uuid4().hex[:12]
         logger.info("chat req=%s role=%s user=%s msg_len=%d", request_id, role, user_id, len(req.message))
+        guard_result = guardrails.check_input(req.message, role)
+        if guard_result:
+            return StreamingResponse(
+                _stream_error(guard_result),
+                media_type="text/event-stream",
+            )
         _check_rate_limit(user_id)
         api_key = _get_api_key(role)
         messages = _build_messages(role, req.message, req.context, user_id)

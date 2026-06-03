@@ -1,252 +1,311 @@
 ---
-import '../styles/theme.css'
-const API_BASE = import.meta.env.PUBLIC_API_URL || "http://localhost:8000"
+import BaseLayout from '@layouts/BaseLayout.astro'
 ---
 
-<!doctype html>
-<html lang="es-CO">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>VYNTRA · Plataforma Académica</title>
-  <meta name="description" content="Plataforma académica VYNTRA — Tecnología educativa, ABP, y analítica en tiempo real. Sogamoso, Boyacá, Colombia." />
-  <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://colegiociudaddelsol.edu.co" />
-  <meta property="og:title" content="VYNTRA · Plataforma Académica" />
-  <meta property="og:description" content="Plataforma académica VYNTRA — Tecnología educativa, ABP, y analítica en tiempo real. Sogamoso, Boyacá, Colombia." />
-  <meta property="og:url" content="https://colegiociudaddelsol.edu.co" />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="VYNTRA Academic" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="VYNTRA · Plataforma Académica" />
-  <meta name="twitter:description" content="Plataforma académica VYNTRA — Tecnología educativa, ABP, y analítica en tiempo real. Sogamoso, Boyacá, Colombia." />
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "EducationalOrganization",
-      "name": "Colegio Técnico Ciudad del Sol",
-      "alternateName": "VYNTRA Academic",
-      "url": "https://colegiociudaddelsol.edu.co",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Sogamoso",
-        "addressRegion": "Boyacá",
-        "addressCountry": "CO"
-      }
-    }
-  </script>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <script is:inline>
-    (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
-  </script>
-  <style>
-    .hero-orb{position:absolute;width:50vmin;height:50vmin;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(128,0,0,.06) 0%,rgba(253,192,3,.03) 30%,transparent 60%);transition:all .8s var(--ease-out)}
-    @keyframes float{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-52%)}}
-    .hero-orb{animation:float 6s ease-in-out infinite}
-    .hero-grid{position:absolute;inset:0;background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse 60% 50% at 50% 50%,black 20%,transparent 70%)}
-    .stagger>*{opacity:0;transform:translateY(16px);animation:fadeUp .6s var(--ease-out) forwards}
-    .stagger>*:nth-child(1){animation-delay:.1s}
-    .stagger>*:nth-child(2){animation-delay:.25s}
-    .stagger>*:nth-child(3){animation-delay:.4s}
-    .stagger>*:nth-child(4){animation-delay:.55s}
-    .stagger>*:nth-child(5){animation-delay:.7s}
-    .stagger>*:nth-child(6){animation-delay:.85s}
-    @media(min-width:768px){#hero-section{padding:6rem 2rem 4rem}}
-    @media(max-width:380px){#hero-section{padding:4rem .75rem 2rem}}
-    @media(max-width:480px){#hero-heading{font-size:clamp(2.2rem,12vw,3rem)!important}}
-    #stats-section,#features-section,#notices-section{transition:padding .3s var(--ease-out)}
-    @media(min-width:768px){#stats-section{padding:5rem 2rem}#features-section{padding:5rem 2rem}#notices-section{padding:5rem 2rem}}
-    @media(max-width:380px){#stats-section{padding:2rem .75rem}#features-section{padding:2rem .75rem}#notices-section{padding:2rem .75rem}}
-    @media(max-width:480px){.stats-grid{grid-template-columns:repeat(2,1fr)!important}}
-    @media(max-width:380px){.stats-grid{grid-template-columns:1fr!important}}
-  </style>
-</head>
-<body>
-  <div class="noise-fixed"></div>
+<BaseLayout titulo="Plataforma Académica" descripcion="VYNTRA Academic — Ciencia, Tecnología y Futuro. Plataforma integral de gestión académica con metodología ABP para el Colegio Técnico Ciudad del Sol, Sogamoso, Boyacá." withNoise={true}>
+  <div class="min-h-screen bg-gradient-to-br from-solar-base via-solar-cream to-solar-50 dark:from-surface-dark dark:via-[#0F0C08] dark:to-[#0A0705] overflow-hidden relative">
 
-  <!-- NAV -->
-  <nav class="nav-blur" style="position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:52px">
-    <div style="display:flex;align-items:center;gap:.5rem">
-      <div style="width:28px;height:28px;border-radius:var(--radius-md);background:var(--maroon);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem">V</div>
-      <span style="font-weight:600;font-size:.85rem;font-family:var(--font-display);color:var(--text)">VYNTRA</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:.75rem">
-      <a href="/login" class="btn-apple btn-primary" style="padding:.45rem 1.1rem;font-size:.75rem">Ingresar</a>
-    </div>
-  </nav>
+    <!-- Solar Orbs Background -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden">
+      <div class="absolute -top-20 -right-20 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-brand-gold/8 via-brand-amber/4 to-transparent blur-[120px] animate-orb"></div>
+      <div class="absolute top-1/3 -left-32 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-brand-maroon/6 via-terracotta-400/3 to-transparent blur-[100px] animate-orb" style="animation-delay:-3s"></div>
+      <div class="absolute -bottom-32 right-1/3 w-[500px] h-[500px] rounded-full bg-gradient-to-t from-brand-gold/5 via-brand-amber/3 to-transparent blur-[130px] animate-orb" style="animation-delay:-6s"></div>
 
-  <!-- HERO -->
-  <section id="hero-section" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:5rem 1.25rem 3rem">
-    <div class="hero-grid"></div>
-    <div class="hero-orb"></div>
-    <div style="position:relative;z-index:2;text-align:center;max-width:800px" class="stagger">
-      <div>
-        <span class="badge badge-maroon" style="margin-bottom:1.5rem">Plataforma Académica v5.0</span>
+      <!-- Grid dots -->
+      <div class="absolute inset-0" style="background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse 70% 50% at 50% 30%,black 30%,transparent 70%)"></div>
+
+      <!-- Construction lines -->
+      <svg class="absolute top-20 right-0 w-64 h-64 opacity-[0.03] dark:opacity-[0.05]" viewBox="0 0 256 256">
+        <circle cx="128" cy="128" r="120" fill="none" stroke="currentColor" stroke-width="0.5" class="text-brand-maroon dark:text-brand-gold"/>
+        <circle cx="128" cy="128" r="80" fill="none" stroke="currentColor" stroke-width="0.5" class="text-brand-gold"/>
+        <line x1="128" y1="8" x2="128" y2="248" stroke="currentColor" stroke-width="0.3" class="text-brand-maroon dark:text-brand-gold"/>
+        <line x1="8" y1="128" x2="248" y2="128" stroke="currentColor" stroke-width="0.3" class="text-brand-maroon dark:text-brand-gold"/>
+        <line x1="43" y1="43" x2="213" y2="213" stroke="currentColor" stroke-width="0.2" class="text-brand-gold"/>
+        <line x1="213" y1="43" x2="43" y2="213" stroke="currentColor" stroke-width="0.2" class="text-brand-gold"/>
+      </svg>
+    </div>
+
+    <!-- Solar Particles (Canvas) -->
+    <canvas id="solar-particles" class="absolute inset-0 pointer-events-none opacity-40 dark:opacity-60" aria-hidden="true"></canvas>
+
+    <!-- NAV -->
+    <nav class="sticky top-0 z-40 nav-blur">
+      <div class="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-14">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-maroon to-brand-maroon-dark text-white flex items-center justify-center text-[13px] font-extrabold">V</div>
+          <span class="text-sm font-bold tracking-tight">VYNTRA</span>
+          <span class="hidden sm:inline text-[10px] text-text-tertiary font-medium uppercase tracking-widest ml-1">Academic</span>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <button id="nav-theme-toggle" class="p-2 rounded-lg text-text-tertiary hover:text-text hover:bg-brand-gold/10 transition-colors" aria-label="Cambiar tema">
+            <svg class="h-4 w-4 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            <svg class="h-4 w-4 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          </button>
+          <a href="/login" class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 bg-gradient-to-br from-brand-maroon to-brand-maroon-light text-white text-xs sm:text-sm font-semibold rounded-lg hover:shadow-glow-maroon hover:-translate-y-0.5 transition-all duration-300 ease-spring active:scale-[0.97]">
+            Ingresar
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </a>
+        </div>
       </div>
-      <div>
-        <h1 id="hero-heading" style="font-family:var(--font-display);font-weight:800;font-size:clamp(3rem,10vw,6rem);line-height:.9;letter-spacing:-.04em;color:var(--text);margin-bottom:.25rem">
-          <span style="color:var(--maroon)">VYN</span><span style="color:var(--text)">TRA</span>
+    </nav>
+
+    <!-- HERO -->
+    <section class="relative min-h-[85vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32">
+      <div class="max-w-4xl mx-auto text-center relative z-10">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-maroon/8 dark:bg-brand-gold/10 border border-brand-maroon/15 dark:border-brand-gold/15 text-[11px] font-semibold uppercase tracking-widest text-brand-maroon dark:text-brand-gold-light mb-6 sm:mb-8 animate-fade-up" style="animation-delay:0s">
+          <span class="h-1.5 w-1.5 rounded-full bg-success animate-pulse"></span>
+          Plataforma Académica v5.0
+        </div>
+
+        <h1 class="font-bold leading-[0.85] tracking-[-0.03em] mb-4 sm:mb-6 px-2 animate-fade-up" style="font-size:clamp(3rem,10vw,7rem);animation-delay:0.1s;font-family:'Fraunces',serif">
+          <span class="bg-gradient-to-r from-brand-maroon via-brand-maroon-light to-brand-gold dark:from-brand-gold dark:via-brand-amber dark:to-brand-gold-light bg-clip-text text-transparent">VYNTRA</span><br/>
+          <span class="text-text">Solaris</span>
         </h1>
-      </div>
-      <div>
-        <p style="font-size:clamp(.9rem,2vw,1.2rem);color:var(--text-secondary);letter-spacing:.3em;text-transform:uppercase;font-weight:500;margin-bottom:1.5rem">Ciencia · Tecnología · Futuro</p>
-      </div>
-      <div>
-        <p style="font-size:clamp(.95rem,1.5vw,1.1rem);color:var(--text-tertiary);line-height:1.7;max-width:560px;margin:0 auto 2.5rem">
-          Plataforma integral de gestión académica con metodología ABP, analítica en tiempo real y alertas inteligentes — Sogamoso, Boyacá, Colombia.
+
+        <p class="text-base sm:text-lg lg:text-xl text-text-secondary font-medium tracking-[0.15em] uppercase mb-4 animate-fade-up" style="animation-delay:0.2s">
+          Ciencia · Tecnología · Futuro
         </p>
-      </div>
-      <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
-        <a href="/login" class="btn-apple btn-primary" style="padding:.85rem 2rem;font-size:.85rem">
-          Acceder al Portal
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-        </a>
-        <a href="#comunicados" class="btn-apple btn-secondary" style="padding:.85rem 2rem;font-size:.85rem">
-          Ver Comunicados
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-        </a>
-      </div>
-    </div>
-    <div style="position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-tertiary);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase">
-      <span>Descubrir</span>
-      <div style="width:1px;height:32px;background:linear-gradient(to bottom,var(--maroon),transparent);animation:scrollPulse 2s ease-in-out infinite"></div>
-    </div>
-  </section>
 
-  <style>
-    @keyframes scrollPulse{0%,100%{opacity:.4;transform:scaleY(1)}50%{opacity:1;transform:scaleY(.6)}}
-  </style>
+        <p class="text-sm sm:text-base text-text-tertiary max-w-xl mx-auto leading-relaxed mb-8 sm:mb-10 animate-fade-up" style="animation-delay:0.3s">
+          Plataforma integral de gestión académica con metodología ABP,
+          analítica en tiempo real y asistentes inteligentes —
+          Colegio Técnico Ciudad del Sol, Sogamoso, Boyacá, Colombia.
+        </p>
 
-  <!-- STATS -->
-  <section style="padding:3rem 1.25rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="stats-section">
-    <div style="max-width:1000px;margin:0 auto">
-    <div style="max-width:1000px;margin:0 auto">
-      <div style="text-align:center;margin-bottom:3rem" class="animate-in">
-        <span class="badge badge-maroon" style="margin-bottom:.75rem">En Vivo</span>
-        <h2 style="font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,4vw,2.8rem);color:var(--text);margin-bottom:.5rem">Ecosistema Académico</h2>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center animate-fade-up" style="animation-delay:0.4s">
+          <a href="/login" class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white font-semibold rounded-xl hover:shadow-glow-maroon hover:-translate-y-0.5 transition-all duration-300 ease-spring active:scale-[0.97]">
+            Acceder al Portal
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </a>
+          <a href="#comunicados" class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-solar-100 dark:bg-surface-dark-card border border-brand-maroon/10 dark:border-brand-gold/10 text-text dark:text-text font-semibold rounded-xl hover:bg-solar-200 dark:hover:bg-surface-dark transition-all duration-300 ease-spring">
+            Ver Comunicados
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+          </a>
+        </div>
       </div>
-      <div class="stats-grid">
-        <div class="card-float stat-card animate-in"><span class="stat-value" id="stat-estudiantes">--</span><span class="stat-label">Estudiantes</span></div>
-        <div class="card-float stat-card animate-in"><span class="stat-value" id="stat-docentes">--</span><span class="stat-label">Docentes</span></div>
-        <div class="card-float stat-card animate-in"><span class="stat-value" id="stat-mora">--</span><span class="stat-label">En Mora</span></div>
-        <div class="card-float stat-card animate-in"><span class="stat-value" id="stat-avisos">--</span><span class="stat-label">Comunicados</span></div>
-      </div>
-    </div>
-  </section>
 
-  <!-- FEATURES -->
-  <section id="features-section" style="padding:3rem 1.25rem">
-    <div style="max-width:1100px;margin:0 auto">
-      <div style="text-align:center;margin-bottom:3rem" class="animate-in">
-        <span class="badge badge-maroon" style="margin-bottom:.75rem">Comunidad VYNTRA</span>
-        <h2 style="font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,4vw,2.8rem);color:var(--text);margin-bottom:.5rem">Sogamoso, Boyacá</h2>
-        <p style="color:var(--text-secondary);max-width:500px;margin:0 auto">Formación integral con énfasis en ciencia, técnica y valores humanos.</p>
+      <!-- Scroll indicator -->
+      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 text-text-tertiary text-[10px] tracking-[0.25em] uppercase animate-fade-up" style="animation-delay:0.6s">
+        <span>Descubrir</span>
+        <div class="w-px h-8 bg-gradient-to-b from-brand-maroon/30 to-transparent"></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem">
-        {[
-          {icon:'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',title:'Rendimiento ABP',desc:'Seguimiento transversal de proyectos integradores con metodología ABP.'},
-          {icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',title:'Analítica en Vivo',desc:'Monitoreo en tiempo real de métricas académicas con alertas tempranas.'},
-          {icon:'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z',title:'Asistente IA',desc:'Chat inteligente para resumir reportes, generar alertas y analizar tendencias.'},
-        ].map(f => (
-          <div class="card-float animate-in" style="padding:1.5rem">
-            <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--maroon-subtle);display:flex;align-items:center;justify-content:center;margin-bottom:1rem">
-              <svg class="h-4 w-4" style="color:var(--maroon)" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={f.icon}/></svg>
+    </section>
+
+    <!-- STATS -->
+    <section class="relative py-16 sm:py-24 border-t border-border" id="stats-section">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-3" style="font-family:'Fraunces',serif">Ecosistema Académico</h2>
+          <p class="text-text-secondary">Estado actual de la institución en tiempo real</p>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          {[
+            { id: 'stat-estudiantes', label: 'Estudiantes', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2', value: '--', color: 'from-brand-maroon to-brand-maroon-dark border-brand-maroon/20' },
+            { id: 'stat-docentes', label: 'Docentes', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493', value: '--', color: 'from-brand-gold to-brand-amber border-brand-gold/20' },
+            { id: 'stat-mora', label: 'En Mora', icon: 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182', value: '0', color: 'from-brand-danger to-red-600 border-brand-danger/20' },
+            { id: 'stat-avisos', label: 'Comunicados', icon: 'M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09', value: '--', color: 'from-brand-info to-blue-500 border-brand-info/20' },
+          ].map((stat, i) => (
+            <div class="group relative bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 sm:p-7 text-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card-hover dark:hover:shadow-card-dark-hover" style={`animation-delay:${i * 0.08}s`}>
+              <div class={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color}`}></div>
+              <div class="w-9 h-9 mx-auto mb-3 rounded-lg bg-brand-maroon/8 dark:bg-brand-gold/8 flex items-center justify-center">
+                <svg class="h-4 w-4 text-brand-maroon dark:text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={stat.icon}/></svg>
+              </div>
+              <div class="text-3xl sm:text-4xl font-extrabold tracking-tight text-brand-maroon dark:text-brand-gold" id={stat.id} style="font-family:'Fraunces',serif">{stat.value}</div>
+              <div class="text-[10px] sm:text-xs uppercase tracking-widest text-text-tertiary mt-1.5 font-semibold">{stat.label}</div>
             </div>
-            <h3 style="font-family:var(--font-display);font-weight:600;font-size:1.05rem;color:var(--text);margin-bottom:.35rem">{f.title}</h3>
-            <p style="color:var(--text-secondary);font-size:.85rem;line-height:1.6">{f.desc}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- NOTICES -->
-  <section id="notices-section" style="padding:3rem 1.25rem;background:var(--bg-secondary);border-top:1px solid var(--border)">
-    <div style="max-width:1100px;margin:0 auto;text-align:center">
-      <span class="badge badge-maroon" style="margin-bottom:.75rem">En Vivo</span>
-      <h2 style="font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,4vw,2.8rem);color:var(--text);margin-bottom:.5rem">Comunicados Institucionales</h2>
-      <p style="color:var(--text-secondary);margin-bottom:3rem;font-size:.9rem">Información oficial para la Comunidad VYNTRA</p>
-
-      <div id="notice-skeleton" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;text-align:left">
-        {[1,2,3].map(() => (
-          <div class="card-float" style="padding:1.5rem">
-            <div class="shimmer" style="height:12px;width:80px;margin-bottom:10px"></div>
-            <div class="shimmer" style="height:18px;width:75%;margin-bottom:6px"></div>
-            <div class="shimmer" style="height:12px;width:55%;margin-bottom:14px"></div>
-            <div class="shimmer" style="height:8px;width:60px"></div>
-          </div>
-        ))}
+    <!-- FEATURES -->
+    <section class="relative py-16 sm:py-24 bg-[var(--bg-secondary)] dark:bg-[#0F0C08] border-t border-border">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-3" style="font-family:'Fraunces',serif">Comunidad <span class="bg-gradient-to-r from-brand-maroon to-brand-gold bg-clip-text text-transparent">VYNTRA</span></h2>
+          <p class="text-text-secondary">Sogamoso, Boyacá — Formación integral con énfasis en ciencia, técnica y valores humanos.</p>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {[
+            { title: 'Rendimiento ABP', desc: 'Seguimiento transversal de proyectos integradores con metodología activa y 9 materias vinculadas.', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18' },
+            { title: 'Analítica en Vivo', desc: 'Monitoreo en tiempo real de métricas académicas, financieras y alertas tempranas automatizadas.', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9' },
+            { title: 'Asistente IA', desc: 'Chat inteligente multi-rol que analiza datos, genera reportes y sugiere estrategias pedagógicas.', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14' },
+          ].map((f, i) => (
+            <div class="group relative bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-gold/30 hover:shadow-card-hover dark:hover:shadow-card-dark-hover" style={`animation-delay:${i * 0.1}s`}>
+              <div class="w-10 h-10 rounded-xl bg-brand-maroon/8 dark:bg-brand-gold/8 flex items-center justify-center mb-4 group-hover:bg-brand-gold/15 transition-colors">
+                <svg class="h-5 w-5 text-brand-maroon dark:text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={f.icon}/></svg>
+              </div>
+              <h3 class="font-bold text-sm mb-2">{f.title}</h3>
+              <p class="text-xs text-text-secondary leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </div>
       </div>
-      <div id="notice-grid" style="display:none;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;text-align:left"></div>
-      <div id="notice-error" style="display:none;margin-top:2rem;padding:1.25rem;border-radius:var(--radius-lg);border:1px solid rgba(186,26,26,.2);background:rgba(186,26,26,.04)">
-        <p style="color:var(--red);font-size:.85rem">No se pudieron cargar los comunicados.</p>
+    </section>
+
+    <!-- NOTICES -->
+    <section class="relative py-16 sm:py-24 border-t border-border" id="comunicados">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-3" style="font-family:'Fraunces',serif">Comunicados</h2>
+          <p class="text-text-secondary">Información oficial para la Comunidad VYNTRA</p>
+        </div>
+
+        <div id="notice-skeleton" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {[1,2,3].map(() => (
+            <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-6">
+              <div class="skeleton-shimmer h-3 w-20 mb-3 rounded"></div>
+              <div class="skeleton-shimmer h-5 w-3/4 mb-2 rounded"></div>
+              <div class="skeleton-shimmer h-4 w-full mb-4 rounded"></div>
+              <div class="skeleton-shimmer h-3 w-16 rounded"></div>
+            </div>
+          ))}
+        </div>
+
+        <div id="notice-grid" class="hidden grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"></div>
+        <div id="notice-error" class="hidden text-center py-12 text-text-tertiary text-sm">No se pudieron cargar los comunicados.</div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- FOOTER -->
-  <footer style="border-top:1px solid var(--border);padding:2rem;text-align:center">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-      <span style="font-family:var(--font-display);font-weight:700;color:var(--maroon);font-size:.9rem">VYNTRA</span>
-      <span style="font-size:.75rem;color:var(--text-tertiary)">© 2026 VYNTRA Academic · Sogamoso, Boyacá, Colombia</span>
-      <span style="font-size:.65rem;color:var(--text-tertiary);opacity:.5">v5.0</span>
-    </div>
-  </footer>
+    <!-- FOOTER -->
+    <footer class="border-t border-border py-8 sm:py-12 text-center">
+      <div class="max-w-3xl mx-auto px-4">
+        <div class="flex flex-col items-center gap-2">
+          <span class="font-bold text-brand-maroon dark:text-brand-gold text-sm" style="font-family:'Fraunces',serif">VYNTRA Solaris</span>
+          <span class="text-xs text-text-tertiary">&copy; 2026 VYNTRA Academic &middot; Colegio T&eacute;cnico Ciudad del Sol &middot; Sogamoso, Boyac&aacute;, Colombia</span>
+          <span class="text-[10px] text-text-tertiary opacity-50">v5.0 &middot; vyntra_engine_active &middot; solar_theme</span>
+        </div>
+      </div>
+    </footer>
+  </div>
 
-  <script define:vars={{ API_BASE }}>
+  <script define:vars={{ API_BASE: import.meta.env.PUBLIC_API_URL || 'http://localhost:8000' }}>
+    // ── SOLAR PARTICLES CANVAS ──
     (function() {
-      var API = API_BASE
+      var canvas = document.getElementById('solar-particles')
+      if (!canvas) return
+      var ctx = canvas.getContext('2d')
+      var particles = []
+      var isDark = document.documentElement.classList.contains('dark')
 
-      async function loadStats() {
-        try {
-          var res = await fetch(API + '/api/admin/stats')
-          if (!res.ok) return
-          var d = await res.json()
-          var map = {'stat-estudiantes': d.total_students,'stat-docentes': d.total_teachers,'stat-mora': d.mora,'stat-avisos': d.total_notices}
-          for (var id in map) {
-            var el = document.getElementById(id)
-            if (el) el.textContent = map[id] ?? '--'
-          }
-        } catch(e) {}
+      function resize() {
+        canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1)
+        canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1)
+        ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0)
       }
 
-      async function loadNotices() {
-        var skeleton = document.getElementById('notice-skeleton')
-        var grid = document.getElementById('notice-grid')
-        var error = document.getElementById('notice-error')
-        try {
-          var res = await fetch(API + '/api/notices')
-          if (!res.ok) throw new Error()
-          var notices = await res.json()
-          if (!notices || notices.length === 0) {
-            skeleton.style.display = 'none'
-            error.querySelector('p').textContent = 'No hay comunicados publicados.'
-            error.style.display = 'block'
-            return
-          }
-          skeleton.style.display = 'none'
-          grid.innerHTML = notices.map(function(n, i) {
-            var d = new Date(n.fecha || n.date).toLocaleDateString('es-CO', {day:'numeric',month:'long',year:'numeric'})
-            var c = n.categoria || n.category || 'General'
-            return '<div class="card-float" style="padding:1.5rem;opacity:0;animation:fadeUp .5s var(--ease-out) '+(i*0.08)+'s forwards">' +
-              '<span class="badge badge-maroon" style="margin-bottom:10px">' + c + '</span>' +
-              '<h3 style="font-family:var(--font-display);font-weight:600;font-size:1rem;color:var(--text);margin-bottom:6px">' + (n.titulo || n.title) + '</h3>' +
-              '<p style="color:var(--text-secondary);font-size:.8rem;line-height:1.6;margin-bottom:10px">' + (n.resumen || n.excerpt || n.contenido || n.content || '') + '</p>' +
-              '<time style="font-size:.7rem;color:var(--text-tertiary)">' + d + '</time></div>'
-          }).join('')
-          grid.style.display = 'grid'
-        } catch(e) {
-          skeleton.style.display = 'none'
-          error.style.display = 'block'
+      function createParticles() {
+        particles = []
+        var count = Math.min(window.innerWidth / 8, 80)
+        for (var i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * canvas.offsetWidth,
+            y: Math.random() * canvas.offsetHeight,
+            r: Math.random() * 2 + 0.5,
+            vx: (Math.random() - 0.5) * 0.15,
+            vy: (Math.random() - 0.5) * 0.3 - 0.1,
+            opacity: Math.random() * 0.5 + 0.1,
+            pulse: Math.random() * Math.PI * 2,
+          })
         }
       }
 
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function() { loadStats(); loadNotices() })
-      else { loadStats(); loadNotices() }
+      function draw() {
+        ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight)
+        var color = isDark ? '245,166,35' : '107,26,26'
+        for (var i = 0; i < particles.length; i++) {
+          var p = particles[i]
+          p.x += p.vx
+          p.y += p.vy
+          p.pulse += 0.01
+          if (p.x < -10) p.x = canvas.offsetWidth + 10
+          if (p.x > canvas.offsetWidth + 10) p.x = -10
+          if (p.y < -10) p.y = canvas.offsetHeight + 10
+          if (p.y > canvas.offsetHeight + 10) p.y = -10
+          var alpha = p.opacity * (0.6 + 0.4 * Math.sin(p.pulse))
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+          ctx.fillStyle = 'rgba(' + color + ',' + alpha + ')'
+          ctx.fill()
+        }
+        requestAnimationFrame(draw)
+      }
+
+      resize()
+      createParticles()
+      draw()
+      window.addEventListener('resize', function() { resize(); createParticles() })
+
+      // ── THEME OBSERVER FOR CANVAS ──
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          if (m.attributeName === 'class') {
+            isDark = document.documentElement.classList.contains('dark')
+          }
+        })
+      })
+      observer.observe(document.documentElement, { attributes: true })
     })()
+
+    // ── THEME TOGGLE ──
+    document.addEventListener('DOMContentLoaded', function() {
+      var themeBtn = document.getElementById('nav-theme-toggle')
+      function setTheme(isDark) {
+        document.documentElement.classList.toggle('dark', isDark)
+        localStorage.setItem('vyntra-theme', isDark ? 'dark' : 'light')
+      }
+      themeBtn?.addEventListener('click', function() {
+        setTheme(!document.documentElement.classList.contains('dark'))
+      })
+    })
+
+    // ── LOAD DATA ──
+    var API = API_BASE
+    async function loadData() {
+      try {
+        var res = await fetch(API + '/api/admin/stats')
+        if (!res.ok) return
+        var d = await res.json()
+        var map = { 'stat-estudiantes': d.total_students, 'stat-docentes': d.total_teachers, 'stat-mora': d.mora || 0, 'stat-avisos': d.total_notices }
+        Object.keys(map).forEach(function(id) {
+          var el = document.getElementById(id)
+          if (el) el.textContent = map[id] ?? '--'
+        })
+      } catch(e) {}
+
+      try {
+        var res2 = await fetch(API + '/api/notices')
+        if (!res2.ok) throw new Error()
+        var notices = await res2.json()
+        var skeleton = document.getElementById('notice-skeleton')
+        var grid = document.getElementById('notice-grid')
+        var error = document.getElementById('notice-error')
+        if (!notices || notices.length === 0) {
+          skeleton.style.display = 'none'
+          error.textContent = 'No hay comunicados publicados.'
+          error.classList.remove('hidden')
+          return
+        }
+        skeleton.style.display = 'none'
+        grid.innerHTML = notices.map(function(n, i) {
+          var d = new Date(n.fecha || n.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+          var c = n.categoria || n.category || 'General'
+          return '<div class="group bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/30 hover:shadow-card-hover" style="opacity:0;animation:fadeUp .5s cubic-bezier(.19,1,.22,1) ' + (i * 0.08) + 's forwards">' +
+            '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-brand-maroon/10 dark:bg-brand-gold/10 text-brand-maroon dark:text-brand-gold-light mb-3">' + c + '</span>' +
+            '<h3 class="font-bold text-sm mb-2">' + (n.titulo || n.title) + '</h3>' +
+            '<p class="text-xs text-text-secondary leading-relaxed mb-3">' + (n.resumen || n.excerpt || n.contenido || n.content || '').substring(0, 120) + '</p>' +
+            '<time class="text-[10px] text-text-tertiary">' + d + '</time>' +
+            '</div>'
+        }).join('')
+        grid.classList.remove('hidden')
+        grid.style.display = 'grid'
+      } catch(e) {
+        document.getElementById('notice-skeleton').style.display = 'none'
+        document.getElementById('notice-error').classList.remove('hidden')
+      }
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadData)
+    else loadData()
   </script>
-</body>
-</html>
+</BaseLayout>

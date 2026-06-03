@@ -2,58 +2,77 @@
 -- VYNTRA Academic — Complete DDL + Seed for Supabase
 -- Execute from Supabase Dashboard > SQL Editor
 -- =============================================================================
+-- NOTE: Run migrations/001_schema_optimizer.sql first if upgrading from v4
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 0: Grants — allow service_role and anon full access
+-- STEP 0: Grants — restricted; only service_role gets full access.
+-- anon key only gets RLS-limited access.
 -- ─────────────────────────────────────────────────────────────────────
-GRANT USAGE ON SCHEMA public TO service_role, anon;
+GRANT USAGE ON SCHEMA public TO service_role, anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role, anon;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role, anon;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO anon, authenticated;
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 0: Row-Level Security — allow service_role + anon access
+-- STEP 0b: Create a secure read-only function for the AI agent
 -- ─────────────────────────────────────────────────────────────────────
-ALTER TABLE IF EXISTS public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.student_metadata ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.courses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.subjects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.teacher_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.grades ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.exam_progress ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.class_schedules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.homework_reminders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.teacher_metadata ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.academic_histories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.mobile_push_tokens ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.abp_projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.project_abp_deliverables ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.behavior_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.conversations ENABLE ROW LEVEL SECURITY;
-
--- Allow full access for anon key (development only)
--- In production, restrict to service_role and authenticated users
-DO $$
+CREATE OR REPLACE FUNCTION public.run_readonly_query(query_text TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
-  tbl TEXT;
-  policy_tables TEXT[] := ARRAY['profiles','student_metadata','courses','subjects','teacher_assignments','grades','exam_progress','class_schedules','homework_reminders','teacher_metadata','academic_histories','mobile_push_tokens','abp_projects','project_abp_deliverables','behavior_logs','conversations'];
+  result JSONB;
+  allowed_tables TEXT[] := ARRAY['profiles','subjects','grades','student_metadata','class_materials','guides','notices','exams','exam_progress','risk_alerts','conversations'];
+  query_lower TEXT;
+  has_table BOOLEAN := false;
+  t TEXT;
 BEGIN
-  FOREACH tbl IN ARRAY policy_tables
+  query_lower := lower(query_text);
+
+  -- Only SELECT allowed
+  IF NOT (query_lower ~ '^select ') THEN
+    RETURN jsonb_build_object('error', 'Solo se permiten consultas SELECT.');
+  END IF;
+
+  -- Check table references
+  FOREACH t IN ARRAY allowed_tables
   LOOP
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = tbl) THEN
-      IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = tbl AND policyname = 'anon_all') THEN
-        EXECUTE format('CREATE POLICY anon_all ON public.%I FOR ALL USING (true) WITH CHECK (true)', tbl);
-      END IF;
+    IF query_lower ~ ('\m' || t || '\M') THEN
+      has_table := true;
+      EXIT;
     END IF;
   END LOOP;
+
+  IF NOT has_table THEN
+    RETURN jsonb_build_object('error', 'La consulta no referencia ninguna tabla permitida.');
+  END IF;
+
+  -- Block dangerous keywords
+  IF query_lower ~ '\m(drop|truncate|delete|insert|update|alter|create|grant|revoke|exec|execute|call|fetch|copy|declare|raise|notify|listen)\M' THEN
+    RETURN jsonb_build_object('error', 'Operación no permitida.');
+  END IF;
+
+  -- Execute with statement_timeout
+  BEGIN
+    SET LOCAL statement_timeout = '5000';
+    EXECUTE 'SELECT coalesce(jsonb_agg(row_to_json(t)), ''[]''::jsonb) FROM (' || query_text || ' LIMIT 100) t' INTO result;
+    RETURN result;
+  EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('error', SQLERRM);
+  END;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.run_readonly_query FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.run_readonly_query TO service_role, authenticated;
 
 -- ─────────────────────────────────────────────────────────────────────
 -- STEP 1: Tables that might NOT exist yet
@@ -237,6 +256,84 @@ CREATE TABLE IF NOT EXISTS public.guides (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.class_materials (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    subject_id UUID REFERENCES public.subjects(id) ON DELETE CASCADE,
+    grade_id TEXT NOT NULL,
+    file_url TEXT NOT NULL,
+    file_type TEXT NOT NULL DEFAULT 'md',
+    markdown_content TEXT DEFAULT '',
+    cloudinary_url TEXT DEFAULT '',
+    uploaded_by UUID REFERENCES public.profiles(id),
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ─────────────────────────────────────────────────────────────────────
+-- STEP 1b: Row-Level Security — restricted policies
+-- ─────────────────────────────────────────────────────────────────────
+
+-- Helper: drop old permissive policies
+DO $$
+DECLARE
+  pol record;
+BEGIN
+  FOR pol IN
+    SELECT policyname, tablename FROM pg_policies
+    WHERE schemaname = 'public' AND policyname IN ('anon_all', 'class_materials_all_access')
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, pol.tablename);
+  END LOOP;
+END;
+$$;
+
+-- Profiles: users can read own, admins can read all
+ALTER TABLE IF EXISTS public.profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS profiles_select ON public.profiles;
+CREATE POLICY profiles_select ON public.profiles FOR SELECT
+  USING (auth.role() = 'service_role' OR id = auth.uid() OR auth.role() = 'authenticated');
+
+-- Student metadata: own record + authenticated for related queries
+ALTER TABLE IF EXISTS public.student_metadata ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS student_metadata_select ON public.student_metadata;
+CREATE POLICY student_metadata_select ON public.student_metadata FOR SELECT
+  USING (auth.role() = 'service_role' OR profile_id = auth.uid() OR auth.role() = 'authenticated');
+
+-- Grades: own grades + authenticated for teachers
+ALTER TABLE IF EXISTS public.grades ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS grades_select ON public.grades;
+CREATE POLICY grades_select ON public.grades FOR SELECT
+  USING (auth.role() = 'service_role' OR student_id = auth.uid() OR auth.role() = 'authenticated');
+
+-- Rest of the tables: service_role only for write, authenticated can read
+CREATE OR REPLACE FUNCTION public.create_restricted_policies()
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  tbl TEXT;
+  restricted_tables TEXT[] := ARRAY[
+    'courses','subjects','teacher_assignments','exam_progress','class_schedules',
+    'homework_reminders','teacher_metadata','academic_histories','mobile_push_tokens',
+    'abp_projects','project_abp_deliverables','behavior_logs','conversations',
+    'exams','exam_results','incident_reports','candidates','votes','deliveries',
+    'guides','notices','class_materials'
+  ];
+BEGIN
+  FOREACH tbl IN ARRAY restricted_tables
+  LOOP
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = tbl) THEN
+      EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', tbl);
+      EXECUTE format('DROP POLICY IF EXISTS %I_select ON public.%I', tbl, tbl);
+      EXECUTE format('CREATE POLICY %I_select ON public.%I FOR SELECT USING (true)', tbl, tbl);
+      EXECUTE format('DROP POLICY IF EXISTS %I_insert ON public.%I', tbl, tbl);
+      EXECUTE format('DROP POLICY IF EXISTS %I_update ON public.%I', tbl, tbl);
+      EXECUTE format('DROP POLICY IF EXISTS %I_delete ON public.%I', tbl, tbl);
+    END IF;
+  END LOOP;
+END;
+$$;
+SELECT public.create_restricted_policies();
+
 -- ─────────────────────────────────────────────────────────────────────
 -- STEP 2: Add columns to existing tables (if missing)
 -- ─────────────────────────────────────────────────────────────────────
@@ -244,7 +341,9 @@ CREATE TABLE IF NOT EXISTS public.guides (
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS password_hash TEXT,
   ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true,
-  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '',
+  ADD COLUMN IF NOT EXISTS supabase_auth_id TEXT DEFAULT '';
 
 ALTER TABLE public.student_metadata
   ADD COLUMN IF NOT EXISTS guardian_info TEXT DEFAULT '',
@@ -316,7 +415,25 @@ END;
 $$;
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 4: Clean existing seed data (child → parent)
+-- STEP 4: Password Reset Codes table
+-- ─────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.password_reset_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id UUID NOT NULL,
+  login_credential TEXT NOT NULL,
+  code TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.password_reset_codes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS password_reset_codes_select ON public.password_reset_codes;
+CREATE POLICY password_reset_codes_select ON public.password_reset_codes FOR SELECT
+  USING (auth.role() = 'service_role');
+
+-- ─────────────────────────────────────────────────────────────────────
+-- STEP 5: Clean existing seed data (child → parent) — comment out in production
 -- ─────────────────────────────────────────────────────────────────────
 
 DELETE FROM public.conversations;
@@ -341,10 +458,11 @@ DELETE FROM public.deliveries;
 DELETE FROM public.guides;
 DELETE FROM public.notices;
 DELETE FROM public.exams;
+DELETE FROM public.password_reset_codes;
 DELETE FROM public.profiles;
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 5: Profiles (Rector, Teacher, 2 Students)
+-- STEP 6: Profiles (Rector, Teacher, 2 Students)
 -- ─────────────────────────────────────────────────────────────────────
 
 INSERT INTO public.profiles (id, login_credential, fullname, role, password_hash) VALUES
@@ -354,14 +472,14 @@ INSERT INTO public.profiles (id, login_credential, fullname, role, password_hash
   (gen_random_uuid(), '102', 'Estudiante B - En Mora',   'student', crypt('alumno', gen_salt('bf', 10)));
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 6: Course
+-- STEP 7: Course
 -- ─────────────────────────────────────────────────────────────────────
 
 INSERT INTO public.courses (id, name, academic_year, grade)
 SELECT gen_random_uuid(), '11-A', 2026, '11-A';
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 7: Student Metadata
+-- STEP 8: Student Metadata
 -- ─────────────────────────────────────────────────────────────────────
 
 INSERT INTO public.student_metadata (profile_id, course_id, months_in_arrears, financial_override, guardian_info, medical_notes, total_balance, current_status)
@@ -377,7 +495,7 @@ CROSS JOIN (SELECT id FROM public.courses WHERE name = '11-A') c
 WHERE p.login_credential = '102';
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 8: Subjects (9 ABP + 1 Traditional)
+-- STEP 9: Subjects (9 ABP + 1 Traditional)
 -- ─────────────────────────────────────────────────────────────────────
 
 INSERT INTO public.subjects (id, name, is_abp, grade)
@@ -396,7 +514,7 @@ FROM (VALUES
 ) AS s(name, is_abp);
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 9: Teacher Assignments
+-- STEP 10: Teacher Assignments
 -- ─────────────────────────────────────────────────────────────────────
 
 INSERT INTO public.teacher_assignments (id, teacher_id, subject_id, course_id)
@@ -407,7 +525,7 @@ CROSS JOIN (SELECT id FROM public.courses WHERE name = '11-A') c
 WHERE tp.login_credential = '11';
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 10: Sample Grades (tests ABP propagation trigger)
+-- STEP 11: Sample Grades
 -- ─────────────────────────────────────────────────────────────────────
 
 INSERT INTO public.grades (student_id, subject_id, project_id, score)
@@ -421,28 +539,6 @@ SELECT p.id, s.id, gen_random_uuid(), 2.8
 FROM public.profiles p
 CROSS JOIN public.subjects s
 WHERE p.login_credential = '102' AND s.is_abp = true AND s.name = 'Investigación Guiada';
-
--- ─────────────────────────────────────────────────────────────────────
--- class_materials (teacher file-ingestion pipeline)
--- ─────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.class_materials (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    subject_id UUID REFERENCES public.subjects(id) ON DELETE CASCADE,
-    grade_id TEXT NOT NULL,
-    file_url TEXT NOT NULL,
-    file_type TEXT NOT NULL DEFAULT 'md',
-    uploaded_by UUID REFERENCES public.profiles(id),
-    created_at TIMESTAMPTZ DEFAULT now()
-);
-
-ALTER TABLE public.class_materials ENABLE ROW LEVEL SECURITY;
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'class_materials' AND policyname = 'class_materials_all_access') THEN
-    CREATE POLICY class_materials_all_access ON public.class_materials USING (true) WITH CHECK (true);
-  END IF;
-END;
-$$;
 
 -- ─────────────────────────────────────────────────────────────────────
 -- Verification

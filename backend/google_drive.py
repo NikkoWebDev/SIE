@@ -19,15 +19,30 @@ CREDENTIALS_KEY = "GOOGLE_DRIVE_CREDENTIALS_JSON"
 
 def _get_credentials() -> service_account.Credentials | None:
     creds_json = os.getenv(CREDENTIALS_KEY)
-    if not creds_json:
-        logger.warning("GOOGLE_DRIVE_CREDENTIALS_JSON not configured — Google Drive upload disabled")
-        return None
-    try:
-        creds_dict = json.loads(creds_json)
-        return service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-    except (json.JSONDecodeError, ValueError, GoogleAuthError) as e:
-        logger.error("Failed to load Google Drive credentials: %s", e)
-        return None
+    # Fallback: load from file path if env var points to a file
+    if creds_json and creds_json.startswith("{"):
+        try:
+            creds_dict = json.loads(creds_json)
+            return service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+        except (json.JSONDecodeError, ValueError, GoogleAuthError) as e:
+            logger.error("Failed to load Google Drive credentials: %s", e)
+            return None
+    file_path = os.getenv("GOOGLE_DRIVE_CREDENTIALS_FILE")
+    if file_path and os.path.exists(file_path):
+        try:
+            return service_account.Credentials.from_service_account_file(file_path, scopes=SCOPES)
+        except (ValueError, GoogleAuthError) as e:
+            logger.error("Failed to load credentials from file %s: %s", file_path, e)
+            return None
+    if creds_json:
+        try:
+            creds_dict = json.loads(creds_json)
+            return service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+        except (json.JSONDecodeError, ValueError, GoogleAuthError) as e:
+            logger.error("Failed to parse GOOGLE_DRIVE_CREDENTIALS_JSON: %s", e)
+            return None
+    logger.warning("GOOGLE_DRIVE_CREDENTIALS not configured — Google Drive upload disabled")
+    return None
 
 
 def upload_to_drive(

@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -65,6 +67,21 @@ FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
     "/api/reports/",
 )
 
+# ── General Rate Limiter (in-memory, per-worker) ──
+_api_calls: dict[str, list[float]] = defaultdict(list)
+API_RATE_LIMIT: int = int(os.getenv("API_RATE_LIMIT", "120"))  # requests per window
+API_RATE_WINDOW: int = 60  # 1 minute window
+
+
+def _check_api_rate_limit(ip: str) -> bool:
+    now = time.time()
+    window = API_RATE_WINDOW
+    _api_calls[ip] = [t for t in _api_calls[ip] if now - t < window]
+    if len(_api_calls[ip]) >= API_RATE_LIMIT:
+        return False
+    _api_calls[ip].append(now)
+    return True
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -82,15 +99,23 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Vyntra Core — Academic Platform", version="5.0.0", lifespan=lifespan)
 
 
+def _get_cors_origin(request: Request) -> str:
+    origin = request.headers.get("Origin", "")
+    if origin in ALLOWED_ORIGINS:
+        return origin
+    return "https://colegiociudaddelsol.edu.co"
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error("Unhandled exception: %s\n%s", exc, traceback.format_exc())
     status = exc.status_code if isinstance(exc, StarletteHTTPException) else 500
     detail = exc.detail if isinstance(exc, StarletteHTTPException) else "Error interno del servidor"
+    origin = _get_cors_origin(request)
     return JSONResponse(
         status_code=status,
         content={"detail": detail},
-        headers={"Access-Control-Allow-Origin": "*"},
+        headers={"Access-Control-Allow-Origin": origin},
     )
 
 
@@ -113,19 +138,52 @@ app.add_middleware(
 
 
 @app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next: Any) -> Response:
+    if not request.url.path.startswith("/api"):
+        return await call_next(request)
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_api_rate_limit(client_ip):
+        origin = _get_cors_origin(request)
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Demasiadas solicitudes. Intenta de nuevo en un minuto."},
+            headers={"Access-Control-Allow-Origin": origin, "Retry-After": "60"},
+        )
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next: Any) -> Response:
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "0"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
+
+
 async def auth_middleware(request: Request, call_next: Any) -> Response:
     path = request.url.path
     if request.method == "OPTIONS" or path.startswith("/ws") or path in SKIP_AUTH_PATHS:
         return await call_next(request)
+    origin = _get_cors_origin(request)
+    # Support both Authorization header and httpOnly cookie
     auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return JSONResponse(status_code=401, content={"detail": "Authorization required"}, headers={"Access-Control-Allow-Origin": "*"})
+    token = ""
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+    else:
+        token = request.cookies.get("access_token", "")
+    if not token:
+        return JSONResponse(status_code=401, content={"detail": "Authorization required"}, headers={"Access-Control-Allow-Origin": origin})
     try:
-        claims = decode_jwt(auth_header[7:])
+        claims = decode_jwt(token)
     except jwt.ExpiredSignatureError:
-        return JSONResponse(status_code=401, content={"detail": "Token expired"}, headers={"Access-Control-Allow-Origin": "*"})
+        return JSONResponse(status_code=401, content={"detail": "Token expired"}, headers={"Access-Control-Allow-Origin": origin})
     except jwt.PyJWTError:
-        return JSONResponse(status_code=401, content={"detail": "Invalid token"}, headers={"Access-Control-Allow-Origin": "*"})
+        return JSONResponse(status_code=401, content={"detail": "Invalid token"}, headers={"Access-Control-Allow-Origin": origin})
     request.state.user_id = claims["sub"]
     request.state.user_role = claims.get("role", "student")
     return await call_next(request)
@@ -143,21 +201,22 @@ async def financial_guard_middleware(request: Request, call_next: Any) -> Respon
             student_id = parsed.get("student_id")
         except Exception:
             pass
+    origin = _get_cors_origin(request)
     if not student_id:
-        return JSONResponse(status_code=422, content={"detail": "Query param student_id required"}, headers={"Access-Control-Allow-Origin": "*"})
+        return JSONResponse(status_code=422, content={"detail": "Query param student_id required"}, headers={"Access-Control-Allow-Origin": origin})
     try:
         db: Client = next(dep_get_db())
         result = db.table("student_metadata").select("*").eq("profile_id", student_id).execute()
         rows = result.data
         if not rows:
-            return JSONResponse(status_code=404, content={"detail": "Student not found"}, headers={"Access-Control-Allow-Origin": "*"})
+            return JSONResponse(status_code=404, content={"detail": "Student not found"}, headers={"Access-Control-Allow-Origin": origin})
         meta = rows[0]
         if meta.get("months_in_arrears", 0) >= 2 and not meta.get("financial_override", False):
             logger.warning("financial-block student=%s path=%s", student_id, request.url.path)
             return JSONResponse(
                 status_code=403,
                 content={"detail": "Estatus financiero irregular — Descarga restringida por mora"},
-                headers={"Access-Control-Allow-Origin": "*"},
+                headers={"Access-Control-Allow-Origin": origin},
             )
     except Exception as e:
         logger.error("financial guard error: %s", e)

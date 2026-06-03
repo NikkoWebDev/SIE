@@ -1,0 +1,60 @@
+---
+import '../styles/theme.css'
+
+export interface Props {
+  titulo: string
+  descripcion?: string
+  noIndex?: boolean
+  withNoise?: boolean
+  withThemeScript?: boolean
+}
+
+const {
+  titulo,
+  descripcion = 'Plataforma académica VYNTRA — Sogamoso, Boyacá, Colombia',
+  noIndex = false,
+  withNoise = false,
+  withThemeScript = true,
+} = Astro.props
+
+const title = `VYNTRA · ${titulo}`
+const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:8000 ws://localhost:8000 https: wss:; frame-src 'self' https:; media-src 'self' https:;"
+
+Astro.response.headers.set('Content-Security-Policy', CSP)
+---
+
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{title}</title>
+  <meta name="description" content={descripcion} />
+  {noIndex && <meta name="robots" content="noindex, nofollow" />}
+  <link rel="canonical" href={`https://colegiociudaddelsol.edu.co${Astro.url.pathname}`} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={descripcion} />
+  <meta property="og:url" content={`https://colegiociudaddelsol.edu.co${Astro.url.pathname}`} />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={descripcion} />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&family=Syne:wght@500;600;700;800&family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  {withThemeScript && (
+    <script is:inline>
+      (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
+    </script>
+  )}
+
+  <slot name="head" />
+</head>
+<body class="antialiased">
+  {withNoise && <div class="noise-overlay" aria-hidden="true"></div>}
+  <slot />
+</body>
+</html>

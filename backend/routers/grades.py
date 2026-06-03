@@ -110,9 +110,14 @@ async def get_my_grades(student_id: str, user_id: str = Depends(auth_dependency)
 @router.get("/grades/download-pdf")
 async def download_grade_pdf(
     student_id: str = Query(..., min_length=1),
+    request: Request = None,
     user_id: str = Depends(auth_dependency),
 ) -> Response:
     db: Client = next(get_db())
+    # IDOR guard: students can only download own PDF
+    role: str = getattr(request.state, "user_role", "")
+    if role == "student" and user_id != student_id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para descargar el PDF de otro estudiante")
     if is_financial_locked_path("/api/grades/download-pdf"):
         req = type("_R", (), {"query_params": {"student_id": student_id}})()
         await financial_guard(req)

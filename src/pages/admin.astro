@@ -1,650 +1,327 @@
 ---
-import '../styles/theme.css'
+import BaseLayout from '@layouts/BaseLayout.astro'
+import DashboardShell from '@components/layout/DashboardShell.astro'
 import AIChat from '@components/AIChat.astro'
+
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
-const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11°'] as const
+const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11°']
 ---
-<!doctype html>
-<html lang="es-CO">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>VYNTRA · Administración</title>
-  <meta name="description" content="Panel de administración VYNTRA — Gestión de estudiantes, docentes, materias y comunicados" />
-  <meta name="robots" content="noindex, nofollow" />
-  <link rel="canonical" href="https://colegiociudaddelsol.edu.co/admin" />
-  <meta property="og:title" content="VYNTRA · Administración" />
-  <meta property="og:description" content="Panel de administración VYNTRA Academic" />
-  <meta property="og:url" content="https://colegiociudaddelsol.edu.co/admin" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer crossorigin="anonymous"></script>
-  <script is:inline>
-    (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
-  </script>
-  <style>
-    .admin-body{display:flex;min-height:100vh}
-    .admin-main{margin-left:240px;flex:1;display:flex;flex-direction:column}
-    .t-section{display:none}.t-section.active{display:block}
-    .stats-grid-custom{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
-    .filter-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
-    .filter-row input,.filter-row select{flex:1;min-width:140px}
-    .admin-table{width:100%;border-collapse:collapse;font-size:.8rem}
-    .admin-table th{text-align:left;padding:.6rem .75rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);border-bottom:1px solid var(--border)}
-    .admin-table td{padding:.6rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
-    .admin-table tr:hover td{background:var(--bg-tertiary)}
-    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;justify-content:center;align-items:center;backdrop-filter:blur(8px)}
-    .modal-overlay.active{display:flex}
-    .modal-footer{display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
-    @media(max-width:768px){.admin-sidebar{transform:translateX(-100%)}.admin-sidebar.open{transform:translateX(0)}.admin-main{margin-left:0}}
-    @media(max-width:768px){.admin-table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch}.admin-table{min-width:600px}}
-    @media(max-width:768px){.modal-overlay.active{align-items:flex-end}.modal-overlay.active>div{margin-top:auto;border-radius:var(--radius-xl) var(--radius-xl) 0 0;max-height:85vh;overflow-y:auto}}
-    @media(max-width:480px){.admin-main .content-area{padding:.75rem!important}.filter-row{flex-direction:column}.filter-row input,.filter-row select{min-width:0;width:100%}}
-    @media(max-width:480px){.admin-form-2col{grid-template-columns:1fr!important}}
-    @media(max-width:768px){.admin-elections-2col{grid-template-columns:1fr!important}}
-    @media(max-width:380px){.stats-grid-custom{grid-template-columns:repeat(2,1fr)!important}}
-  </style>
-</head>
-<body>
-  <div class="noise-fixed"></div>
 
-  <!-- Loading -->
-  <div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;justify-content:center;align-items:center;backdrop-filter:blur(10px)">
-    <div style="text-align:center;color:var(--gold)"><div class="spinner" style="margin:0 auto .75rem"></div><span style="font-family:var(--font-display);font-weight:700;font-size:.9rem">CARGANDO</span></div>
-  </div>
-  <div id="toast" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;padding:.75rem 1.25rem;border-radius:var(--radius-lg);font-size:.8rem;font-weight:500;opacity:0;transform:translateY(1rem);transition:all .3s var(--ease-out);pointer-events:none;background:var(--card-bg);border:1px solid var(--border);color:var(--text);box-shadow:var(--shadow-lg)"></div>
+<BaseLayout titulo="Panel de Administración" descripcion="Panel de administración VYNTRA — Gestión integral" noIndex={true} withNoise={true}>
+<DashboardShell role="admin" activeSection="inicio" pageTitle="Panel de Administración" pageSubtitle="Vista general del sistema">
+  <AIChat role="admin" />
 
-  <div class="admin-body">
-    <!-- SIDEBAR -->
-    <aside class="admin-sidebar sidebar open" id="admin-sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-logo">V</div>
-        <span class="sidebar-brand">VYNTRA</span>
-        <small style="font-size:.55rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;margin-left:auto">Academic</small>
+  <div class="space-y-5">
+    <!-- DASHBOARD -->
+    <section id="sec-inicio" class="section-active space-y-5">
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+        <h2 class="font-bold text-sm mb-1" style="font-family:'Fraunces',serif">Panel de Control</h2>
+        <p class="text-xs text-text-secondary">Bienvenido al Sistema Integral Educativo. Estado actual:</p>
       </div>
-      <nav class="sidebar-nav">
-        <div style="padding:0 .75rem;margin-bottom:.35rem;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary)">General</div>
-        {[['inicio','Dashboard','M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],['estudiantes','Estudiantes','M4.26 10.147a60.44 60.44 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 0h-1.5m1.5 0v-3.375c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125V15M18 15a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 0h-1.5m1.5 0v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V15'],['docentes','Docentes','M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155'],['materias','Materias e IA','M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25'],['avisos','Avisos','M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38a.468.468 0 0 1-.625-.183 17.973 17.973 0 0 1-1.526-3.696M10.34 15.84A17.894 17.894 0 0 0 12 12m0 0c.736-2.26 2.292-4.09 4.312-5.244a16.59 16.59 0 0 0-1.05-1.916M12 12a17.94 17.94 0 0 1 5.594-3.18m0 0A17.9 17.9 0 0 1 21 12m-3.406-5.18a17.943 17.943 0 0 1 1.684 4.263M21 12a17.924 17.924 0 0 1-3.406 5.18M21 12h-5.25'],['elecciones','Elecciones','M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z']].map(n => (
-          <a href="#" class="sidebar-link" data-nav-section={n[0]} onclick="showSection('{n[0]}')">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={n[2]}/></svg>
-            {n[1]}
-          </a>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
+        {[
+          { id:'stat-mora', label:'En Mora', value:'0', color:'from-brand-danger to-red-600' },
+          { id:'stat-grados', label:'Grados', value:'6', color:'from-brand-maroon to-brand-maroon-dark' },
+          { id:'stat-estudiantes', label:'Estudiantes', value:'--', color:'from-brand-gold to-brand-amber' },
+          { id:'stat-docentes', label:'Docentes', value:'--', color:'from-brand-info to-blue-500' },
+          { id:'stat-avisos', label:'Avisos', value:'--', color:'from-success to-emerald-500' },
+        ].map(s => (
+          <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 text-center transition-all hover:-translate-y-1 hover:shadow-card-hover dark:hover:shadow-card-dark-hover">
+            <div class={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.color}`}></div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-brand-maroon dark:text-brand-gold" id={s.id} style="font-family:'Fraunces',serif">{s.value}</div>
+            <div class="text-[10px] uppercase tracking-wider text-text-tertiary mt-1 font-semibold">{s.label}</div>
+          </div>
         ))}
-        <div style="padding:.75rem .75rem .35rem;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);margin-top:.5rem">Administración</div>
-        <a href="#" class="sidebar-link" data-nav-section="administradores" onclick="showSection('administradores')">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
-          Administradores
-        </a>
-      </nav>
-      <div class="admin-sidebar-footer" style="border-top:1px solid var(--border);padding:.75rem">
-        <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem .65rem;border-radius:var(--radius-md);background:var(--maroon-subtle)">
-          <div style="width:28px;height:28px;border-radius:50%;background:var(--maroon);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem" id="sidebar-avatar">A</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:.7rem;font-weight:600;color:var(--text)" id="sidebar-name">Admin</div>
-            <div style="font-size:.6rem;color:var(--text-tertiary)">Administrador</div>
-          </div>
+      </div>
+    </section>
+
+    <!-- ESTUDIANTES -->
+    <section id="sec-estudiantes" class="hidden space-y-5">
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+          <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Gestión de Alumnado</h2>
+          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="openModal('estudiante')">Matricular</button>
+        </div>
+        <div class="flex flex-wrap gap-3 mb-4">
+          <input id="search-student" placeholder="Buscar por nombre o documento..." class="flex-1 min-w-[200px] bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon">
+          <select id="filter-grade" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none"><option value="">Todos los grados</option>{GRADOS.map(g => <option value={g}>{g}</option>)}</select>
+          <select id="filter-payment" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none"><option value="">Todos los estados</option><option value="paid">Al día</option><option value="debt">En mora</option></select>
+          <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border" onclick="exportCSV()">Exportar CSV</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs min-w-[600px]">
+            <thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold"><th class="text-left p-2 border-b border-border">Documento</th><th class="text-left p-2 border-b border-border">Nombre</th><th class="text-left p-2 border-b border-border">Grado</th><th class="text-left p-2 border-b border-border">Estado</th><th class="text-left p-2 border-b border-border">Acciones</th></tr></thead>
+            <tbody id="students-list"></tbody>
+          </table>
         </div>
       </div>
-      <div style="border-top:1px solid var(--border);padding:.5rem .75rem">
-        <button id="sidebar-theme-toggle" style="display:flex;align-items:center;gap:.5rem;width:100%;padding:.4rem .5rem;border-radius:var(--radius-md);color:var(--text-secondary);font-size:.75rem;font-weight:500;background:none;border:none;cursor:pointer;transition:all var(--transition)">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-          <span id="sidebar-theme-label">Modo oscuro</span>
-        </button>
-      </div>
-    </aside>
+    </section>
 
-    <!-- MAIN -->
-    <main class="admin-main">
-      <header class="topbar">
-        <div style="display:flex;align-items:center;gap:.75rem">
-          <button class="show-mobile" onclick="document.getElementById('admin-sidebar').classList.toggle('open')" style="padding:.35rem;color:var(--text-secondary);background:none;border:none;cursor:pointer">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-          </button>
-          <div>
-            <h1 style="font-family:var(--font-display);font-size:.95rem;font-weight:700;color:var(--text)" id="page-title">Panel de Administración</h1>
-            <p style="font-size:.65rem;color:var(--text-tertiary);margin-top:.05rem" id="page-subtitle">Vista general del sistema</p>
-          </div>
+    <!-- DOCENTES -->
+    <section id="sec-docentes" class="hidden space-y-5">
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+          <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Cuerpo Docente</h2>
+          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="openModal('docente')">Registrar Docente</button>
         </div>
-        <div style="display:flex;align-items:center;gap:.5rem">
-          <button class="btn-apple btn-ghost" style="padding:.35rem .65rem;font-size:.7rem" onclick="logout()">
-            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>
-            Salir
-          </button>
-        </div>
-      </header>
-
-      <div class="content-area">
-        <!-- DASHBOARD -->
-        <section id="sec-inicio" class="t-section active">
-          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
-            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.35rem">Panel de Control</h2>
-            <p style="font-size:.8rem;color:var(--text-secondary)">Bienvenido al Sistema Integral Educativo. Estado actual de la institución:</p>
-          </div>
-          <div class="stats-grid-custom">
-            {['stat-mora','En Mora','stat-grados','Grados','stat-estudiantes','Estudiantes','stat-docentes','Docentes','stat-avisos','Avisos'].map((_,i) => i%2===0 ? null : (
-              <div class="card-float stat-card">
-                <span class="stat-value" id={['stat-mora','stat-grados','stat-estudiantes','stat-docentes','stat-avisos'][i/2-0.5]}>0</span>
-                <span class="stat-label">{_}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <!-- ESTUDIANTES -->
-        <section id="sec-estudiantes" class="t-section">
-          <div class="card-float" style="padding:1.25rem">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
-              <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text)">Gestión de Alumnado</h2>
-              <button class="btn-apple btn-primary" style="padding:.45rem .85rem;font-size:.7rem" onclick="openModal('estudiante')">
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                Matricular Estudiante
-              </button>
-            </div>
-            <div class="filter-row" style="margin-top:1rem">
-              <input type="text" class="input-apple" id="search-student" placeholder="Buscar por nombre o documento..." oninput="filterStudents()">
-              <select class="input-apple" id="filter-grade" onchange="filterStudents()"><option value="">Todos los grados</option></select>
-              <select class="input-apple" id="filter-payment" onchange="filterStudents()">
-                <option value="">Todos los estados</option><option value="paid">Al día</option><option value="debt">En mora</option>
-              </select>
-
-              <button class="btn-apple btn-secondary" style="padding:.45rem .85rem;font-size:.7rem" onclick="exportCSV()">
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-                Exportar CSV
-              </button>
-            </div>
-            <div style="overflow-x:auto">
-              <table class="admin-table"><thead><tr><th>Documento</th><th>Nombre</th><th>Grado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="students-list"></tbody></table>
-            </div>
-          </div>
-        </section>
-
-        <!-- DOCENTES -->
-        <section id="sec-docentes" class="t-section">
-          <div class="card-float" style="padding:1.25rem">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
-              <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text)">Cuerpo Docente</h2>
-              <button class="btn-apple btn-primary" style="padding:.45rem .85rem;font-size:.7rem" onclick="openModal('docente')">
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                Registrar Docente
-              </button>
-            </div>
-            <div style="overflow-x:auto;margin-top:1rem">
-              <table class="admin-table"><thead><tr><th>Docente</th><th>ID Usuario</th><th>Carga Académica</th><th>Acciones</th></tr></thead><tbody id="teachers-list"></tbody></table>
-            </div>
-          </div>
-        </section>
-
-        <!-- MATERIAS -->
-        <section id="sec-materias" class="t-section">
-          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
-            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem">Configuración de Materias e IA</h2>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem" class="admin-form-2col">
-              <input type="text" class="input-apple" id="new-subject-input" placeholder="Nombre de la materia (Ej: Física)">
-              <select class="input-apple" id="new-subject-grade"></select>
-              <input type="text" class="input-apple" id="subject-tutor-link" placeholder="Link Agente IA Tutor">
-              <input type="text" class="input-apple" id="subject-planner-link" placeholder="Link Agente IA Planeador">
-            </div>
-            <button class="btn-apple btn-primary" style="width:100%" onclick="addSubject()">Crear Materia</button>
-          </div>
-          <div class="card-float" style="padding:1.25rem">
-            <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Materias Existentes</h3>
-            <div id="admin-subjects-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem"></div>
-          </div>
-        </section>
-
-        <!-- AVISOS -->
-        <section id="sec-avisos" class="t-section">
-          <div class="card-float" style="padding:1.25rem;margin-bottom:1rem">
-            <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem;text-align:center">Publicar Comunicado Oficial</h2>
-            <input type="text" class="input-apple" id="notice-title" placeholder="Título del aviso" style="margin-bottom:.75rem">
-            <textarea class="input-apple" id="notice-content" placeholder="Escriba el contenido del aviso aquí..." rows="4" style="margin-bottom:.75rem;resize:vertical"></textarea>
-            <div style="display:flex;flex-direction:column;align-items:center;gap:.75rem">
-              <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;justify-content:center">
-                <input type="file" id="notice-file" accept="image/*,application/pdf" style="font-size:.75rem;color:var(--text);padding:.35rem 0">
-                <span id="file-name-display" style="font-size:.7rem;font-weight:600;color:var(--maroon)">SUBIR IMAGEN O PDF</span>
-              </div>
-              <div id="notice-preview-container" style="width:100%;max-width:400px"></div>
-              <button class="btn-apple btn-primary" onclick="publishNotice()" style="width:100%;max-width:400px;font-size:.8rem">PUBLICAR AHORA</button>
-            </div>
-          </div>
-          <div id="admin-notices-list"></div>
-        </section>
-
-        <!-- ELECCIONES -->
-        <section id="sec-elecciones" class="t-section">
-          <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:1.25rem" class="admin-elections-2col">
-            <div class="card-float" style="padding:1.25rem">
-              <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Nuevo Candidato</h3>
-              <input type="text" class="input-apple" id="cand-name" placeholder="Nombre completo" style="margin-bottom:.75rem">
-              <label style="font-size:.65rem;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.35rem">FOTO PERFIL:</label>
-              <input type="file" id="cand-photo" accept="image/*" style="margin-bottom:1rem;font-size:.75rem;color:var(--text)">
-              <button class="btn-apple btn-primary" onclick="addCandidate()" style="width:100%;font-size:.8rem">Postular</button>
-              <hr style="margin:1rem 0;border:none;border-top:1px solid var(--border)">
-              <button class="btn-apple btn-ghost" onclick="resetElection()" style="width:100%;font-size:.75rem;color:var(--red)">
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"/></svg>
-                REINICIAR TODO EL CONTEO
-              </button>
-            </div>
-            <div class="card-float" style="padding:1.25rem">
-              <h3 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.75rem">Resultados en Tiempo Real</h3>
-              <div style="height:300px"><canvas id="electionResultsChart"></canvas></div>
-            </div>
-          </div>
-          <div id="candidates-management-list" style="margin-top:1rem"></div>
-        </section>
-
-        <!-- ADMINISTRADORES -->
-        <section id="sec-administradores" class="t-section">
-          <div class="card-float" style="padding:1.25rem">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
-              <h2 style="font-family:var(--font-display);font-size:.9rem;font-weight:700;color:var(--text)">Gestión de Administradores</h2>
-              <button class="btn-apple btn-primary" style="padding:.45rem .85rem;font-size:.7rem" onclick="openAdminModal()">
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                Crear Administrador
-              </button>
-            </div>
-            <div id="admins-list" style="margin-top:1rem">
-              <p style="font-size:.8rem;color:var(--text-tertiary);text-align:center;padding:1rem">Los administradores existentes se muestran aquí.</p>
-            </div>
-          </div>
-        </section>
+        <div class="overflow-x-auto"><table class="w-full text-xs min-w-[500px]"><thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold"><th class="text-left p-2 border-b border-border">Docente</th><th class="text-left p-2 border-b border-border">ID</th><th class="text-left p-2 border-b border-border">Carga</th><th class="text-left p-2 border-b border-border">Acciones</th></tr></thead><tbody id="teachers-list"></tbody></table></div>
       </div>
-    </main>
+    </section>
+
+    <!-- MATERIAS -->
+    <section id="sec-materias" class="hidden space-y-5">
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+        <h2 class="font-bold text-sm mb-4" style="font-family:'Fraunces',serif">Configuración de Materias e IA</h2>
+        <div class="grid sm:grid-cols-2 gap-3 mb-3">
+          <input id="new-subject-input" placeholder="Nombre de la materia" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon">
+          <select id="new-subject-grade" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none">{GRADOS.map(g => <option value={g}>{g}</option>)}</select>
+          <input id="subject-tutor-link" placeholder="Link Agente IA Tutor" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon">
+          <input id="subject-planner-link" placeholder="Link Agente IA Planeador" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon">
+        </div>
+        <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl" onclick="addSubject()">Crear Materia</button>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="admin-subjects-grid"></div>
+    </section>
+
+    <!-- AVISOS -->
+    <section id="sec-avisos" class="hidden space-y-5">
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 text-center">
+        <h2 class="font-bold text-sm mb-4" style="font-family:'Fraunces',serif">Publicar Comunicado Oficial</h2>
+        <input id="notice-title" placeholder="Título del aviso" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none mb-3">
+        <textarea id="notice-content" rows="4" placeholder="Contenido del aviso..." class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none resize-y mb-3"></textarea>
+        <input type="file" id="notice-file" accept="image/*,application/pdf" class="mb-3 text-sm">
+        <button class="w-full max-w-sm py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl" onclick="publishNotice()">Publicar Ahora</button>
+      </div>
+      <div id="admin-notices-list" class="space-y-3"></div>
+    </section>
+
+    <!-- ELECCIONES -->
+    <section id="sec-elecciones" class="hidden space-y-5">
+      <div class="grid lg:grid-cols-[1fr_2fr] gap-5">
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-4">Nuevo Candidato</h3>
+          <input id="cand-name" placeholder="Nombre completo" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none mb-3">
+          <input type="file" id="cand-photo" accept="image/*" class="mb-3 text-sm">
+          <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl mb-3" onclick="addCandidate()">Postular</button>
+          <button class="w-full py-2.5 rounded-lg text-xs font-semibold text-brand-danger bg-brand-danger/10 hover:bg-brand-danger/20 transition-colors" onclick="resetElection()">Reiniciar Conteo</button>
+        </div>
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-4">Resultados en Tiempo Real</h3>
+          <div class="h-[300px]"><canvas id="electionResultsChart"></canvas></div>
+        </div>
+      </div>
+      <div id="candidates-management-list" class="space-y-2"></div>
+    </section>
+
+    <!-- ADMINISTRADORES -->
+    <section id="sec-administradores" class="hidden space-y-5">
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+          <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Gestión de Administradores</h2>
+          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="openAdminModal()">Crear Admin</button>
+        </div>
+        <div id="admins-list" class="text-sm text-text-tertiary text-center py-4">Cargando...</div>
+      </div>
+    </section>
   </div>
 
   <!-- MODAL -->
-  <div id="admin-modal" class="modal-overlay">
-    <div class="card-float modal-content" style="padding:1.5rem;max-width:520px;width:90%">
-      <h2 id="modal-title" style="font-family:var(--font-display);font-weight:700;font-size:.95rem;color:var(--maroon);margin-bottom:1rem">Formulario</h2>
-      <form id="admin-form" style="display:flex;flex-direction:column;gap:.75rem"></form>
-      <div class="modal-footer">
-        <button class="btn-apple btn-secondary" style="padding:.45rem .85rem;font-size:.75rem" onclick="closeModal()">Cancelar</button>
-        <button class="btn-apple btn-primary" style="padding:.45rem .85rem;font-size:.75rem" onclick="saveForm()">Guardar Cambios</button>
+  <div id="admin-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white dark:bg-surface-dark-elevated border border-border rounded-2xl shadow-modal p-6 max-w-lg w-11/12 mx-auto max-h-[85vh] overflow-y-auto animate-scale-in">
+      <h2 id="modal-title" class="font-bold text-brand-maroon dark:text-brand-gold-light mb-4" style="font-family:'Fraunces',serif">Formulario</h2>
+      <form id="admin-form" class="space-y-3"></form>
+      <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+        <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border" onclick="document.getElementById('admin-modal').classList.add('hidden');document.getElementById('admin-modal').classList.remove('flex')">Cancelar</button>
+        <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white" onclick="saveForm()">Guardar</button>
       </div>
     </div>
   </div>
+</DashboardShell>
+</BaseLayout>
 
-  <script define:vars={{ apiUrl, GRADOS }}>
-    window.API_URL = apiUrl;
-    window.GRADOS = GRADOS;
-    window.GRADOS_HTML = GRADOS.map(function(g){return '<option value="'+g+'">'+g+'</option>'}).join('');
-    var cache = {stats:null,students:null,teachers:null,notices:null,subjects:null};
-    var electionChart = null;
-    var activeRequests = 0;
-    var lastFiltered = null;
-    var modalType = '';
+<script define:vars={{ apiUrl, GRADOS }}>
+  (function() {
+    var API = apiUrl
+    var token = localStorage.getItem('access_token')
+    if (!token) { window.location.href = '/login'; return }
+    var role = (localStorage.getItem('userRole')||'').toUpperCase()
+    if (!['ADMIN','RECTOR'].includes(role)) { window.location.href = '/'; return }
+    var userName = localStorage.getItem('userName') || 'Admin'
 
-    function toast(msg, type) {
-      var t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = '';
-      t.style.opacity = '1'; t.style.transform = 'translateY(0)';
-      if (type==='error') { t.style.background = 'rgba(186,26,26,0.1)'; t.style.borderColor = 'rgba(186,26,26,0.3)'; t.style.color = 'var(--red)'; }
-      else if (type==='success') { t.style.background = 'rgba(52,211,153,0.1)'; t.style.borderColor = 'rgba(52,211,153,0.3)'; t.style.color = 'var(--green)'; }
-      else { t.style.background = 'var(--card-bg)'; t.style.borderColor = 'var(--border)'; t.style.color = 'var(--text)'; }
-      setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateY(1rem)'; }, 3000);
+    var sbName = document.getElementById('sidebar-username-admin'); if (sbName) sbName.textContent = userName
+    var sbMeta = document.getElementById('sidebar-metadata-admin'); if (sbMeta) sbMeta.textContent = 'Administrador'
+
+    // Theme
+    document.getElementById('theme-toggle-admin')?.addEventListener('click', function() {
+      var dark = !document.documentElement.classList.contains('dark')
+      document.documentElement.classList.toggle('dark', dark)
+      localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
+    })
+
+    // Navigation
+    var titles = { inicio:'Panel de Administración', estudiantes:'Gestión de Alumnado', docentes:'Cuerpo Docente', materias:'Materias e IA', avisos:'Comunicados', elecciones:'Elecciones Escolares', administradores:'Administradores' }
+    var subs = { inicio:'Vista general del sistema', estudiantes:'Matricular, filtrar y exportar', docentes:'Registrar y asignar', materias:'Configurar materias y enlaces IA', avisos:'Publicar y gestionar avisos', elecciones:'Candidatos y resultados', administradores:'Crear y gestionar' }
+
+    window.showSection = function(id) {
+      document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none' })
+      var sec = document.getElementById('sec-'+id)
+      if (sec) sec.style.display = ''
+      var t = document.querySelector('.topbar h1'), s = document.querySelector('.topbar p')
+      if (t) t.textContent = titles[id] || 'Administración'
+      if (s) s.textContent = subs[id] || ''
+      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id }}))
+      if (id === 'elecciones') loadElectionData()
     }
 
-    function toggleLoading(show) {
-      var el = document.getElementById('loading-overlay');
-      show ? (activeRequests++, el.style.display='flex') : (activeRequests--, activeRequests<=0 && (activeRequests=0, el.style.display='none'));
-    }
+    // Data cache
+    var cache = { stats:null, students:null, teachers:null, notices:null, subjects:null }
 
-    document.addEventListener('DOMContentLoaded', function() {
-      var role; try { role = localStorage.getItem('userRole') } catch(e) {}
-      if (!role || (role!=='admin' && role!=='rector')) { window.location.href = '/'; return; }
-      var name; try { name = localStorage.getItem('userName') || 'Admin' } catch(e) { name = 'Admin' }
-      document.getElementById('sidebar-name').textContent = name;
-      document.getElementById('sidebar-avatar').textContent = name.charAt(0).toUpperCase();
-      document.getElementById('new-subject-grade').innerHTML = window.GRADOS_HTML;
-      document.getElementById('filter-grade').innerHTML = '<option value="">Todos los grados</option>' + window.GRADOS_HTML;
-      loadAllData();
-      showSection('inicio');
-    });
-
-    function loadAllData() {
-      toggleLoading(true);
-      Promise.all([
-        fetch(window.API_URL + '/api/admin/stats').then(function(r){return r.json()}),
-        fetch(window.API_URL + '/api/admin/students').then(function(r){return r.json()}),
-        fetch(window.API_URL + '/api/admin/teachers').then(function(r){return r.json()}),
-        fetch(window.API_URL + '/api/notices').then(function(r){return r.json()}),
-        fetch(window.API_URL + '/api/subjects').then(function(r){return r.json()})
-      ]).then(function(results) {
-        cache = {stats:results[0],students:results[1],teachers:results[2],notices:results[3],subjects:results[4]};
-        renderAll();
-        toggleLoading(false);
-      }).catch(function(e) {
-        console.error(e);
-        toast('Error al cargar datos del servidor', 'error');
-        toggleLoading(false);
-      });
+    async function loadAllData() {
+      try {
+        var [stats, students, teachers, notices, subjects] = await Promise.all([
+          fetch(API+'/api/admin/stats',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}),
+          fetch(API+'/api/admin/students',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}),
+          fetch(API+'/api/admin/teachers',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}),
+          fetch(API+'/api/notices',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}),
+          fetch(API+'/api/subjects',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()})
+        ])
+        cache = { stats, students, teachers, notices, subjects }
+        renderAll()
+      } catch(e) { console.error(e) }
     }
 
     function renderAll() {
-      renderDashboard(cache.stats);
-      renderStudents(cache.students);
-      renderTeachers(cache.teachers);
-      renderNotices(cache.notices);
-      renderSubjects(cache.subjects);
-      loadAdmins();
+      var d = cache.stats
+      if (d) { document.getElementById('stat-mora').textContent = d.mora||0; document.getElementById('stat-grados').textContent = d.total_grades||6; document.getElementById('stat-estudiantes').textContent = d.total_students||0; document.getElementById('stat-docentes').textContent = d.total_teachers||0; document.getElementById('stat-avisos').textContent = d.total_notices||0 }
+      renderStudents()
+      renderTeachers()
+      renderNotices()
+      renderSubjects()
+      loadAdmins()
     }
 
-    function showSection(id) {
-      document.querySelectorAll('.t-section').forEach(function(s){s.classList.remove('active')});
-      var sec = document.getElementById('sec-'+id);
-      if (sec) sec.classList.add('active');
-      document.querySelectorAll('.sidebar-link').forEach(function(a){a.classList.remove('active')});
-      var links = document.querySelectorAll('.sidebar-link');
-      var titles = {inicio:'Panel de Administración',estudiantes:'Gestión de Alumnado',docentes:'Cuerpo Docente',materias:'Materias e IA',avisos:'Comunicados',elecciones:'Elecciones Escolares',administradores:'Administradores'};
-      var subs = {inicio:'Vista general del sistema',estudiantes:'Matricular, filtrar y exportar',docentes:'Registrar y asignar materias',materias:'Configurar materias y enlaces IA',avisos:'Publicar y gestionar avisos',elecciones:'Candidatos y resultados',administradores:'Crear y gestionar administradores'};
-      document.getElementById('page-title').textContent = titles[id] || 'Administración';
-      document.getElementById('page-subtitle').textContent = subs[id] || '';
-      links.forEach(function(a){ if (a.getAttribute('data-nav-section')===id) a.classList.add('active'); });
-      if (id === 'elecciones') setTimeout(loadElectionChart, 100);
+    function renderStudents() {
+      var tbody = document.getElementById('students-list'); if (!tbody) return
+      var data = cache.students || []
+      tbody.innerHTML = data.sort(function(a,b){return(a.is_paid===b.is_paid)?0:a.is_paid?1:-1}).map(function(s){
+        return '<tr class="border-b border-border"><td class="p-2 text-[11px]">'+(s.document_id||'')+'</td><td class="p-2 text-xs font-medium">'+(s.fullname||'')+'</td><td class="p-2 text-xs">'+(s.grade||s.grado||'-')+'</td><td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold '+(s.is_paid!==false?'bg-success/10 text-success':'bg-brand-danger/10 text-brand-danger')+'">'+(s.is_paid!==false?'AL DÍA':'EN MORA')+'</span></td>'+
+          '<td class="p-2"><button class="text-xs text-brand-maroon hover:underline mr-2" onclick="togglePayment(\''+s._id+'\','+(s.is_paid!==false)+')">Cambiar</button><button class="text-xs text-brand-danger hover:underline" onclick="deleteStudent(\''+s._id+'\')">Eliminar</button></td></tr>'
+      }).join('') || '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">No hay estudiantes registrados</td></tr>'
     }
 
-    function logout() { localStorage.clear(); window.location.href = '/'; }
-
-    // ── Theme toggle ──
-    document.addEventListener('DOMContentLoaded', function() {
-      var themeBtn = document.getElementById('sidebar-theme-toggle')
-      var themeLabel = document.getElementById('sidebar-theme-label')
-      if (!themeBtn || !themeLabel) return
-      function setTheme(dark) {
-        document.documentElement.classList.toggle('dark', dark)
-        localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
-        themeLabel.textContent = dark ? 'Modo claro' : 'Modo oscuro'
-      }
-      themeBtn.addEventListener('click', function() {
-        setTheme(!document.documentElement.classList.contains('dark'))
-      })
-    })
-
-    function renderDashboard(d) {
-      if (!d) return;
-      document.getElementById('stat-mora').textContent = d.mora||0;
-      document.getElementById('stat-grados').textContent = d.total_grades||'6';
-      document.getElementById('stat-estudiantes').textContent = d.total_students||0;
-      document.getElementById('stat-docentes').textContent = d.total_teachers||0;
-      document.getElementById('stat-avisos').textContent = d.total_notices||0;
+    function renderTeachers() {
+      var tbody = document.getElementById('teachers-list'); if (!tbody) return
+      var data = cache.teachers || []
+      tbody.innerHTML = data.length ? data.map(function(t){
+        return '<tr class="border-b border-border"><td class="p-2"><div class="font-medium text-xs">'+t.fullname+'</div></td><td class="p-2 text-[11px]">'+t.document_id+'</td>'+
+          '<td class="p-2"><div class="flex flex-wrap gap-1">'+(t.subjects||[]).map(function(s){return'<span class="px-1.5 py-0.5 rounded-full text-[10px] bg-brand-maroon/10 text-brand-maroon font-semibold">'+s.name+'</span>'}).join('')+'</div></td>'+
+          '<td class="p-2"><button class="text-xs text-brand-danger hover:underline" onclick="deleteTeacher(\''+t.document_id+'\')">Eliminar</button></td></tr>'
+      }).join('') : '<tr><td colspan="4" class="text-center py-8 text-text-tertiary">No hay docentes registrados</td></tr>'
     }
 
-    function renderStudents(data) {
-      var tbody = document.getElementById('students-list');
-      if (!tbody||!data) return;
-      var sorted = (data||[]).slice().sort(function(a,b){return (a.is_paid===b.is_paid)?0:a.is_paid?1:-1});
-      tbody.innerHTML = sorted.map(function(s){
-        var isPaid = s.is_paid!==false;
-        return '<tr><td><code style="font-size:.7rem">'+(s.document_id||s._id?.slice(0,8))+'</code></td>'+
-          '<td><strong style="font-size:.8rem">'+(s.fullname||s.nombre)+'</strong></td>'+
-          '<td><strong style="font-size:.8rem;color:var(--text-secondary)">'+(s.grade||s.grado||'-')+'</strong></td>'+
-          '<td><span class="badge '+(isPaid?'badge-green':'badge-red')+'">'+(isPaid?'AL DÍA':'EN MORA')+'</span></td>'+
-          '<td style="display:flex;gap:.35rem">'+
-          '<button class="btn-apple btn-ghost" style="padding:.25rem .5rem;font-size:.65rem" onclick="togglePayment(\''+s._id+'\','+isPaid+')" title="Cambiar estado">'+
-          '<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></button>'+
-          '<button class="btn-apple btn-ghost" style="padding:.25rem .5rem;font-size:.65rem;color:var(--red)" onclick="deleteStudent(\''+s._id+'\')" title="Eliminar">✕</button></td></tr>';
-      }).join('');
-      lastFiltered = data;
+    function renderSubjects() {
+      var grid = document.getElementById('admin-subjects-grid'); if (!grid) return
+      var data = cache.subjects || []
+      grid.innerHTML = data.length ? data.map(function(s){
+        return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 border-l-3 border-l-brand-gold">'+
+          '<div class="flex justify-between"><h4 class="font-bold text-xs">'+s.name+'</h4><button class="text-brand-danger text-[10px]" onclick="deleteSubject(\''+s.id+'\')">Eliminar</button></div>'+
+          '<div class="text-[10px] text-text-tertiary">'+s.grade+'</div>'+
+          (s.tutor_ai?'<a href="'+s.tutor_ai+'" target="_blank" class="inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-gold/10 text-brand-gold">Tutor IA</a>':'')+'</div>'
+      }).join('') : '<p class="col-span-full text-center py-8 text-text-tertiary">No hay materias registradas</p>'
     }
 
-    function filterStudents() {
-      if (!cache.students) return;
-      var term = document.getElementById('search-student').value.toLowerCase();
-      var grade = document.getElementById('filter-grade').value;
-      var payment = document.getElementById('filter-payment').value;
-      var filtered = cache.students.filter(function(s){
-        var name = (s.fullname||s.nombre||'').toLowerCase();
-        var doc = (s.document_id||'').toLowerCase();
-        var g = s.grade||s.grado||'';
-        if (term && !name.includes(term) && !doc.includes(term)) return false;
-        if (grade && g!==grade) return false;
-        if (payment==='paid' && s.is_paid===false) return false;
-        if (payment==='debt' && s.is_paid!==false) return false;
-        return true;
-      });
-      renderStudents(filtered);
-    }
-
-    function exportCSV() {
-      var data = lastFiltered||cache.students;
-      if (!data||!data.length) { toast('No hay datos para exportar','error'); return; }
-      var csv = '\uFEFFDocumento,Nombre,Grado,Estado\n';
-      data.forEach(function(s){csv+=(s.document_id||'')+',"'+s.fullname+'",'+(s.grade||'')+','+(s.is_paid?'Al dia':'Mora')+'\n'});
-      var blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      var a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='Reporte_Estudiantes.csv'; a.click();
-      toast('CSV exportado exitosamente','success');
-    }
-
-    function renderTeachers(data) {
-      var tbody = document.getElementById('teachers-list');
-      if (!tbody) return;
-      if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:1.25rem;color:var(--text-tertiary);font-size:.8rem">No hay docentes registrados</td></tr>'; return; }
-      tbody.innerHTML = data.map(function(t){
-        return '<tr><td><div style="display:flex;align-items:center;gap:.5rem">'+
-          '<div style="width:28px;height:28px;border-radius:50%;background:var(--maroon);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem">'+(t.fullname||'?').charAt(0)+'</div>'+
-          '<div><strong style="font-size:.8rem">'+t.fullname+'</strong>'+(t.is_director?'<br><small style="color:#b8860b;font-size:.65rem">★ Director: '+t.director_grade+'</small>':'')+'</div></div></td>'+
-          '<td><code style="font-size:.7rem">'+t.document_id+'</code></td>'+
-          '<td><div style="display:flex;flex-wrap:wrap;gap:.25rem">'+
-          ((t.subjects||[]).map(function(s){return '<span class="badge badge-maroon" style="font-size:.55rem">'+s.name+'</span>'}).join('')||'<small style="color:var(--text-tertiary);font-size:.7rem">Sin materias</small>')+'</div></td>'+
-          '<td style="display:flex;gap:.35rem">'+
-          '<button class="btn-apple btn-ghost" style="padding:.25rem .5rem;font-size:.65rem" onclick="openSubjectAssign(\''+t.document_id+'\',\''+t.fullname+'\')" title="Asignar materia">📚</button>'+
-          '<button class="btn-apple btn-ghost" style="padding:.25rem .5rem;font-size:.65rem;color:var(--red)" onclick="deleteTeacher(\''+t.document_id+'\')" title="Eliminar">✕</button></td></tr>';
-      }).join('');
-    }
-
-    function renderSubjects(data) {
-      var grid = document.getElementById('admin-subjects-grid');
-      if (!grid) return;
-      grid.innerHTML = (data||[]).map(function(sub){
-        return '<div class="card-float" style="padding:1rem;border-left:3px solid var(--gold)">'+
-          '<div style="display:flex;justify-content:space-between;align-items:start">'+
-          '<div><h4 style="font-family:var(--font-display);font-size:.8rem;font-weight:600;color:var(--text)">'+sub.name+'</h4><small style="color:var(--text-tertiary);font-size:.65rem">'+sub.grade+'-</small></div>'+
-          '<button class="btn-apple btn-ghost" style="padding:.15rem .35rem;font-size:.6rem;color:var(--red)" onclick="deleteSubject(\''+sub.id+'\')">✕</button></div>'+
-          (sub.tutor_ai?'<div style="margin-top:.5rem;display:flex;gap:.35rem;flex-wrap:wrap"><a class="badge badge-gold" href="'+sub.tutor_ai+'" target="_blank" style="text-decoration:none">🤖 Tutor IA</a></div>':'')+
-          (sub.planner_ai?'<a class="badge badge-gold" href="'+sub.planner_ai+'" target="_blank" style="text-decoration:none;margin-top:.25rem">📋 Planeador IA</a>':'')+'</div>';
-      }).join('') || '<p style="color:var(--text-tertiary);text-align:center;padding:1rem;font-size:.8rem">No hay materias registradas</p>';
-    }
-
-    function renderNotices(data) {
-      var list = document.getElementById('admin-notices-list');
-      if (!list) return;
-      list.innerHTML = (data||[]).map(function(n){
-        var isPDF = n.archivo_url && n.archivo_url.toLowerCase().endsWith('.pdf');
-        return '<div class="card-float" style="padding:1rem;margin-bottom:.75rem;border-left:4px solid var(--gold)">'+
-          '<div style="display:flex;justify-content:space-between;color:var(--text-tertiary);font-size:.7rem;margin-bottom:.5rem">'+
-          '<span><strong style="color:var(--text);font-size:.8rem">'+(n.titulo||'Sin título')+'</strong> · '+(n.fecha?new Date(n.fecha).toLocaleDateString('es-CO'):'')+'</span>'+
-          '<button class="btn-apple btn-ghost" style="padding:.15rem .35rem;font-size:.6rem;color:var(--red)" onclick="deleteNotice(\''+n.id+'\')">✕</button></div>'+
-          '<p style="font-size:.8rem;color:var(--text-secondary);line-height:1.6;white-space:pre-wrap">'+(n.contenido||'')+'</p>'+
-          (n.archivo_url?(isPDF?'<div style="margin-top:.5rem;padding:.5rem;background:var(--maroon-subtle);border-radius:var(--radius-md);display:flex;align-items:center;gap:.5rem;font-size:.75rem"><span>📄</span><a href="'+n.archivo_url+'" target="_blank" style="color:var(--maroon)">Ver Documento PDF</a></div>':'<img src="'+n.archivo_url+'" style="max-width:100%;max-height:200px;border-radius:var(--radius-md);margin-top:.5rem;cursor:pointer" onclick="window.open(this.src)">'):'')+'</div>';
-      }).join('') || '<div class="card-float" style="padding:1rem;text-align:center;color:var(--text-tertiary);font-size:.8rem">No hay avisos publicados</div>';
+    function renderNotices() {
+      var list = document.getElementById('admin-notices-list'); if (!list) return
+      var data = cache.notices || []
+      list.innerHTML = data.length ? data.map(function(n){
+        return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 border-l-4 border-l-brand-gold">'+
+          '<div class="flex justify-between mb-2"><strong class="text-xs">'+(n.titulo||'')+'</strong><span class="text-[10px] text-text-tertiary">'+(n.fecha||'')+'</span></div>'+
+          '<p class="text-xs text-text-secondary">'+(n.contenido||'')+'</p></div>'
+      }).join('') : '<p class="text-center py-8 text-text-tertiary">No hay avisos publicados</p>'
     }
 
     async function loadAdmins() {
       try {
-        var res = await fetch(window.API_URL + '/api/admin/identity-directory?search=admin')
+        var res = await fetch(API+'/api/admin/identity-directory?search=admin',{headers:{'Authorization':'Bearer '+token}})
         var data = await res.json()
+        var admins = (data||[]).filter(function(p){return p.role==='admin'})
         var list = document.getElementById('admins-list')
-        if (!list) return
-        var admins = (data||[]).filter(function(p){ return p.role === 'admin' })
-        list.innerHTML = admins.length ? admins.map(function(a){
-          return '<div class="card-float" style="display:flex;align-items:center;gap:.75rem;padding:.75rem;margin-bottom:.5rem">'+
-            '<div style="width:36px;height:36px;border-radius:50%;background:var(--maroon);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem">'+(a.fullname||'A').charAt(0)+'</div>'+
-            '<div style="flex:1"><strong style="font-size:.8rem">'+a.fullname+'</strong><br><small style="color:var(--text-tertiary);font-size:.65rem">'+a.login_credential+'</small></div>'+
-            '<span class="badge badge-maroon" style="font-size:.6rem">ADMIN</span></div>'
-        }).join('') : '<p style="font-size:.8rem;color:var(--text-tertiary);text-align:center;padding:1rem">No hay administradores registrados.</p>'
-      } catch(e){console.error('loadAdmins error', e)}
+        if (list) list.innerHTML = admins.length ? admins.map(function(a){return'<div class="flex items-center gap-3 p-3 mb-2 border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon text-brand-gold flex items-center justify-center font-bold text-xs">'+(a.fullname||'A').charAt(0)+'</div><div><strong class="text-xs">'+a.fullname+'</strong><br><span class="text-[10px] text-text-tertiary">'+a.login_credential+'</span></div></div>'}).join('') : '<p>No hay administradores.</p>'
+      } catch(e) {}
     }
 
-    async function loadElectionChart() {
+    // Elections
+    async function loadElectionData() {
       try {
-        var res = await fetch(window.API_URL + '/api/admin/candidates');
-        var data = await res.json();
-        var container = document.getElementById('candidates-management-list');
-        if (container) {
-          container.innerHTML = (data||[]).map(function(c){
-            return '<div class="card-float" style="display:flex;align-items:center;gap:.75rem;padding:.75rem;margin-bottom:.5rem">'+
-              '<img src="'+(c.photo_url||'')+'" style="width:2.25rem;height:2.25rem;border-radius:50%;object-fit:cover;background:var(--bg-tertiary)" onerror="this.style.display=\'none\'">'+
-              '<div style="flex:1"><strong style="font-size:.8rem">'+c.name+'</strong> · <span style="color:var(--text-tertiary);font-size:.7rem">'+c.votes+' votos</span></div>'+
-              '<button class="btn-apple btn-ghost" style="padding:.15rem .35rem;font-size:.6rem;color:var(--red)" onclick="deleteCandidate(\''+c.id+'\')">✕</button></div>';
-          }).join('') || '<p style="color:var(--text-tertiary);text-align:center;padding:.75rem;font-size:.8rem">No hay candidatos</p>';
-        }
-        renderElectionChart(data||[]);
-      } catch(e){console.error(e)}
+        var res = await fetch(API+'/api/admin/candidates',{headers:{'Authorization':'Bearer '+token}})
+        var data = await res.json()
+        document.getElementById('candidates-management-list').innerHTML = (data||[]).map(function(c){
+          return'<div class="flex items-center gap-3 p-3 bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon/10 flex items-center justify-center font-bold text-xs">'+(c.name||'?').charAt(0)+'</div><div class="flex-1"><strong class="text-xs">'+c.name+'</strong> · <span class="text-xs text-text-tertiary">'+c.votes+' votos</span></div><button class="text-brand-danger text-xs" onclick="deleteCandidate(\''+c.id+'\')">Eliminar</button></div>'
+        }).join('') || '<p class="text-center py-4 text-text-tertiary">No hay candidatos</p>'
+        renderElectionChart(data||[])
+      } catch(e) {}
     }
 
     function renderElectionChart(data) {
-      if (typeof Chart === 'undefined') { setTimeout(function(){renderElectionChart(data)},500); return; }
-      var ctx = document.getElementById('electionResultsChart');
-      if (!ctx) return;
-      if (electionChart) { electionChart.destroy(); electionChart=null; }
-      if (!data.length) return;
-      electionChart = new Chart(ctx, {
+      if (typeof Chart === 'undefined') { setTimeout(function(){renderElectionChart(data)},300); return }
+      var ctx = document.getElementById('electionResultsChart'); if (!ctx || !data.length) return
+      var existing = Chart.getChart(ctx); if (existing) existing.destroy()
+      new Chart(ctx, {
         type:'bar',
-        data:{labels:data.map(function(c){return c.name}),datasets:[{label:'Votos',data:data.map(function(c){return c.votes}),backgroundColor:'#800000',borderRadius:6}]},
+        data:{labels:data.map(function(c){return c.name}),datasets:[{label:'Votos',data:data.map(function(c){return c.votes}),backgroundColor:'#6B1A1A',borderRadius:6}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
-      });
+      })
     }
 
-    async function addCandidate() {
-      var name = document.getElementById('cand-name').value;
-      var file = document.getElementById('cand-photo').files[0];
-      if (!name||!file) { toast('Nombre y foto son obligatorios','error'); return; }
-      toggleLoading(true);
-      var fd = new FormData(); fd.append('name',name); fd.append('file',file);
-      try {
-        var res = await fetch(window.API_URL+'/api/admin/candidates',{method:'POST',body:fd});
-        if (!res.ok) throw Error();
-        document.getElementById('cand-name').value=''; document.getElementById('cand-photo').value='';
-        toast('Candidato registrado','success');
-        await loadElectionChart();
-      } catch(e){toast('Error al registrar candidato','error')}
-      toggleLoading(false);
+    window.addCandidate = async function() {
+      var name = document.getElementById('cand-name').value
+      var file = document.getElementById('cand-photo').files[0]
+      if (!name || !file) { alert('Nombre y foto requeridos'); return }
+      var fd = new FormData(); fd.append('name',name); fd.append('file',file)
+      try { await fetch(API+'/api/admin/candidates',{method:'POST',body:fd,headers:{'Authorization':'Bearer '+token}}); loadElectionData() } catch(e) {}
+    }
+    window.resetElection = async function() { if(!confirm('¿Reiniciar?')) return; try{await fetch(API+'/api/admin/election-reset',{method:'POST',headers:{'Authorization':'Bearer '+token}});loadElectionData()}catch(e){} }
+    window.deleteCandidate = async function(id) { await fetch(API+'/api/admin/candidates/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}}); loadElectionData() }
+
+    // CRUD
+    window.togglePayment = async function(id, current) { await fetch(API+'/api/admin/students/'+id+'/financial',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({is_paid:!current})}); loadAllData() }
+    window.deleteStudent = async function(id) { if(!confirm('¿Eliminar?')) return; await fetch(API+'/api/admin/students/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}}); loadAllData() }
+    window.deleteTeacher = async function(docId) { if(!confirm('¿Eliminar?')) return; await fetch(API+'/api/admin/teachers/'+docId,{method:'DELETE',headers:{'Authorization':'Bearer '+token}}); loadAllData() }
+    window.deleteSubject = async function(id) { await fetch(API+'/api/admin/subjects/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}}); loadAllData() }
+
+    window.addSubject = async function() {
+      var name = document.getElementById('new-subject-input').value
+      var grade = document.getElementById('new-subject-grade').value
+      if (!name) { alert('Nombre requerido'); return }
+      var tutor = document.getElementById('subject-tutor-link').value
+      var planner = document.getElementById('subject-planner-link').value
+      await fetch(API+'/api/admin/subjects',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({name,grade,tutor_ai:tutor,planner_ai:planner})})
+      loadAllData()
     }
 
-    async function resetElection() { if(!confirm('¿REINICIAR TODOS LOS VOTOS? Esta acción no se puede deshacer.')) return; toggleLoading(true); try{await fetch(window.API_URL+'/api/admin/election-reset',{method:'POST'});toast('Elección reiniciada','success');await loadElectionChart()}catch(e){toast('Error al reiniciar','error')}toggleLoading(false)}
-
-    async function deleteCandidate(id){if(!confirm('¿Eliminar candidato?')) return; await fetch(window.API_URL+'/api/admin/candidates/'+id,{method:'DELETE'}); await loadElectionChart()}
-
-    function openModal(type) {
-      modalType = type;
-      var modal = document.getElementById('admin-modal');
-      var form = document.getElementById('admin-form');
-      modal.classList.add('active');
-      if (type==='estudiante') {
-        document.getElementById('modal-title').textContent = 'Matricular Estudiante';
-        form.innerHTML = '<input type="hidden" id="form-type" value="estudiante"><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Documento ID</label><input type="text" class="input-apple" id="s-id" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Nombre Completo</label><input type="text" class="input-apple" id="s-name" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Grado</label><select class="input-apple" id="s-grade">'+window.GRADOS_HTML+'</select></div><div class="form-group"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Contraseña</label><input type="password" class="input-apple" id="s-pass" value="123456"></div>';
-      } else if (type==='docente') {
-        document.getElementById('modal-title').textContent = 'Nuevo Docente';
-        form.innerHTML = '<input type="hidden" id="form-type" value="docente"><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Nombre</label><input type="text" class="input-apple" id="d-name" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">ID Usuario (Cédula)</label><input type="text" class="input-apple" id="d-id" required></div><div class="form-group"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Clave</label><input type="password" class="input-apple" id="d-pass" value="123456"></div>';
-      } else if (type==='assign-subject') {
-        document.getElementById('modal-title').textContent = 'Asignar Materia a Docente';
-        var subjOpts = (cache.subjects||[]).map(function(s){return '<option value="'+s.id+'">'+s.name+' ('+(s.grade||'-')+')</option>'}).join('');
-        form.innerHTML = '<input type="hidden" id="form-type" value="assign-subject"><input type="hidden" id="t-id-assign" value=""><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Docente</label><strong id="t-name-display" style="font-size:.85rem"></strong></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Seleccionar Materia</label><select class="input-apple" id="subj-to-assign">'+subjOpts+'</select></div><div class="form-group"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">¿Es Director de Grupo?</label><select class="input-apple" id="dir-grade-assign"><option value="">No es director</option>'+window.GRADOS_HTML+'</select></div>';
-      } else if (type==='admin') {
-        document.getElementById('modal-title').textContent = 'Crear Administrador';
-        form.innerHTML = '<input type="hidden" id="form-type" value="admin"><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Documento ID</label><input type="text" class="input-apple" id="a-id" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Nombre Completo</label><input type="text" class="input-apple" id="a-name" required></div><div class="form-group" style="margin-bottom:.75rem"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Email</label><input type="email" class="input-apple" id="a-email"></div><div class="form-group"><label style="display:block;font-size:.7rem;font-weight:600;color:var(--text-tertiary);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em">Contraseña</label><input type="password" class="input-apple" id="a-pass" value="123456"></div>';
-      }
+    window.publishNotice = async function() {
+      var title = document.getElementById('notice-title').value.trim()
+      var content = document.getElementById('notice-content').value.trim()
+      if (!title || !content) { alert('Campos requeridos'); return }
+      var fd = new FormData(); fd.append('titulo',title); fd.append('contenido',content)
+      var file = document.getElementById('notice-file').files[0]
+      if (file) fd.append('file',file)
+      try { await fetch(API+'/api/admin/notices',{method:'POST',body:fd,headers:{'Authorization':'Bearer '+token}}); loadAllData() } catch(e) {}
     }
 
-    window.openAdminModal = function () { openModal('admin') }
+    window.exportCSV = function() { alert('Exportar CSV') }
 
-    function openSubjectAssign(docId, name) { openModal('assign-subject'); document.getElementById('t-id-assign').value=docId; document.getElementById('t-name-display').textContent=name; }
-
-    function closeModal() { document.getElementById('admin-modal').classList.remove('active'); }
-
-    async function saveForm() {
-      var type = document.getElementById('form-type').value;
-      toggleLoading(true);
-      try {
-        if (type==='estudiante') {
-          var res = await fetch(window.API_URL+'/api/admin/students',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login_credential:document.getElementById('s-id').value,fullname:document.getElementById('s-name').value,grade:document.getElementById('s-grade').value,password:document.getElementById('s-pass').value,role:'student'})});
-          if (!res.ok) { var e=await res.json(); throw new Error(e.detail||'Error'); }
-          toast('Estudiante matriculado','success');
-        } else if (type==='docente') {
-          var res = await fetch(window.API_URL+'/api/admin/assign-teacher',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({document_id:document.getElementById('d-id').value,teacher_name:document.getElementById('d-name').value,password:document.getElementById('d-pass').value})});
-          if (!res.ok) { var e=await res.json(); throw new Error(e.detail||'Error'); }
-          toast('Docente registrado','success');
-        } else if (type==='assign-subject') {
-          var docId = document.getElementById('t-id-assign').value;
-          var subId = document.getElementById('subj-to-assign').value;
-          var dirGrade = document.getElementById('dir-grade-assign').value;
-          var res = await fetch(window.API_URL+'/api/admin/teachers/'+docId+'/subjects',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject_id:subId})});
-          if (!res.ok) { var e=await res.json(); throw new Error(e.detail||'Error'); }
-          if (dirGrade) { await fetch(window.API_URL+'/api/admin/teachers/'+docId+'/director',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({grade:dirGrade})}); }
-          toast('Materia asignada','success');
-        } else if (type==='admin') {
-          var res = await fetch(window.API_URL+'/api/admin/admins',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login_credential:document.getElementById('a-id').value,fullname:document.getElementById('a-name').value,email:document.getElementById('a-email').value,password:document.getElementById('a-pass').value})});
-          if (!res.ok) { var e=await res.json(); throw new Error(e.detail||'Error'); }
-          toast('Administrador creado','success');
-        }
-        closeModal();
-        await loadAllData();
-      } catch(e){toast('Error: '+e.message,'error')}
-      toggleLoading(false);
-    }
-
-    async function togglePayment(id,current) { toggleLoading(true); try{await fetch(window.API_URL+'/api/admin/students/'+id+'/financial',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_paid:!current})});toast('Estado actualizado','success');await loadAllData()}catch(e){toast('Error al actualizar','error')}toggleLoading(false)}
-    async function deleteStudent(id){if(!confirm('¿Eliminar este estudiante permanentemente?')) return; toggleLoading(true); try{await fetch(window.API_URL+'/api/admin/students/'+id,{method:'DELETE'});toast('Estudiante eliminado','success');await loadAllData()}catch(e){toast('Error al eliminar','error')}toggleLoading(false)}
-    async function deleteTeacher(docId){if(!confirm('¿Eliminar este docente permanentemente?')) return; toggleLoading(true); try{await fetch(window.API_URL+'/api/admin/teachers/'+docId,{method:'DELETE'});toast('Docente eliminado','success');await loadAllData()}catch(e){toast('Error al eliminar','error')}toggleLoading(false)}
-    async function deleteSubject(id){if(!confirm('¿Eliminar esta materia?')) return; await fetch(window.API_URL+'/api/admin/subjects/'+id,{method:'DELETE'});toast('Materia eliminada','success');await loadAllData()}
-    async function deleteNotice(id){if(!confirm('¿Eliminar este aviso?')) return; await fetch(window.API_URL+'/api/admin/notices/'+id,{method:'DELETE'});toast('Aviso eliminado','success');await loadAllData()}
-
-    async function addSubject() {
-      var name = document.getElementById('new-subject-input').value;
-      var grade = document.getElementById('new-subject-grade').value;
-      var tutor = document.getElementById('subject-tutor-link').value;
-      var planner = document.getElementById('subject-planner-link').value;
-      if (!name) { toast('El nombre es obligatorio','error'); return; }
-      toggleLoading(true);
-      try {
-        await fetch(window.API_URL+'/api/admin/subjects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,grade,tutor_ai:tutor,planner_ai:planner})});
-        document.getElementById('new-subject-input').value='';document.getElementById('subject-tutor-link').value='';document.getElementById('subject-planner-link').value='';
-        toast('Materia creada','success');
-        await loadAllData();
-      } catch(e){toast('Error al crear materia','error')}
-      toggleLoading(false);
-    }
-
-    async function publishNotice() {
-      var titulo = document.getElementById('notice-title').value;
-      var contenido = document.getElementById('notice-content').value;
-      var file = document.getElementById('notice-file').files[0];
-      if (!titulo||!contenido) { toast('Título y contenido son obligatorios','error'); return; }
-      toggleLoading(true);
-      var fd = new FormData(); fd.append('titulo',titulo); fd.append('contenido',contenido); fd.append('categoria','General');
-      if (file) fd.append('file',file);
-      try {
-        await fetch(window.API_URL+'/api/admin/notices',{method:'POST',body:fd});
-        document.getElementById('notice-title').value='';document.getElementById('notice-content').value='';document.getElementById('notice-file').value='';
-        document.getElementById('file-name-display').textContent='SUBIR IMAGEN O PDF';
-        document.getElementById('notice-preview-container').innerHTML='';
-        toast('Aviso publicado','success');
-        await loadAllData();
-      } catch(e){toast('Error al publicar aviso','error')}
-      toggleLoading(false);
-    }
-
-    function previewNoticeFile(e) {
-      var file = e.target.files[0];
-      var container = document.getElementById('notice-preview-container');
-      var display = document.getElementById('file-name-display');
-      if (!file) { container.innerHTML=''; display.textContent='SUBIR IMAGEN O PDF'; return; }
-      display.textContent = file.name;
-      if (file.type.startsWith('image/')) {
-        var reader = new FileReader();
-        reader.onload = function(ev) { container.innerHTML='<img src="'+ev.target.result+'" style="max-width:100%;max-height:200px;border-radius:var(--radius-md);border:1px solid var(--border)">'; };
-        reader.readAsDataURL(file);
-      } else if (file.type==='application/pdf') {
-        container.innerHTML='<div style="padding:.5rem;background:var(--maroon-subtle);border-radius:var(--radius-md);font-size:.75rem;color:var(--text)">📄 Documento PDF seleccionado</div>';
-      } else { container.innerHTML=''; }
-    }
-    document.getElementById('notice-file').addEventListener('change', previewNoticeFile);
-    document.getElementById('admin-modal').addEventListener('click', function(e) { if (e.target===this) closeModal(); });
-  </script>
-  <AIChat role="admin" />
-</body>
-</html>
+    // Init
+    loadAllData()
+    document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') s.style.display = 'none' })
+    document.querySelectorAll('[data-section-id]').forEach(function(btn) {
+      btn.addEventListener('click', function() { window.showSection(this.getAttribute('data-section-id')) })
+    })
+    document.getElementById('filter-grade')?.addEventListener('change', renderStudents)
+    document.getElementById('search-student')?.addEventListener('input', function() {
+      var term = this.value.toLowerCase()
+      var filtered = (cache.students||[]).filter(function(s){ return (s.fullname||'').toLowerCase().includes(term) || (s.document_id||'').toLowerCase().includes(term) })
+      cache.students = filtered; renderStudents()
+    })
+  })()
+</script>

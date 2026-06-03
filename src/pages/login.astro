@@ -1,129 +1,108 @@
 ---
-import '../styles/theme.css'
+import BaseLayout from '@layouts/BaseLayout.astro'
+
 const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
 ---
 
-<!doctype html>
-<html lang="es-CO">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>VYNTRA · Acceso</title>
-  <meta name="description" content="Inicia sesión en VYNTRA Academic" />
-  <meta name="robots" content="noindex, nofollow" />
-  <link rel="canonical" href="https://colegiociudaddelsol.edu.co/login" />
-  <meta property="og:title" content="VYNTRA · Acceso" />
-  <meta property="og:description" content="Inicia sesión en VYNTRA Academic" />
-  <meta property="og:url" content="https://colegiociudaddelsol.edu.co/login" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <script>
-    import * as Sentry from '@sentry/browser'
-    var dsn = import.meta.env.PUBLIC_SENTRY_DSN || ''
-    if (dsn) { Sentry.init({ dsn, environment: import.meta.env.PUBLIC_ENV || 'development', tracesSampleRate: 0.25 }) }
-  </script>
-  <script is:inline>
-    (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
-  </script>
-</head>
-<body>
-  <div class="noise-fixed"></div>
-  <main style="display:flex;min-height:100vh;width:100%">
-    <!-- LEFT: Brand panel (hidden mobile) -->
-    <section style="display:none" class="login-brand">
-      <div class="grid-dots" style="position:absolute;inset:0"></div>
-      <div class="hero-orb"></div>
-      <div style="position:relative;z-index:2;padding:4rem">
-        <div style="width:56px;height:56px;border-radius:var(--radius-lg);background:var(--maroon);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem;margin-bottom:3rem">V</div>
-        <span class="badge badge-maroon" style="margin-bottom:1rem">Portal VYNTRA v5.0</span>
-        <h1 style="font-family:var(--font-display);font-weight:800;font-size:clamp(2.5rem,4vw,3.5rem);line-height:.9;letter-spacing:-.03em;color:var(--text);margin-bottom:.5rem">
-          <span style="color:var(--maroon)">VYNTRA</span><br/>Academic
+<BaseLayout titulo="Acceso" descripcion="Inicia sesión en VYNTRA Academic — Solaris" noIndex={true} withNoise={true}>
+  <main class="flex min-h-screen bg-gradient-to-br from-solar-base via-solar-cream to-solar-50 dark:from-surface-dark dark:via-[#0F0C08] dark:to-[#0A0705]">
+    <!-- LEFT: Brand Panel (hidden on mobile) -->
+    <section class="hidden w-0 lg:flex lg:w-[45%] relative overflow-hidden items-center justify-center">
+      <!-- Solar glow -->
+      <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-brand-gold/10 via-brand-amber/5 to-transparent blur-[120px] animate-orb"></div>
+      <div class="absolute inset-0" style="background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse 60% 50% at 50% 50%,black 25%,transparent 70%)"></div>
+
+      <!-- Construction diagram -->
+      <svg class="absolute top-10 right-10 w-72 h-72 opacity-[0.04] dark:opacity-[0.06]" viewBox="0 0 256 256">
+        <circle cx="128" cy="128" r="110" fill="none" stroke="currentColor" stroke-width="0.5" class="text-brand-maroon dark:text-brand-gold"/>
+        <circle cx="128" cy="128" r="75" fill="none" stroke="currentColor" stroke-width="0.5" class="text-brand-gold"/>
+        <line x1="18" y1="128" x2="238" y2="128" stroke="currentColor" stroke-width="0.3" class="text-brand-maroon"/>
+        <line x1="128" y1="18" x2="128" y2="238" stroke="currentColor" stroke-width="0.3" class="text-brand-maroon"/>
+        <line x1="50" y1="50" x2="206" y2="206" stroke="currentColor" stroke-width="0.2" class="text-brand-gold"/>
+        <line x1="206" y1="50" x2="50" y2="206" stroke="currentColor" stroke-width="0.2" class="text-brand-gold"/>
+      </svg>
+
+      <div class="relative z-10 max-w-md mx-auto px-10">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-maroon to-brand-maroon-dark text-white flex items-center justify-center text-lg font-extrabold mb-10">V</div>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-brand-maroon/10 dark:bg-brand-gold/10 text-brand-maroon dark:text-brand-gold-light border border-brand-maroon/10 dark:border-brand-gold/10 mb-4">Portal v5.0 Solaris</span>
+        <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-extrabold leading-[0.85] tracking-tight mb-3" style="font-family:'Fraunces',serif">
+          <span class="bg-gradient-to-r from-brand-maroon to-brand-gold bg-clip-text text-transparent">VYNTRA</span><br/>
+          <span>Solaris</span>
         </h1>
-        <p style="font-size:clamp(.9rem,1.5vw,1.1rem);color:var(--text-secondary);letter-spacing:.15em;text-transform:uppercase;font-weight:500;margin-bottom:1.5rem">Ciencia · Tecnología · Futuro</p>
-        <p style="color:var(--text-tertiary);font-size:.85rem;line-height:1.6;max-width:380px;margin-bottom:3rem">Plataforma Educativa VYNTRA — Tecnología al servicio de la educación en Sogamoso, Boyacá.</p>
-        <div style="display:flex;align-items:center;gap:1rem">
-          <div style="width:40px;height:2px;background:var(--maroon);border-radius:1px"></div>
-          <span style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text-tertiary)">Tecnología Educativa</span>
+        <p class="text-sm tracking-[0.2em] uppercase text-text-secondary font-medium mb-6">Ciencia · Tecnología · Futuro</p>
+        <p class="text-xs text-text-tertiary leading-relaxed mb-10">Plataforma educativa inteligente — Tecnología al servicio de la educación en Sogamoso, Boyacá.</p>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-0.5 bg-gradient-to-r from-brand-maroon to-brand-gold rounded"></div>
+          <span class="text-[10px] uppercase tracking-[0.2em] text-text-tertiary font-semibold">Solar Engine</span>
         </div>
       </div>
-      <div style="position:absolute;bottom:2rem;left:4rem;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.2em;color:var(--text-tertiary);opacity:.5">v5.0 // vyntra_engine_active // academic_portal</div>
+      <div class="absolute bottom-6 left-10 text-[9px] uppercase tracking-[0.25em] text-text-tertiary opacity-40">v5.0 · vyntra_solaris · portal</div>
     </section>
 
-    <!-- RIGHT: Login panel -->
-    <section class="login-panel">
-      <div class="glow-orb-maroon"></div>
-      <div class="glow-orb-gold"></div>
+    <!-- RIGHT: Login Panel -->
+    <section class="w-full lg:w-[55%] flex items-center justify-center px-4 sm:px-8 py-8 relative overflow-hidden">
+      <!-- Floating glow orbs -->
+      <div class="absolute top-10 right-10 w-72 h-72 rounded-full bg-brand-gold/6 blur-[100px] animate-orb pointer-events-none"></div>
+      <div class="absolute bottom-10 left-10 w-64 h-64 rounded-full bg-brand-maroon/5 blur-[80px] animate-orb pointer-events-none" style="animation-delay:-4s"></div>
 
-      <div style="width:100%;max-width:400px;position:relative;z-index:2">
+      <div class="w-full max-w-[420px] relative z-10">
         <!-- Mobile brand -->
-        <div class="show-mobile" style="text-align:center;margin-bottom:2rem">
-          <div style="width:48px;height:48px;border-radius:var(--radius-md);background:var(--maroon);color:white;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;margin-bottom:.75rem">V</div>
-          <div style="font-family:var(--font-display);font-weight:700;font-size:1.3rem;color:var(--text)">VYNTRA Academic</div>
+        <div class="lg:hidden text-center mb-8">
+          <div class="w-10 h-10 mx-auto rounded-xl bg-gradient-to-br from-brand-maroon to-brand-maroon-dark text-white flex items-center justify-center text-base font-extrabold mb-3">V</div>
+          <div class="font-bold text-lg tracking-tight" style="font-family:'Fraunces',serif">VYNTRA Solaris</div>
+          <div class="text-[10px] text-text-tertiary uppercase tracking-widest mt-1">Academic · v5.0</div>
         </div>
 
-        <div class="card-float" style="padding:2rem">
-          <div style="text-align:center;margin-bottom:1.5rem">
-            <h2 style="font-family:var(--font-display);font-weight:700;font-size:1.5rem;color:var(--text);margin-bottom:.25rem">Iniciar Sesión</h2>
-            <p style="color:var(--text-tertiary);font-size:.8rem">Bienvenido a VYNTRA</p>
+        <div class="bg-white/60 dark:bg-surface-dark-elevated backdrop-blur-2xl border border-border rounded-2xl p-6 sm:p-8 shadow-card dark:shadow-card-dark animate-fade-up">
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-bold tracking-tight mb-1" style="font-family:'Fraunces',serif">Iniciar Sesión</h2>
+            <p class="text-xs text-text-tertiary">Bienvenido a VYNTRA</p>
           </div>
 
           <!-- Segmented control -->
-          <div class="segmented-control" id="tab-container">
-            <div class="segmented-slider" id="tab-slider" style="left:4px"></div>
-            <button id="tab-estudiante" class="tab-btn-segment" style="color:var(--text)" data-tab="estudiante">Estudiante</button>
-            <button id="tab-personal" class="tab-btn-segment" style="color:var(--text-tertiary)" data-tab="personal">Personal</button>
+          <div class="relative flex h-10 rounded-full bg-[var(--input-bg)] p-1 mb-6">
+            <div id="tab-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-r from-brand-maroon to-brand-maroon-dark rounded-full transition-all duration-400 ease-spring z-0 left-1"></div>
+            <button id="tab-estudiante" class="flex-1 relative z-10 flex items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 text-text" data-tab="estudiante">Estudiante</button>
+            <button id="tab-personal" class="flex-1 relative z-10 flex items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 text-text-tertiary" data-tab="personal">Personal</button>
           </div>
 
-          <!-- Form -->
-          <form id="login-form" style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem" novalidate>
-            <div style="display:flex;flex-direction:column;gap:.35rem">
-              <label for="doc-id" class="label-caps">Identificación Institucional</label>
-              <div style="position:relative">
-                <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
-                <input id="doc-id" type="text" inputmode="numeric" autocomplete="username" placeholder="ID-000000" required class="input-apple" style="padding-left:2.75rem" />
+          <form id="login-form" class="space-y-4" novalidate>
+            <div>
+              <label for="doc-id" class="block ml-1 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-1.5">Identificación Institucional</label>
+              <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0"/></svg>
+                <input id="doc-id" type="text" inputmode="numeric" autocomplete="username" placeholder="ID-000000" required
+                  class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-text-tertiary/50 outline-none transition-all duration-200 focus:border-brand-maroon dark:focus:border-brand-gold focus:shadow-[0_0_0_3px_var(--input-focus-ring)]" />
               </div>
             </div>
-            <div id="password-group" style="display:flex;flex-direction:column;gap:.35rem;transition:all .35s var(--ease-out);overflow:hidden;max-height:100px;opacity:1">
-              <label for="password" class="label-caps">Contraseña</label>
-              <div style="position:relative">
-                <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" class="input-apple" style="padding-left:2.75rem" />
+
+            <div id="password-group" class="transition-all duration-300 overflow-hidden" style="max-height:100px;opacity:1">
+              <label for="password" class="block ml-1 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-1.5">Contraseña</label>
+              <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <input id="password" type="password" autocomplete="current-password" placeholder="••••••••"
+                  class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-text-tertiary/50 outline-none transition-all duration-200 focus:border-brand-maroon dark:focus:border-brand-gold focus:shadow-[0_0_0_3px_var(--input-focus-ring)]" />
+              </div>
+              <div class="flex justify-end mt-2">
+                <button type="button" id="forgot-link" class="text-[10px] font-semibold text-brand-maroon/60 dark:text-brand-gold/60 hover:text-brand-maroon dark:hover:text-brand-gold transition-colors">¿Problemas de acceso?</button>
               </div>
             </div>
-            <div style="display:flex;justify-content:flex-end">
-              <span class="forgot-link" id="forgot-link">¿Problemas de acceso?</span>
-            </div>
-            <!-- Google OAuth button (Personal tab only) -->
-            <div id="google-signin-container" style="display:none;margin-top:.5rem">
-              <div style="position:relative;margin-bottom:.75rem">
-                <div style="border-top:1px solid var(--border);position:absolute;top:50%;left:0;right:0"></div>
-                <span style="position:relative;z-index:1;display:block;text-align:center;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary);background:var(--card-bg);width:2rem;margin:0 auto">O</span>
-              </div>
-              <button id="google-signin-btn" class="btn-apple btn-secondary" style="width:100%;height:2.75rem;font-size:.8rem;display:flex;align-items:center;justify-content:center;gap:.5rem">
-                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
-                Ingresar con Google
-              </button>
-            </div>
-            <button id="login-submit" type="submit" class="btn-apple btn-primary" style="width:100%;height:3rem;font-size:.85rem">
+
+            <button id="login-submit" type="submit" class="w-full h-11 flex items-center justify-center gap-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-lg hover:shadow-glow-maroon hover:-translate-y-0.5 transition-all duration-300 ease-spring active:scale-[0.97]">
               <span id="submit-text">Ingresar al Portal</span>
-              <svg id="submit-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+              <svg id="submit-spinner" class="hidden h-4 w-4 animate-spin-slow" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
             </button>
-            <div id="login-error" style="border-radius:var(--radius-md);border:1px solid rgba(186,26,26,.15);background:rgba(186,26,26,.04);padding:.65rem .85rem;font-size:.8rem;color:var(--red);text-align:center;display:none" role="alert"></div>
+
+            <div id="login-error" class="hidden rounded-lg border border-brand-danger/20 bg-brand-danger/5 px-4 py-2.5 text-xs text-brand-danger text-center" role="alert"></div>
           </form>
 
-          <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:.5rem">
-            <p style="font-size:.65rem;color:var(--text-tertiary)">VYNTRA Academic · Sogamoso, Boyacá</p>
-            <div style="display:flex;align-items:center;gap:.5rem">
-              <span class="pulse-dot"></span>
-              <span style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-tertiary)">Servidores en línea</span>
+          <div class="mt-6 pt-5 border-t border-border text-center space-y-1.5">
+            <p class="text-[10px] text-text-tertiary">VYNTRA Solaris · Sogamoso, Boyacá</p>
+            <div class="flex items-center justify-center gap-2 text-[10px] text-text-tertiary">
+              <span class="h-1.5 w-1.5 rounded-full bg-success animate-pulse"></span>
+              <span class="uppercase tracking-widest font-semibold">Sistema activo</span>
             </div>
           </div>
         </div>
@@ -132,143 +111,72 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
   </main>
 
   <!-- Forgot Password Modal -->
-  <div id="forgot-modal" class="modal-overlay">
-    <div class="card-float modal-content" style="padding:1.5rem;max-width:400px;width:90%">
+  <div id="forgot-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white dark:bg-surface-dark-elevated border border-border rounded-2xl shadow-modal p-6 max-w-sm w-11/12 mx-auto animate-scale-in">
       <div id="forgot-step-1">
-        <h3 style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text);margin-bottom:.25rem">Recuperar Acceso</h3>
-        <p style="font-size:.75rem;color:var(--text-tertiary);margin-bottom:1rem">Ingresa tu identificación institucional para recibir un código de recuperación.</p>
-        <div style="display:flex;flex-direction:column;gap:.75rem">
-          <input type="text" class="input-apple" id="forgot-credential" placeholder="Identificación institucional" autocomplete="off">
-          <button class="btn-apple btn-primary" style="width:100%" id="forgot-send-btn" onclick="sendResetCode()">
-            <span id="forgot-send-text">Enviar Código</span>
-            <svg id="forgot-send-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-          </button>
-        </div>
-        <div id="forgot-step-1-error" style="margin-top:.5rem;font-size:.75rem;color:var(--red);text-align:center;display:none"></div>
+        <h3 class="font-bold text-base mb-1" style="font-family:'Fraunces',serif">Recuperar Acceso</h3>
+        <p class="text-xs text-text-tertiary mb-4">Ingresa tu identificación para recibir un código de recuperación.</p>
+        <input type="text" id="forgot-credential" placeholder="Identificación institucional" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
+        <button id="forgot-send-btn" class="w-full h-10 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Enviar Código</button>
+        <div id="forgot-step-1-error" class="hidden mt-2 text-xs text-brand-danger text-center"></div>
       </div>
-      <div id="forgot-step-2" style="display:none">
-        <h3 style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text);margin-bottom:.25rem">Nueva Contraseña</h3>
-        <p style="font-size:.75rem;color:var(--text-tertiary);margin-bottom:1rem">Ingresa el código que recibiste y tu nueva contraseña.</p>
-        <div style="display:flex;flex-direction:column;gap:.75rem">
-          <input type="text" class="input-apple" id="forgot-code" placeholder="Código de 6 dígitos" maxlength="6" inputmode="numeric" autocomplete="off">
-          <input type="password" class="input-apple" id="forgot-new-pass" placeholder="Nueva contraseña" autocomplete="new-password">
-          <input type="password" class="input-apple" id="forgot-confirm-pass" placeholder="Confirmar contraseña" autocomplete="new-password">
-          <button class="btn-apple btn-primary" style="width:100%" id="forgot-reset-btn" onclick="submitResetCode()">
-            <span id="forgot-reset-text">Restablecer Contraseña</span>
-            <svg id="forgot-reset-spinner" class="hidden h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-          </button>
-        </div>
-        <div id="forgot-step-2-error" style="margin-top:.5rem;font-size:.75rem;color:var(--red);text-align:center;display:none"></div>
-        <div id="forgot-step-2-success" style="margin-top:.5rem;font-size:.75rem;color:var(--green);text-align:center;display:none"></div>
+      <div id="forgot-step-2" class="hidden">
+        <h3 class="font-bold text-base mb-1" style="font-family:'Fraunces',serif">Nueva Contraseña</h3>
+        <p class="text-xs text-text-tertiary mb-4">Ingresa el código y tu nueva contraseña.</p>
+        <input type="text" id="forgot-code" placeholder="Código de 6 dígitos" maxlength="6" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
+        <input type="password" id="forgot-new-pass" placeholder="Nueva contraseña" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
+        <input type="password" id="forgot-confirm-pass" placeholder="Confirmar contraseña" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
+        <button id="forgot-reset-btn" class="w-full h-10 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Restablecer</button>
+        <div id="forgot-step-2-error" class="hidden mt-2 text-xs text-brand-danger text-center"></div>
+        <div id="forgot-step-2-success" class="hidden mt-2 text-xs text-success text-center"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border)">
-        <button class="btn-apple btn-ghost" style="padding:.35rem .65rem;font-size:.7rem" id="forgot-back-btn" onclick="closeForgotModal()">Cerrar</button>
-        <span id="forgot-debug-code" style="font-size:.65rem;color:var(--text-tertiary);display:none"></span>
-      </div>
+      <button class="mt-4 text-xs text-text-tertiary hover:text-text" onclick="document.getElementById('forgot-modal').classList.add('hidden');document.getElementById('forgot-modal').classList.remove('flex')">Cerrar</button>
     </div>
   </div>
 
   <style>
-    .login-brand{width:45%;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
-    @media(min-width:1024px){.login-brand{display:flex}}
-    .login-panel{width:100%;display:flex;align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden;background:var(--bg-secondary)}
-    @media(min-width:1024px){.login-panel{width:55%}}
-    .hero-orb{position:absolute;width:50vmin;height:50vmin;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(128,0,0,.06) 0%,rgba(253,192,3,.03) 30%,transparent 60%)}
-    .glow-orb-maroon{position:absolute;top:20%;right:-10%;width:300px;height:300px;border-radius:50%;background:var(--glow-maroon);filter:blur(100px);pointer-events:none}
-    .glow-orb-gold{position:absolute;bottom:10%;left:-5%;width:200px;height:200px;border-radius:50%;background:var(--glow-gold);filter:blur(80px);pointer-events:none}
-    .segmented-control{position:relative;display:flex;height:2.5rem;border-radius:var(--radius-full);background:var(--input-bg);padding:4px}
-    .segmented-slider{position:absolute;top:4px;bottom:4px;width:calc(50% - 4px);background:var(--maroon);border-radius:var(--radius-full);transition:left .4s cubic-bezier(.34,1.56,.64,1);z-index:0}
-    .tab-btn-segment{flex:1;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);cursor:pointer;border:none;background:none;font-size:.8rem;font-weight:600;font-family:inherit;transition:color .3s ease}
-    .input-icon{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);width:1.1rem;height:1.1rem;color:var(--text-tertiary);transition:color .3s ease;pointer-events:none}
-    .label-caps{display:block;margin-left:.15rem;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-tertiary)}
-    .forgot-link{font-size:.7rem;font-weight:600;color:var(--maroon);opacity:.6;transition:opacity .2s ease}
-    .forgot-link:hover{opacity:1}
-    .hidden{display:none!important}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .animate-spin{animation:spin .7s linear infinite}
-    @media(max-width:480px){.login-panel{padding:1rem}}
-    @media(max-width:380px){.login-panel{padding:.75rem}.card-float{padding:1.25rem!important}}
-    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;justify-content:center;align-items:center;backdrop-filter:blur(8px)}
-    .modal-overlay.active{display:flex}
-    @media(max-width:768px){.modal-overlay.active{align-items:flex-end}.modal-overlay.active>.modal-content{margin-top:auto;border-radius:var(--radius-xl) var(--radius-xl) 0 0;max-height:85vh;overflow-y:auto}}
+    .modal-overlay { display: flex; }
   </style>
 
-  <script define:vars={{ baseUrl, googleClientId: import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || '' }}>
-    (function () {
+  <script define:vars={{ baseUrl, googleClientId }}>
+    (function() {
       var tabEst = document.getElementById('tab-estudiante')
       var tabPer = document.getElementById('tab-personal')
       var slider = document.getElementById('tab-slider')
-      var passwordGroup = document.getElementById('password-group')
-      var passwordInput = document.getElementById('password')
       var form = document.getElementById('login-form')
       var docInput = document.getElementById('doc-id')
-      var submitBtn = document.getElementById('login-submit')
-      var submitText = document.getElementById('submit-text')
-      var submitSpinner = document.getElementById('submit-spinner')
-      var errorDiv = document.getElementById('login-error')
+      var passwordInput = document.getElementById('password')
       var currentTab = 'estudiante'
       var endpoint = baseUrl + '/api/auth/login'
 
-      ;(function wakeUp() {
-        try { fetch(baseUrl + '/api/health', { method:'GET', priority:'low' }).catch(function(){}) } catch(e){}
-      })()
-
-      var googleContainer = document.getElementById('google-signin-container')
-
       function setTab(tab) {
         currentTab = tab
-        slider.style.left = tab === 'estudiante' ? '4px' : 'calc(50% + 4px)'
-        passwordGroup.style.maxHeight = '100px'
-        passwordGroup.style.opacity = '1'
-        passwordInput.required = true
+        slider.style.left = tab === 'estudiante' ? '4px' : 'calc(50% + 2px)'
         tabEst.style.color = tab === 'estudiante' ? 'var(--text)' : 'var(--text-tertiary)'
         tabPer.style.color = tab === 'personal' ? 'var(--text)' : 'var(--text-tertiary)'
-        if (googleContainer) {
-          googleContainer.style.display = tab === 'personal' ? 'block' : 'none'
-        }
       }
-      tabEst.addEventListener('click', function () { setTab('estudiante') })
-      tabPer.addEventListener('click', function () { setTab('personal') })
+      tabEst.addEventListener('click', function() { setTab('estudiante') })
+      tabPer.addEventListener('click', function() { setTab('personal') })
 
-      function setupInputGlow(input) {
-        var icon = input.parentElement.querySelector('.input-icon')
-        if (!icon) return
-        input.addEventListener('focus', function () { icon.style.color = 'var(--maroon)' })
-        input.addEventListener('blur', function () { icon.style.color = '' })
-      }
-      setupInputGlow(docInput)
-      setupInputGlow(passwordInput)
-
-      form.addEventListener('submit', async function (e) {
+      form.addEventListener('submit', async function(e) {
         e.preventDefault()
-        errorDiv.style.display = 'none'
-        errorDiv.textContent = ''
+        var errDiv = document.getElementById('login-error')
+        var submitText = document.getElementById('submit-text')
+        var spinner = document.getElementById('submit-spinner')
+        errDiv.classList.add('hidden')
         submitText.textContent = 'Validando...'
-        submitSpinner.classList.remove('hidden')
-        submitBtn.disabled = true
+        spinner.classList.remove('hidden')
 
         var docId = docInput.value.trim()
         var password = passwordInput.value
-
-        if (!docId) { showError('Ingresa tu identificación institucional.'); return }
-        if (!password) { showError('Ingresa tu contraseña.'); return }
-
-        var controller = new AbortController()
-        var timeoutId = setTimeout(function () { controller.abort() }, 25000)
+        if (!docId) { showErr('Ingresa tu identificación institucional.'); return }
+        if (!password) { showErr('Ingresa tu contraseña.'); return }
 
         try {
-          var res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login_credential: docId, password: password }),
-            signal: controller.signal,
-          })
-          clearTimeout(timeoutId)
+          var res = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ login_credential:docId, password:password }) })
           if (!res.ok) {
-            var errData
-            try { errData = await res.json() } catch(e) { errData = {} }
-            if (res.status === 401) throw new Error('Credenciales inválidas.')
-            throw new Error(errData.mensaje || errData.detail || errData.error || 'Error de autenticación.')
+            var ed = await res.json().catch(function(){return{}})
+            throw new Error(res.status === 401 ? 'Credenciales inválidas.' : (ed.mensaje || ed.detail || ed.error || 'Error.'))
           }
           var data = await res.json()
           var token = data.access_token || data.token || ''
@@ -278,170 +186,82 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
           localStorage.setItem('userRole', role)
           localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
           localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || docId)
-          localStorage.setItem('profile_id', usuario.profile_id || '')
-          localStorage.setItem('is_paid', String(data.is_paid !== false))
+          if (usuario.profile_id) localStorage.setItem('profile_id', usuario.profile_id)
           if (data.grado || data.grade) localStorage.setItem('userGrade', data.grado || data.grade)
           if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
+
           submitText.textContent = '¡Bienvenido!'
           var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }
           window.location.href = map[role] || '/dashboard'
-        } catch (err) {
-          clearTimeout(timeoutId)
-          if (err.name === 'AbortError') showError('El servidor está iniciando. Reintenta en unos segundos.')
-          else showError(err.message || 'Error de conexión.')
+        } catch(err) {
+          showErr(err.message || 'Error de conexión.')
         }
 
-        function showError(msg) {
-          errorDiv.textContent = msg
-          errorDiv.style.display = 'block'
+        function showErr(msg) {
+          errDiv.textContent = msg
+          errDiv.classList.remove('hidden')
           submitText.textContent = 'Ingresar al Portal'
-          submitSpinner.classList.add('hidden')
-          submitBtn.disabled = false
+          spinner.classList.add('hidden')
         }
       })
-      // ── Google OAuth ──
-      var googleBtn = document.getElementById('google-signin-btn')
-      if (googleBtn) {
-        googleBtn.addEventListener('click', function () {
-          var clientId = googleClientId || ''
-          if (!clientId) { showError('Google OAuth no está configurado.'); return }
-          if (typeof google !== 'undefined' && google.accounts) {
-            google.accounts.id.initialize({
-              client_id: clientId,
-              callback: function (response) {
-                if (response.credential) handleGoogleCredential(response.credential)
-              }
-            })
-            google.accounts.id.prompt()
-          } else {
-            showError('Error al cargar Google Sign-In. Recarga la página.')
-          }
-        })
-      }
 
-      async function handleGoogleCredential(credential) {
-        submitText.textContent = 'Validando...'
-        submitSpinner.classList.remove('hidden')
-        submitBtn.disabled = true
-        try {
-          var res = await fetch(baseUrl + '/api/auth/google', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ credential: credential }),
-          })
-          if (!res.ok) { var ed; try { ed = await res.json() } catch(e){}; throw new Error(ed && (ed.detail || ed.mensaje) || 'Error de autenticación con Google.') }
-          var data = await res.json()
-          var token = data.access_token || data.token || ''
-          var usuario = data.usuario || {}
-          var role = (usuario.rol || data.rol || 'PROFESOR').toUpperCase()
-          localStorage.setItem('access_token', token)
-          localStorage.setItem('userRole', role)
-          localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
-          localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || '')
-          localStorage.setItem('profile_id', usuario.profile_id || '')
-          submitText.textContent = '¡Bienvenido!'
-          var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', TEACHER:'/docente' }
-          window.location.href = map[role] || '/dashboard'
-        } catch (err) {
-          showError(err.message)
-        }
-      }
-
-      // ── Forgot Password ──
-      var forgotLink = document.getElementById('forgot-link')
+      // Forgot password logic
       var forgotModal = document.getElementById('forgot-modal')
-      var currentForgotCredential = ''
+      document.getElementById('forgot-link')?.addEventListener('click', function() {
+        forgotModal.classList.add('flex'); forgotModal.classList.remove('hidden')
+        document.getElementById('forgot-step-1').style.display = 'block'
+        document.getElementById('forgot-step-2').style.display = 'none'
+      })
+      forgotModal?.addEventListener('click', function(e) { if (e.target === this) { this.classList.add('hidden'); this.classList.remove('flex') } })
 
-      if (forgotLink) {
-        forgotLink.addEventListener('click', function () {
-          forgotModal.classList.add('active')
-          document.getElementById('forgot-step-1').style.display = 'block'
-          document.getElementById('forgot-step-2').style.display = 'none'
-          document.getElementById('forgot-credential').value = ''
-          document.getElementById('forgot-code').value = ''
-          document.getElementById('forgot-new-pass').value = ''
-          document.getElementById('forgot-confirm-pass').value = ''
-          document.getElementById('forgot-step-1-error').style.display = 'none'
-          document.getElementById('forgot-step-2-error').style.display = 'none'
-          document.getElementById('forgot-step-2-success').style.display = 'none'
-          document.getElementById('forgot-debug-code').style.display = 'none'
-        })
-      }
-
-      if (forgotModal) {
-        forgotModal.addEventListener('click', function (e) { if (e.target === this) closeForgotModal() })
-      }
-
-      window.closeForgotModal = function () {
-        forgotModal.classList.remove('active')
-      }
-
-      window.sendResetCode = async function () {
+      document.getElementById('forgot-send-btn')?.addEventListener('click', async function() {
         var cred = document.getElementById('forgot-credential').value.trim()
-        if (!cred) { document.getElementById('forgot-step-1-error').textContent = 'Ingresa tu identificación institucional.'; document.getElementById('forgot-step-1-error').style.display = 'block'; return }
-        var btn = document.getElementById('forgot-send-btn')
-        var txt = document.getElementById('forgot-send-text')
-        var spn = document.getElementById('forgot-send-spinner')
-        btn.disabled = true; txt.textContent = 'Enviando...'; spn.classList.remove('hidden')
-        document.getElementById('forgot-step-1-error').style.display = 'none'
+        if (!cred) { document.getElementById('forgot-step-1-error').textContent = 'Ingresa tu identificación.'; document.getElementById('forgot-step-1-error').classList.remove('hidden'); return }
         try {
-          var res = await fetch(baseUrl + '/api/auth/forgot-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login_credential: cred }),
-          })
+          var res = await fetch(baseUrl + '/api/auth/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ login_credential:cred }) })
           var data = await res.json()
-          if (!res.ok) throw new Error(data.detail || data.mensaje || 'Error al enviar código')
-          currentForgotCredential = cred
+          if (!res.ok) throw new Error(data.detail || 'Error')
           document.getElementById('forgot-step-1').style.display = 'none'
           document.getElementById('forgot-step-2').style.display = 'block'
-          if (data.debug_code) {
-            var debug = document.getElementById('forgot-debug-code')
-            debug.textContent = '🔑 Código: ' + data.debug_code
-            debug.style.display = 'block'
-          }
-        } catch (err) {
+        } catch(err) {
           document.getElementById('forgot-step-1-error').textContent = err.message
-          document.getElementById('forgot-step-1-error').style.display = 'block'
+          document.getElementById('forgot-step-1-error').classList.remove('hidden')
         }
-        btn.disabled = false; txt.textContent = 'Enviar Código'; spn.classList.add('hidden')
-      }
+      })
 
-      window.submitResetCode = async function () {
+      document.getElementById('forgot-reset-btn')?.addEventListener('click', async function() {
         var code = document.getElementById('forgot-code').value.trim()
-        var newPass = document.getElementById('forgot-new-pass').value
-        var confirmPass = document.getElementById('forgot-confirm-pass').value
-        var errDiv = document.getElementById('forgot-step-2-error')
-        var sucDiv = document.getElementById('forgot-step-2-success')
-        errDiv.style.display = 'none'; sucDiv.style.display = 'none'
-        if (!code || code.length !== 6) { errDiv.textContent = 'Ingresa el código de 6 dígitos.'; errDiv.style.display = 'block'; return }
-        if (!newPass || newPass.length < 4) { errDiv.textContent = 'La contraseña debe tener al menos 4 caracteres.'; errDiv.style.display = 'block'; return }
-        if (newPass !== confirmPass) { errDiv.textContent = 'Las contraseñas no coinciden.'; errDiv.style.display = 'block'; return }
-        var btn = document.getElementById('forgot-reset-btn')
-        var txt = document.getElementById('forgot-reset-text')
-        var spn = document.getElementById('forgot-reset-spinner')
-        btn.disabled = true; txt.textContent = 'Restableciendo...'; spn.classList.remove('hidden')
+        var p1 = document.getElementById('forgot-new-pass').value
+        var p2 = document.getElementById('forgot-confirm-pass').value
+        if (!code || code.length !== 6) { showErr2('Código inválido'); return }
+        if (!p1 || p1.length < 4) { showErr2('Contraseña muy corta'); return }
+        if (p1 !== p2) { showErr2('No coinciden'); return }
         try {
-          var res = await fetch(baseUrl + '/api/auth/reset-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login_credential: currentForgotCredential, code: code, new_password: newPass }),
-          })
+          var res = await fetch(baseUrl + '/api/auth/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ login_credential:document.getElementById('forgot-credential').value, code:code, new_password:p1 }) })
           var data = await res.json()
-          if (!res.ok) throw new Error(data.detail || data.mensaje || 'Error al restablecer')
-          sucDiv.textContent = 'Contraseña actualizada exitosamente. Ahora puedes iniciar sesión.'
-          sucDiv.style.display = 'block'
-          document.getElementById('forgot-code').value = ''
-          document.getElementById('forgot-new-pass').value = ''
-          document.getElementById('forgot-confirm-pass').value = ''
-          setTimeout(function () { closeForgotModal() }, 2500)
-        } catch (err) {
-          errDiv.textContent = err.message
-          errDiv.style.display = 'block'
+          if (!res.ok) throw new Error(data.detail || 'Error')
+          document.getElementById('forgot-step-2-success').textContent = 'Contraseña actualizada. Ya puedes iniciar sesión.'
+          document.getElementById('forgot-step-2-success').classList.remove('hidden')
+          setTimeout(function() { forgotModal.classList.add('hidden'); forgotModal.classList.remove('flex') }, 2500)
+        } catch(err) { showErr2(err.message) }
+        function showErr2(m) {
+          document.getElementById('forgot-step-2-error').textContent = m
+          document.getElementById('forgot-step-2-error').classList.remove('hidden')
         }
-        btn.disabled = false; txt.textContent = 'Restablecer Contraseña'; spn.classList.add('hidden')
-      }
+      })
+
+      // Wake-up ping
+      try { fetch(baseUrl + '/api/health', { method:'GET', priority:'low' }).catch(function(){}) } catch(e) {}
+
+      // Icon glow on input focus
+      ;[docInput, passwordInput].forEach(function(inp) {
+        inp?.addEventListener('focus', function() {
+          this.parentElement.querySelector('svg').style.color = 'var(--brand-maroon)'
+        })
+        inp?.addEventListener('blur', function() {
+          this.parentElement.querySelector('svg').style.color = ''
+        })
+      })
     })()
   </script>
-</body>
-</html>
+</BaseLayout>

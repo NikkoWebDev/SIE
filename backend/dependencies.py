@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import logging
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import jwt
 from dotenv import load_dotenv
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Response
 from supabase import Client
 
 from config.database import get_db
@@ -24,15 +25,13 @@ RISK_THRESHOLD: float = 3.5
 MAX_GRADE: float = 5.0
 JWT_SECRET: str = os.getenv("JWT_SECRET", "")
 if not JWT_SECRET:
-    logger.warning("JWT_SECRET not set! Using insecure default. Set JWT_SECRET in .env for production.")
-    JWT_SECRET = "dev-secret-change-me"
-JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    raise RuntimeError("JWT_SECRET no configurada. El servidor no arrancará sin una clave JWT segura.")
+JWT_ALGORITHM: str = "HS256"  # fixed algorithm — cannot be overridden via env
 
 SKIP_AUTH_PATHS: frozenset[str] = frozenset({
     "/", "/api/health", "/api/login", "/api/auth/login", "/api/auth/register",
     "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/google",
-    "/api/notices", "/api/admin/stats", "/api/admin/mora-students", "/api/admin/at-risk-students",
-    "/api/subjects", "/api/admin/candidates", "/api/admin/election-results",
+    "/api/auth/logout",
     "/docs", "/openapi.json", "/redoc",
 })
 FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
@@ -50,22 +49,59 @@ def encode_jwt(payload: dict[str, Any], expires_hours: int = TOKEN_EXPIRY_HOURS)
     payload = dict(payload)
     payload.setdefault("iat", datetime.now(timezone.utc))
     payload.setdefault("exp", datetime.now(timezone.utc) + timedelta(hours=expires_hours))
+    payload.setdefault("jti", secrets.token_hex(16))  # unique token ID for revocation
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
 def decode_jwt(token: str) -> dict[str, Any]:
     return jwt.decode(
         token, JWT_SECRET, algorithms=[JWT_ALGORITHM],
-        options={"require": ["sub"]},
+        options={"require": ["sub", "exp", "jti"]},
     )
+
+
+def set_jwt_cookie(response: Response, token: str, token_type: str = "bearer") -> None:
+    """Set JWT as an httpOnly, SameSite=Strict cookie. Secure only in production."""
+    is_secure = os.getenv("ENV", "development") == "production"
+    max_age = TOKEN_EXPIRY_HOURS * 3600
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        max_age=max_age,
+        httponly=True,
+        secure=is_secure,
+        samesite="strict",
+        path="/",
+    )
+    response.set_cookie(
+        key="token_type",
+        value=token_type,
+        max_age=max_age,
+        httponly=True,
+        secure=is_secure,
+        samesite="strict",
+        path="/",
+    )
+
+
+def clear_jwt_cookie(response: Response) -> None:
+    """Clear JWT cookies (logout)."""
+    is_secure = os.getenv("ENV", "development") == "production"
+    response.delete_cookie(key="access_token", path="/", httponly=True, secure=is_secure, samesite="strict")
+    response.delete_cookie(key="token_type", path="/", httponly=True, secure=is_secure, samesite="strict")
 
 
 def auth_dependency(request: Request) -> str:
     auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
+    token = ""
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+    else:
+        token = request.cookies.get("access_token", "")
+    if not token:
         raise HTTPException(status_code=401, detail="Authorization required")
     try:
-        claims = decode_jwt(auth_header[7:])
+        claims = decode_jwt(token)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.PyJWTError:
@@ -117,3 +153,34 @@ async def financial_guard(request: Request) -> None:
 
 def is_financial_locked_path(path: str) -> bool:
     return any(path.startswith(p) for p in FINANCIAL_LOCKED_PATHS)
+
+
+# ── Audit Logging ────────────────────────────────────────────────
+
+AUDIT_LOG_LEVEL = os.getenv("AUDIT_LOG_LEVEL", "INFO").upper()
+
+
+class AuditLogger:
+    """Structured audit log for sensitive operations."""
+
+    @staticmethod
+    def log(action: str, actor_id: str, target_id: str = "", detail: str = "", success: bool = True) -> None:
+        entry = {
+            "action": action,
+            "actor_id": actor_id,
+            "target_id": target_id,
+            "detail": detail,
+            "success": success,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        if AUDIT_LOG_LEVEL == "DEBUG":
+            logger.debug("AUDIT: %s", json.dumps(entry, ensure_ascii=False))
+        else:
+            logger.info("AUDIT: %s", json.dumps(entry, ensure_ascii=False))
+
+    @staticmethod
+    def log_failure(action: str, actor_id: str, target_id: str = "", detail: str = "") -> None:
+        AuditLogger.log(action, actor_id, target_id, detail, success=False)
+
+
+audit = AuditLogger()

@@ -1,0 +1,71 @@
+---
+export interface Props {
+  role: 'student' | 'teacher' | 'admin'
+  pageTitle?: string
+  pageSubtitle?: string
+  onMobileMenu?: boolean
+  userName?: string
+  class?: string
+}
+
+const { role, pageTitle = 'Panel', pageSubtitle = '', onMobileMenu = true, userName = '', class: extraClass = '' } = Astro.props
+---
+
+<header class={`sticky top-0 z-20 nav-blur flex items-center gap-3 px-4 sm:px-6 h-14 ${extraClass}`}>
+  {onMobileMenu && (
+    <button
+      id="mobile-menu-btn"
+      class="lg:hidden flex items-center justify-center p-1.5 rounded-lg text-text-secondary hover:text-text hover:bg-brand-gold/10 transition-colors"
+      aria-label="Abrir menú"
+      aria-expanded="false"
+    >
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  )}
+
+  <div class="min-w-0 flex-1">
+    <h1 class="text-sm font-bold truncate">{pageTitle}</h1>
+    {pageSubtitle && <p class="text-[11px] text-text-tertiary truncate">{pageSubtitle}</p>}
+  </div>
+
+  <div class="flex items-center gap-2 sm:gap-3">
+    <slot name="actions" />
+    <div class="hidden sm:flex items-center gap-2 text-text-tertiary text-xs">
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+      </span>
+      <span class="text-[11px]">En línea</span>
+    </div>
+    {role === 'student' && (
+      <div class="text-xs font-semibold bg-[var(--bg-card)] dark:bg-surface-dark-card border border-border rounded-lg px-3 py-1.5" id="live-clock">00:00</div>
+    )}
+  </div>
+</header>
+
+{onMobileMenu && (
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('mobile-menu-btn')
+      const sidebar = document.querySelector('[class*="sidebar-"]')
+      const overlay = document.querySelector('[id^="sidebar-overlay-"]')
+      if (btn && sidebar && overlay) {
+        btn.addEventListener('click', () => {
+          const isOpen = sidebar.classList.contains('-translate-x-full') || !sidebar.classList.contains('translate-x-0')
+          sidebar.classList.toggle('translate-x-0', isOpen)
+          sidebar.classList.toggle('-translate-x-full', !isOpen)
+          overlay.classList.toggle('hidden', !isOpen)
+          btn.setAttribute('aria-expanded', String(isOpen))
+        })
+        overlay.addEventListener('click', () => {
+          sidebar.classList.add('-translate-x-full')
+          sidebar.classList.remove('translate-x-0')
+          overlay.classList.add('hidden')
+          btn.setAttribute('aria-expanded', 'false')
+        })
+      }
+    })
+  </script>
+)}

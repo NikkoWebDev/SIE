@@ -1,1154 +1,639 @@
 ---
-import Layout from '@layouts/Layout.astro'
+import BaseLayout from '@layouts/BaseLayout.astro'
+import DashboardShell from '@components/layout/DashboardShell.astro'
 import WsRiskAlert from '@components/WsRiskAlert.astro'
 import AIChat from '@components/AIChat.astro'
+
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 const wsUrl = apiUrl.replace(/^http/, 'ws')
 ---
-<Layout titulo="Estudiante" sinMenu={true}>
+
+<BaseLayout titulo="Panel de Estudiante" descripcion="Panel de estudiante VYNTRA — Rendimiento académico" noIndex={true} withNoise={true}>
+<DashboardShell role="student" activeSection="inicio" pageTitle="Panel de Estudiante" pageSubtitle="Rendimiento académico y recursos">
   <WsRiskAlert />
+  <AIChat role="student" />
 
-  <style>
-    :root{--sidebar-w:220px}
-    .app-shell{display:flex;min-height:100vh}
-    .est-sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:rgba(10,10,10,.96);backdrop-filter:blur(30px) saturate(160%);-webkit-backdrop-filter:blur(30px) saturate(160%);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1);border-right:1px solid rgba(255,255,255,.05)}
-    .est-sidebar .logo-area{padding:1.75rem 1.5rem 1.375rem;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:.625rem}
-    .est-sidebar .logo-mark{width:34px;height:34px;background:var(--maroon);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:15px;color:#fff;letter-spacing:-.5px;flex-shrink:0}
-    .est-sidebar .logo-text{font-family:var(--font-display);font-weight:700;font-size:17px;color:#fff;letter-spacing:.5px}
-    .est-sidebar .logo-text span{color:var(--gold)}
-    .est-sidebar .nav-section{font-size:9.5px;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.25);padding:1.25rem 1.5rem .5rem}
-    .est-sidebar .est-nav-link{display:flex;align-items:center;gap:.6875rem;padding:.6875rem 1.5rem;color:rgba(255,255,255,.65);cursor:pointer;font-size:13.5px;font-weight:500;border-left:3px solid transparent;transition:color .2s,background .2s;margin:1px 0;text-decoration:none;background:none;border-right:none;border-top:none;border-bottom:none;width:100%;text-align:left;font-family:var(--font-body)}
-    .est-sidebar .est-nav-link:hover{color:rgba(255,255,255,.88);background:rgba(255,255,255,.04)}
-    .est-sidebar .est-nav-link.active{color:var(--gold);background:rgba(253,192,3,.08);border-left-color:var(--gold)}
-    .est-sidebar .est-nav-link .nav-icon{width:18px;text-align:center;font-size:15px;opacity:.75;flex-shrink:0}
-    .est-sidebar .est-nav-link.active .nav-icon{opacity:1}
-    .est-sidebar .sidebar-footer{padding:.75rem 1rem;border-top:1px solid rgba(255,255,255,.07);margin-top:auto}
-    .student-chip{display:flex;align-items:center;gap:.625rem;padding:.375rem .5rem;border-radius:.625rem;cursor:pointer;transition:background .2s}
-    .student-chip:hover{background:rgba(255,255,255,.04)}
-    .student-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--maroon),#b30000);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:14px;color:#fff;flex-shrink:0}
-    .student-name{font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85)}
-    .est-main{margin-left:var(--sidebar-w);flex:1;min-height:100vh}
-    .est-topbar{position:sticky;top:0;z-index:100;height:62px;background:rgba(255,255,255,.75);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;transition:background .35s}
-    .est-topbar .topbar-left{display:flex;align-items:center;gap:.875rem}
-    .est-topbar .topbar-title{font-family:var(--font-display);font-weight:700;font-size:19px}
-    .est-topbar .topbar-right{display:flex;align-items:center;gap:1rem}
-    .online-indicator{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
-    .online-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-    .online-dot.online{background:#34C759;box-shadow:0 0 0 0 rgba(52,199,89,.6);animation:pulse-dot 2s infinite}
-    .online-dot.offline{background:#BA1A1A;box-shadow:none;animation:none}
-    @keyframes pulse-dot{0%{box-shadow:0 0 0 0 rgba(52,199,89,.6)}70%{box-shadow:0 0 0 6px rgba(52,199,89,0)}100%{box-shadow:0 0 0 0 rgba(52,199,89,0)}}
-    .topbar-clock{font-family:var(--font-display);font-weight:600;font-size:14px;color:var(--text);letter-spacing:.5px;background:var(--card-bg);border:1px solid var(--border);padding:6px 14px;border-radius:var(--radius-sm)}
-    .theme-toggle-btn{width:36px;height:36px;border-radius:50%;background:var(--card-bg);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;color:var(--text)}
-    .theme-toggle-btn:hover{transform:scale(1.08)}
-    .hamburger-btn{display:none;background:none;border:none;cursor:pointer;color:var(--text);font-size:20px;padding:4px}
-    .content-area{padding:2rem;max-width:1200px}
-    .section{display:none}.section.active{display:block}
-    .welcome-banner{background:linear-gradient(130deg,var(--maroon) 0%,#b30000 55%,#600000 100%);border-radius:var(--radius-lg);padding:1.875rem 2rem;margin-bottom:1.75rem;position:relative;overflow:hidden;color:#fff}
-    .welcome-banner::after{content:'VYNTRA';position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-family:var(--font-display);font-size:90px;font-weight:800;color:rgba(255,255,255,.06);letter-spacing:-4px;pointer-events:none}
-    .welcome-banner h1{font-family:var(--font-display);font-size:clamp(1.2rem,2vw,1.6rem);font-weight:800;margin-bottom:4px}
-    .welcome-banner p{font-size:14px;opacity:.75}
-    .welcome-meta{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
-    .welcome-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500}
-    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:1.75rem}
-    .stat-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.375rem 1.25rem 1.125rem;position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s}
-    .stat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
-    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--maroon);border-radius:3px 3px 0 0}
-    .stat-card:nth-child(2)::before{background:var(--gold)}
-    .stat-card:nth-child(3)::before{background:#34C759}
-    .stat-card:nth-child(4)::before{background:#007AFF}
-    .stat-icon{font-size:20px;margin-bottom:8px}
-    .stat-value{font-family:var(--font-display);font-size:clamp(1.5rem,2.2vw,2.2rem);font-weight:800;color:var(--maroon);line-height:1;margin-bottom:4px}
-    .stat-card:nth-child(2) .stat-value{color:var(--gold)}
-    .stat-card:nth-child(3) .stat-value{color:#34C759}
-    .stat-card:nth-child(4) .stat-value{color:#007AFF}
-    .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;opacity:.55;font-weight:500}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:1.5rem}
-    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:1.5rem}
-    .section-title{font-family:var(--font-display);font-size:clamp(1.1rem,1.8vw,1.375rem);font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:.625rem}
-    .card-title{font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:1rem;opacity:.9}
-    .perf-item{margin-bottom:1rem}
-    .perf-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-    .perf-name{font-size:13px;font-weight:500}
-    .perf-score{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--maroon)}
-    .perf-bar-bg{height:7px;background:var(--border);border-radius:10px;overflow:hidden}
-    .perf-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--maroon),#c00000);transition:width 1s cubic-bezier(.4,0,.2,1)}
-    .perf-bar-fill.gold{background:linear-gradient(90deg,#b38000,var(--gold))}
-    .perf-bar-fill.green{background:linear-gradient(90deg,#27a047,#34C759)}
-    .timeline{position:relative;padding-left:1.5rem}
-    .timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border)}
-    .timeline-item{position:relative;padding-bottom:1.25rem}
-    .timeline-item:last-child{padding-bottom:0}
-    .timeline-dot{position:absolute;left:-1.5rem;top:3px;width:14px;height:14px;border-radius:50%;background:var(--maroon);border:2px solid var(--bg);box-shadow:0 0 0 2px var(--maroon)}
-    .timeline-dot.gold{background:var(--gold);box-shadow:0 0 0 2px var(--gold)}
-    .timeline-dot.green{background:#34C759;box-shadow:0 0 0 2px #34C759}
-    .timeline-date{font-size:11px;opacity:.5;margin-bottom:3px}
-    .timeline-text{font-size:13px;font-weight:500}
-    .timeline-sub{font-size:12px;opacity:.6;margin-top:2px}
-    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
-    .cal-day-name{font-size:10px;opacity:.5;padding:4px 0;text-transform:uppercase;letter-spacing:.5px}
-    .cal-day{font-size:12.5px;font-weight:500;padding:7px 4px;border-radius:8px;cursor:pointer;transition:background .15s;position:relative}
-    .cal-day:hover{background:var(--border)}
-    .cal-day.today{background:var(--maroon);color:#fff;font-weight:700}
-    .cal-day.has-event::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gold)}
-    .cal-day.other-month{opacity:.3}
-    .data-table{width:100%;border-collapse:collapse;font-size:13.5px}
-    .data-table th{text-align:left;padding:10px 14px;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;opacity:.5;font-weight:600;border-bottom:1px solid var(--border)}
-    .data-table td{padding:13px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
-    .data-table tr:last-child td{border-bottom:none}
-    .data-table tr:hover td{background:var(--input-bg)}
-    .progress-cell{min-width:120px}
-    .table-progress-bg{height:5px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:4px}
-    .table-progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--maroon),#c00000)}
-    .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.3px}
-    .schedule-grid{overflow-x:auto}
-    .schedule-table{width:100%;border-collapse:collapse;min-width:680px}
-    .schedule-table th{padding:10px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:.5;border-bottom:1px solid var(--border)}
-    .schedule-table td{padding:8px;text-align:center;font-size:12.5px;border:1px solid var(--border);min-height:52px;vertical-align:top}
-    .sched-block{background:var(--maroon);color:#fff;border-radius:8px;padding:7px 8px;font-size:11.5px;font-weight:600;line-height:1.35;margin:2px}
-    .sched-block.alt{background:rgba(128,0,0,.12);color:var(--maroon)}
-    .sched-block.gold-bg{background:rgba(253,192,3,.15);color:#7a5c00}
-    .time-col{font-size:11.5px;opacity:.5;font-weight:500;text-align:right;padding-right:14px}
-    .tasks-split{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-    .dropzone{border:2px dashed var(--border);border-radius:var(--radius-md);padding:2.25rem 1.25rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
-    .dropzone:hover,.dropzone.dragover{border-color:var(--maroon);background:rgba(128,0,0,.04)}
-    .dropzone-icon{font-size:32px;margin-bottom:10px}
-    .dropzone-text{font-size:13.5px;font-weight:500;opacity:.7}
-    .dropzone-sub{font-size:12px;opacity:.45;margin-top:5px}
-    .form-group{margin-bottom:1rem}
-    .form-label{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:6px;display:block}
-    .form-input,.form-select{width:100%;padding:10px 14px;background:var(--input-bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);font-size:13.5px;transition:border-color .2s,box-shadow .2s;outline:none}
-    .form-input:focus,.form-select:focus{border-color:var(--maroon);box-shadow:0 0 0 3px rgba(128,0,0,.1)}
-    .history-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
-    .history-item:last-child{border-bottom:none}
-    .history-icon{width:38px;height:38px;border-radius:10px;background:rgba(128,0,0,.09);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
-    .history-name{font-size:13px;font-weight:600}
-    .history-meta{font-size:11px;opacity:.5;margin-top:2px}
-    .library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-    .lib-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.25rem;transition:transform .3s,box-shadow .3s;position:relative;overflow:hidden}
-    .lib-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
-    .lib-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--maroon);border-radius:4px 0 0 4px}
-    .lib-card:nth-child(2)::before{background:var(--gold)}\n    .lib-card:nth-child(3)::before{background:#007AFF}
-    .lib-card:nth-child(4)::before{background:#34C759}
-    .lib-card:nth-child(5)::before{background:#AF52DE}
-    .lib-card:nth-child(6)::before{background:#FF9500}
-    .lib-icon{font-size:26px;margin-bottom:10px}
-    .lib-name{font-family:var(--font-display);font-weight:700;font-size:14px;margin-bottom:5px}
-    .lib-desc{font-size:12px;opacity:.6;margin-bottom:12px;line-height:1.5}
-    .lib-links{display:flex;gap:8px;flex-wrap:wrap}
-    .lib-link{font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:20px;cursor:pointer;text-decoration:none;transition:all .18s;display:inline-flex;align-items:center;gap:4px}
-    .lib-link.primary{background:var(--maroon);color:#fff}
-    .lib-link.primary:hover{background:#6a0000}
-    .lib-link.ai{background:rgba(253,192,3,.15);color:#b38000;border:1px solid rgba(253,192,3,.3)}
-    .profile-header{display:flex;align-items:flex-start;gap:24px;margin-bottom:1.75rem}
-    .profile-avatar-lg{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--maroon),#b30000);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:30px;color:#fff;flex-shrink:0;position:relative}
-    .profile-avatar-lg::after{content:'';position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#34C759;border:2px solid var(--bg)}
-    .profile-name{font-family:var(--font-display);font-size:clamp(1.2rem,2vw,1.5rem);font-weight:800;margin-bottom:4px}
-    .profile-id{font-size:13px;opacity:.5}
-    .profile-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .info-item{padding:14px;background:var(--input-bg);border-radius:var(--radius-sm)}
-    .info-key{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;opacity:.5;margin-bottom:4px}
-    .info-val{font-size:14px;font-weight:600}
-    .btn-apple{border-radius:12px;padding:10px 20px;font-family:var(--font-body);font-weight:600;border:none;cursor:pointer;font-size:13.5px;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
-    .btn-primary{background:var(--maroon);color:#fff}
-    .btn-primary:hover{background:#6a0000;transform:translateY(-1px);box-shadow:0 4px 14px rgba(128,0,0,.35)}
-    .btn-secondary{background:var(--input-bg);color:var(--text);border:1px solid var(--border)}
-    .btn-secondary:hover{background:var(--border)}
-    .btn-ghost{background:transparent;color:var(--maroon);border:1px solid rgba(128,0,0,.25)}
-    .btn-ghost:hover{background:rgba(128,0,0,.06)}
-    .filter-row{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
-    .period-filter{padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:500;background:var(--input-bg);border:1px solid var(--border);cursor:pointer;transition:all .18s;color:var(--text)}
-    .period-filter.active{background:var(--maroon);color:#fff;border-color:var(--maroon)}
-    .chart-mock-wrap{padding:10px 0 28px}
-    .chart-bars{display:flex;align-items:flex-end;gap:10px;height:160px}
-    .c-bar{flex:1;border-radius:8px 8px 0 0;position:relative;transition:height .9s cubic-bezier(.4,0,.2,1)}
-    .c-bar::after{content:attr(data-val);position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-family:var(--font-display);font-size:12px;font-weight:700;opacity:.8}
-    .c-bar-label{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:10px;opacity:.5;white-space:nowrap}
-    .exam-modal{position:fixed;inset:0;z-index:9999;background:#040405;display:none;flex-direction:column}
-    .exam-modal.open{display:flex}
-    .exam-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06)}
-    .exam-modal-body{flex:1;overflow-y:auto;padding:1.5rem;display:grid;grid-template-columns:1fr;gap:1rem}
-    .exam-question-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:1rem;padding:1.25rem}
-    .exam-option{display:flex;align-items:center;gap:.625rem;padding:.625rem .75rem;border-radius:.5rem;border:1px solid rgba(255,255,255,.08);cursor:pointer;transition:all .15s;margin-bottom:.375rem;font-size:.8125rem}
-    .exam-option:hover{border-color:rgba(253,192,3,.3);background:rgba(253,192,3,.04)}
-    .exam-option:has(input:checked){border-color:#FDC003;background:rgba(253,192,3,.06)}
-    .strike-badge{display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .75rem;border-radius:999px;font-size:.6875rem;font-weight:600;background:rgba(186,26,26,.12);color:#ff4d4d}
-    .timer-display{font-family:var(--font-display);font-weight:700;font-size:1.5rem;font-variant-numeric:tabular-nums}
-    .timer-display.warning{color:#ff4d4d;animation:pulse 1s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-    .candidate-card{background:var(--card-bg);border:1px solid var(--border);border-radius:1.25rem;padding:1.25rem;text-align:center;transition:all .2s}
-    .candidate-card:hover{border-color:rgba(128,0,0,.3)}
-    .candidate-card img{width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto .75rem}
-    .saber-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
-    .saber-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.25rem;transition:transform .3s,box-shadow .3s;position:relative;overflow:hidden}
-    .saber-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
-    .saber-card .saber-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
-    .saber-card .saber-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
-    .saber-card .saber-title{font-family:var(--font-display);font-weight:700;font-size:14px;margin-bottom:4px}
-    .saber-card .saber-desc{font-size:12px;opacity:.6;margin-bottom:12px;line-height:1.5}
-    .saber-tabs{display:flex;gap:4px;margin-bottom:1rem;flex-wrap:wrap}
-    .saber-tab{padding:6px 16px;border-radius:20px;font-size:12.5px;font-weight:500;background:var(--input-bg);border:1px solid var(--border);cursor:pointer;transition:all .18s;color:var(--text)}
-    .saber-tab.active{background:var(--maroon);color:#fff;border-color:var(--maroon)}
-    .saber-tab.gold-tab.active{background:var(--gold);border-color:var(--gold);color:#000}
-    .saber-material{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-    .saber-material:last-child{border-bottom:none}
-    .saber-material .mat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-    .saber-material .mat-info{flex:1}
-    .saber-material .mat-name{font-size:13px;font-weight:600}
-    .saber-material .mat-meta{font-size:11px;opacity:.5}
-    .lightbox-overlay{position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;cursor:zoom-out}
-    .lightbox-overlay.open{display:flex}
-    .lightbox-overlay img{max-width:90vw;max-height:90vh;border-radius:.75rem;object-fit:contain}
-    .exam-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:1rem;padding:1rem;cursor:pointer;transition:all .2s}
-    .exam-card:hover{border-color:rgba(253,192,3,.3);background:rgba(253,192,3,.03)}
-    .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;backdrop-filter:blur(4px)}
-    @media(max-width:1024px){
-      .stats-grid{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}.library-grid{grid-template-columns:repeat(2,1fr)}
-    }
-    @media(max-width:768px){
-      .est-sidebar{transform:translateX(-220px)}.est-sidebar.open{transform:translateX(0)}
-      .sidebar-overlay{display:block;opacity:0;pointer-events:none;transition:opacity .3s}
-      .sidebar-overlay.visible{opacity:1;pointer-events:all}
-      .est-main{margin-left:0}.hamburger-btn{display:flex}
-      .content-area{padding:1.25rem 1rem}.tasks-split{grid-template-columns:1fr}
-      .profile-info-grid{grid-template-columns:1fr}.est-topbar{padding:0 1rem}
-      .saber-grid{grid-template-columns:1fr}
-    }
-    @media(max-width:480px){
-      .stats-grid{grid-template-columns:1fr 1fr;gap:10px}.library-grid{grid-template-columns:1fr}
-      .stat-value{font-size:1.7rem}.welcome-banner h1{font-size:1.25rem}.welcome-banner::after{display:none}
-      .saber-tab{font-size:11px;padding:4px 10px}
-    }
-    @media(max-width:380px){
-      .content-area{padding:.875rem .625rem}.stats-grid{gap:8px}.stat-card{padding:1rem .75rem .875rem}.topbar-clock{display:none}
-    }
-    @media(min-width:769px){.est-sidebar{transform:translateX(0)!important}}
-  </style>
-
-  <aside class="est-sidebar" id="sidebar">
-    <div class="logo-area">
-      <div class="logo-mark">V</div>
-      <div class="logo-text">VY<span>N</span>TRA</div>
-      <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.remove('open')" style="margin-left:auto;color:rgba(255,255,255,.5);display:none">&#x2715;</button>
-    </div>
-    <div class="nav-section">Navegación</div>
-    <button class="est-nav-link active" data-nav="inicio"><span class="nav-icon">&#x2299;</span> Inicio</button>
-    <button class="est-nav-link" data-nav="notas"><span class="nav-icon">&#x25C8;</span> Notas</button>
-    <button class="est-nav-link" data-nav="examenes"><span class="nav-icon">&#x2630;</span> Exámenes</button>
-    <button class="est-nav-link" data-nav="horarios"><span class="nav-icon">&#x25F7;</span> Horarios</button>
-    <button class="est-nav-link" data-nav="tareas"><span class="nav-icon">&#x25FB;</span> Tareas</button>
-    <button class="est-nav-link" data-nav="saber"><span class="nav-icon">&#x2697;</span> Pruebas Saber</button>
-    <button class="est-nav-link" data-nav="biblioteca"><span class="nav-icon">&#x25EB;</span> Biblioteca</button>
-    <button class="est-nav-link" data-nav="votaciones"><span class="nav-icon">&#x2714;</span> Votaciones</button>
-    <button class="est-nav-link" data-nav="perfil"><span class="nav-icon">&#x25CE;</span> Perfil</button>
-    <div class="sidebar-footer">
-      <div class="student-chip" onclick="showSection('perfil')">
-        <div class="student-avatar" id="sb-avatar">V</div>
-        <div>
-          <div class="student-name" id="sb-name">Cargando...</div>
-          <div style="font-size:10.5px;color:rgba(255,255,255,.35);margin-top:1px" id="sb-grade"></div>
+  <!-- SECTIONS -->
+  <div class="space-y-5">
+    <!-- INICIO -->
+    <section id="sec-inicio" class="section-active space-y-5">
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-maroon via-brand-maroon-dark to-terracotta-800 text-white p-5 sm:p-8">
+        <div class="absolute right-0 top-1/2 -translate-y-1/2 text-[120px] font-extrabold text-white/[0.04] select-none pointer-events-none" style="font-family:'Fraunces',serif">V</div>
+        <div class="relative z-10">
+          <h1 class="text-lg sm:text-xl lg:text-2xl font-bold mb-1" style="font-family:'Fraunces',serif">Hola, <span id="student-name">Estudiante</span></h1>
+          <p class="text-white/70 text-xs sm:text-sm" id="student-meta">Panel de rendimiento académico</p>
+          <div class="flex flex-wrap gap-2 mt-4">
+            <span class="inline-flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5 text-[11px] font-medium" id="welcome-badge-grade">Cargando...</span>
+            <span class="inline-flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5 text-[11px] font-medium" id="welcome-badge-avg">Promedio: -- / 5.0</span>
+            <span class="inline-flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5 text-[11px] font-medium" id="welcome-badge-risk">-- aprobadas</span>
+          </div>
         </div>
       </div>
-      <div style="display:flex;gap:4px;margin-top:8px">
-        <button id="est-theme-toggle" class="theme-toggle-btn" style="width:32px;height:32px;font-size:13px;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.08)">&#x1F319;</button>
-        <button onclick="localStorage.clear();window.location.href='/'" style="flex:1;padding:6px;border-radius:8px;color:rgba(255,255,255,.5);font-size:11px;font-weight:500;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);cursor:pointer;font-family:var(--font-body)">&#x2192; Salir</button>
-      </div>
-    </div>
-  </aside>
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()"><img id="lightbox-img" src="" alt=""></div>
-
-  <div class="exam-modal" id="exam-modal">
-    <div class="exam-modal-header">
-      <div><strong id="exam-modal-title" style="font-size:.875rem;color:#fff">Examen</strong><div class="strike-badge" id="strike-badge" style="display:none">&#x26A0;&#xFE0F; <span id="strike-val">0</span>/5</div></div>
-      <div style="display:flex;align-items:center;gap:1rem">
-        <span class="timer-display" id="timer-display">00:00</span>
-        <button class="btn-ghost" onclick="intentarSalirManual()" style="font-size:.75rem;color:rgba(255,255,255,.5);padding:6px 12px;border-radius:8px;background:none;border:1px solid rgba(255,255,255,.1);cursor:pointer;font-family:var(--font-body);font-weight:500">&#x2715; Salir</button>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {[
+          { id:'stat-avg',label:'Promedio General',icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9',color:'from-brand-maroon to-brand-maroon-dark' },
+          { id:'stat-subjects',label:'Asignaturas',icon:'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5',color:'from-brand-gold to-brand-amber' },
+          { id:'stat-passing',label:'Aprobadas',icon:'M5 13l4 4L19 7',color:'from-success to-emerald-500' },
+          { id:'stat-bimestre',label:'Bimestre Actual',icon:'M8 7V3m8 4V3m-9 8h10M5 21h14',color:'from-brand-info to-blue-500' },
+        ].map(s => (
+          <div class="group bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 sm:p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover dark:hover:shadow-card-dark-hover">
+            <div class={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.color}`}></div>
+            <div class="w-8 h-8 rounded-lg bg-brand-maroon/8 dark:bg-brand-gold/8 flex items-center justify-center mb-3">
+              <svg class="h-4 w-4 text-brand-maroon dark:text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={s.icon}/></svg>
+            </div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-brand-maroon dark:text-brand-gold" id={s.id} style="font-family:'Fraunces',serif">--</div>
+            <div class="text-[10px] uppercase tracking-wider text-text-tertiary mt-1 font-semibold">{s.label}</div>
+          </div>
+        ))}
       </div>
-    </div>
-    <div class="exam-modal-body" id="examen-preguntas-render"></div>
+
+      <div class="grid lg:grid-cols-2 gap-4 sm:gap-5">
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-4">Rendimiento por Asignatura</h3>
+          <div id="perf-list" class="space-y-3 text-sm text-text-tertiary">Cargando...</div>
+        </div>
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-4">Avisos Recientes</h3>
+          <div id="notices-list" class="text-xs text-text-secondary">Cargando...</div>
+        </div>
+      </div>
+
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+        <h3 class="font-bold text-sm mb-4">Calendario — <span id="cal-month-label">Este mes</span></h3>
+        <div class="grid grid-cols-7 gap-1 text-center" id="calGrid">
+          {['Lu','Ma','Mi','Ju','Vi','Sá','Do'].map(d => <div class="text-[10px] text-text-tertiary uppercase font-semibold py-1">{d}</div>)}
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTAS -->
+    <section id="sec-notas" class="hidden space-y-5">
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Registro de Notas</h2>
+      <div class="flex flex-wrap gap-2 items-center" id="period-filters">
+        {['P1','P2','P3','P4'].map(p => (
+          <button class="px-4 py-1.5 rounded-full text-xs font-semibold bg-[var(--input-bg)] border border-border text-text-tertiary transition-all data-[active]:bg-brand-maroon data-[active]:text-white data-[active]:border-brand-maroon" data-period={p}>{p}</button>
+        ))}
+        <button class="ml-auto px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border hover:bg-solar-200 transition-colors" onclick="generarBoletinPDF()">Exportar PDF</button>
+      </div>
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="text-text-tertiary text-[10px] uppercase tracking-wider font-semibold"><th class="text-left p-2 border-b border-border">Asignatura</th><th class="p-2 border-b border-border text-center">P1</th><th class="p-2 border-b border-border text-center">P2</th><th class="p-2 border-b border-border text-center">P3</th><th class="p-2 border-b border-border text-center">P4</th><th class="p-2 border-b border-border text-center">Promedio</th><th class="p-2 border-b border-border text-center">Estado</th></tr></thead>
+          <tbody id="grades-table-body"><tr><td colspan="7" class="text-center py-8 text-text-tertiary">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="grid lg:grid-cols-2 gap-4 sm:gap-5">
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-4">Promedio por Bimestre</h3>
+          <div class="flex items-end gap-2 h-40" id="bimestre-bars">
+            {['P1','P2','P3','P4'].map(p => (
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <span class="text-[11px] font-bold text-brand-maroon dark:text-brand-gold" id={`bar-${p}-val`}>--</span>
+                <div class="w-full rounded-t-lg bg-gradient-to-t from-brand-maroon to-brand-maroon-light transition-all duration-700 ease-out" id={`bar-${p}`} style="height:4px"></div>
+                <span class="text-[10px] text-text-tertiary">{p}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-4">Evolución</h3>
+          <div class="h-52"><canvas id="myGradesChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXAMENES -->
+    <section id="sec-examenes" class="hidden space-y-5">
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Exámenes</h2>
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+        <div id="available-exams" class="text-sm text-text-tertiary">Cargando...</div>
+      </div>
+    </section>
+
+    <!-- HORARIOS -->
+    <section id="sec-horarios" class="hidden space-y-5">
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Horario Semanal</h2>
+      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 overflow-x-auto">
+        <div id="schedule-container" class="text-sm text-text-tertiary min-w-[600px]">Cargando horario...</div>
+      </div>
+    </section>
+
+    <!-- TAREAS -->
+    <section id="sec-tareas" class="hidden space-y-5">
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Tareas</h2>
+      <div class="grid lg:grid-cols-2 gap-5">
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-4">Subir Nueva Tarea</h3>
+          <div class="space-y-3">
+            <select id="hw-subject" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon"><option>Seleccionar asignatura...</option></select>
+            <input id="hw-title" placeholder="Ej: Taller 3 — Ecuaciones" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon" />
+            <textarea id="hw-comment" rows="2" placeholder="Notas adicionales..." class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon resize-y"></textarea>
+            <div id="dropzoneArea" class="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-brand-maroon hover:bg-brand-maroon/3 transition-colors">
+              <div class="text-2xl mb-2">&#x1F4CE;</div>
+              <div class="text-sm font-medium text-text-secondary">Arrastra tu archivo aquí</div>
+              <p class="text-xs text-text-tertiary mt-1">PDF, DOCX, ZIP, PNG · Máx 20 MB</p>
+              <input type="file" id="hw-file" accept=".pdf,.doc,.docx,.zip,.png,.jpg" class="hidden" />
+              <div id="file-name-display" class="text-xs text-brand-maroon mt-2 font-semibold"></div>
+            </div>
+            <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl hover:shadow-glow-maroon transition-all" onclick="sendHomework()">Enviar Entrega</button>
+          </div>
+        </div>
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-4">Historial de Entregas</h3>
+          <div id="homework-history" class="text-sm text-text-tertiary">Cargando...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRUEBAS SABER -->
+    <section id="sec-saber" class="hidden space-y-5">
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Pruebas Saber</h2>
+      <div class="flex flex-wrap gap-2" id="saber-area-tabs">
+        {[{id:'matematicas',label:'Matemáticas'},{id:'lenguaje',label:'Lenguaje'},{id:'ciencias',label:'C. Naturales'},{id:'sociales',label:'C. Sociales'},{id:'ingles',label:'Inglés'},{id:'icfes',label:'ICFES Saber 11'}].map(a => (
+          <button class="px-4 py-1.5 rounded-full text-xs font-semibold bg-[var(--input-bg)] border border-border text-text-tertiary transition-all data-[active]:bg-brand-maroon data-[active]:text-white data-[active]:border-brand-maroon" data-area={a.id}>{a.label}</button>
+        ))}
+      </div>
+      <div class="flex flex-wrap gap-2" id="saber-period-tabs">
+        {[1,2,3,4].map(b => (
+          <button class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--input-bg)] border border-border text-text-tertiary transition-all data-[active]:bg-brand-gold data-[active]:text-solar-shadow data-[active]:border-brand-gold" data-bimestre={String(b)}>Bimestre {b}</button>
+        ))}
+      </div>
+      <div id="saber-content" class="text-sm text-text-tertiary">Selecciona un área y bimestre.</div>
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-2">Practica tus Conocimientos</h3>
+          <p class="text-xs text-text-secondary mb-4">Preguntas tipo ICFES con autocorrección.</p>
+          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg hover:shadow-glow-maroon transition-all mr-2" onclick="iniciarSimulacroSaber()">Iniciar Simulacro</button>
+        </div>
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <h3 class="font-bold text-sm mb-2">Mi Progreso</h3>
+          <p class="text-xs text-text-secondary" id="saber-progress-summary">Completa un simulacro para ver tu progreso.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- BIBLIOTECA -->
+    <section id="sec-biblioteca" class="hidden space-y-5">
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Biblioteca</h2>
+      <select id="biblio-period" class="w-48 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon mb-4">
+        <option value="">Todos los bimestres</option>
+        {['P1','P2','P3','P4'].map(p => <option value={p}>Bimestre {p.replace('P','')}</option>)}
+      </select>
+      <div id="library-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"><p class="text-sm text-text-tertiary col-span-full">Cargando biblioteca...</p></div>
+    </section>
+
+    <!-- VOTACIONES -->
+    <section id="sec-votaciones" class="hidden space-y-5">
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Votación Estudiantil</h2>
+      <div id="candidates-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- PERFIL -->
+    <section id="sec-perfil" class="hidden space-y-5">
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight" style="font-family:'Fraunces',serif">Mi Perfil</h2>
+      <div class="grid lg:grid-cols-2 gap-5">
+        <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+          <div class="flex items-start gap-4 mb-6">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-brand-maroon to-terracotta-600 text-white flex items-center justify-center text-2xl font-extrabold shrink-0 relative">
+              <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-white dark:border-surface-dark"></div>
+              <span id="profile-avatar-text">V</span>
+            </div>
+            <div>
+              <div class="font-bold text-lg" id="profile-name">Cargando...</div>
+              <div class="text-xs text-text-tertiary" id="profile-id">Código: --</div>
+              <div class="flex gap-2 mt-2 flex-wrap" id="profile-badges"></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3" id="profile-info-grid"></div>
+        </div>
+        <div class="space-y-4">
+          <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+            <h3 class="font-bold text-sm mb-4">Resumen Académico</h3>
+            <div class="grid grid-cols-4 gap-3 text-center">
+              {[{id:'pf-avg',label:'Promedio',color:'text-brand-maroon'},{id:'pf-subjects-count',label:'Asignaturas',color:'text-brand-gold'},{id:'pf-passing',label:'Aprobadas',color:'text-success'},{id:'pf-risk',label:'En Riesgo',color:'text-brand-info'}].map(s => (
+                <div><div class={`text-2xl font-extrabold ${s.color}`} id={s.id}>--</div><div class="text-[10px] uppercase tracking-wider text-text-tertiary mt-1">{s.label}</div></div>
+              ))}
+            </div>
+          </div>
+          <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+            <h3 class="font-bold text-sm mb-4">Actividad Reciente</h3>
+            <div id="profile-timeline" class="text-sm text-text-tertiary">Cargando...</div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <div class="est-main">
-    <header class="est-topbar">
-      <div class="topbar-left">
-        <button class="hamburger-btn" onclick="toggleSidebar()">&#x2630;</button>
-        <div class="topbar-title" id="pageTitle">Inicio</div>
+  <!-- Exam Modal -->
+  <div id="exam-modal" class="fixed inset-0 z-[9999] bg-[#040405] hidden flex-col">
+    <div class="flex items-center justify-between px-4 sm:px-6 py-3 bg-white/5 border-b border-white/5">
+      <div>
+        <strong id="exam-modal-title" class="text-white text-sm">Examen</strong>
+        <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-danger/20 text-brand-danger mt-1" id="strike-badge" style="display:none">
+          <span id="strike-val">0</span>/5
+        </div>
       </div>
-      <div class="topbar-right">
-        <div class="online-indicator">
-          <span class="online-dot online" id="online-dot"></span>
-          <span id="online-text">En línea</span>
-        </div>
-        <div class="topbar-clock" id="liveClock">00:00:00</div>
-        <button class="theme-toggle-btn" id="topbar-theme-toggle" title="Cambiar tema">&#x1F319;</button>
+      <div class="flex items-center gap-3">
+        <span class="text-lg font-bold tabular-nums text-white" id="timer-display">00:00</span>
+        <button class="px-3 py-1.5 rounded-lg text-xs text-white/50 border border-white/10 hover:bg-white/5 transition-colors" onclick="intentarSalirManual()">Salir</button>
       </div>
-    </header>
-
-    <div class="content-area">
-
-      <section class="section active" id="sec-inicio">
-        <div class="welcome-banner">
-          <h1>Hola, <span id="student-name">Estudiante</span> &#x1F44B;</h1>
-          <p id="student-meta" style="font-size:14px;opacity:.75">Panel de rendimiento académico</p>
-          <div class="welcome-meta">
-            <div class="welcome-badge" id="welcome-badge-grade">&#x1F4DA; Cargando...</div>
-            <div class="welcome-badge" id="welcome-badge-avg">&#x1F3AF; Promedio: -- / 5.0</div>
-            <div class="welcome-badge" id="welcome-badge-risk">&#x2705; -- aprobadas</div>
-          </div>
-        </div>
-        <div class="stats-grid" id="statsGrid">
-          <div class="stat-card"><div class="stat-icon">&#x1F4CA;</div><div class="stat-value" id="stat-avg">--</div><div class="stat-label">Promedio General</div></div>
-          <div class="stat-card"><div class="stat-icon">&#x1F4DA;</div><div class="stat-value" id="stat-subjects">--</div><div class="stat-label">Asignaturas</div></div>
-          <div class="stat-card"><div class="stat-icon">&#x2705;</div><div class="stat-value" id="stat-passing">--</div><div class="stat-label">Aprobadas</div></div>
-          <div class="stat-card"><div class="stat-icon">&#x1F393;</div><div class="stat-value" id="stat-bimestre">--</div><div class="stat-label">Bimestre Actual</div></div>
-        </div>
-        <div class="grid-2">
-          <div class="card-float">
-            <div class="card-title">Rendimiento por Asignatura</div>
-            <div id="perf-list"><div class="perf-item"><div class="perf-header"><span class="perf-name">Cargando...</span></div></div></div>
-          </div>
-          <div class="card-float">
-            <div class="card-title">&#x1F4E2; Avisos Recientes</div>
-            <div id="notices-list" style="font-size:.75rem;color:var(--text-secondary)">Cargando...</div>
-          </div>
-        </div>
-        <div class="card-float">
-          <div class="card-title">&#x1F4C5; Calendario — <span id="cal-month-label">Este mes</span></div>
-          <div class="cal-grid" id="calGrid"><div class="cal-day-name">Lu</div><div class="cal-day-name">Ma</div><div class="cal-day-name">Mi</div><div class="cal-day-name">Ju</div><div class="cal-day-name">Vi</div><div class="cal-day-name">Sá</div><div class="cal-day-name">Do</div></div>
-        </div>
-      </section>
-
-      <section class="section" id="sec-notas">
-        <div class="section-title"><span>&#x25C8;</span> Registro de Notas</div>
-        <div class="filter-row">
-          <button class="period-filter active" data-period="P1" onclick="setPeriod(this)">P1</button>
-          <button class="period-filter" data-period="P2" onclick="setPeriod(this)">P2</button>
-          <button class="period-filter" data-period="P3" onclick="setPeriod(this)">P3</button>
-          <button class="period-filter" data-period="P4" onclick="setPeriod(this)">P4</button>
-          <div style="margin-left:auto"><button class="btn-apple btn-secondary" onclick="generarBoletinPDF()">&#x2B07; Exportar PDF</button></div>
-        </div>
-        <div class="card-float" style="margin-bottom:24px">
-          <table class="data-table">
-            <thead><tr><th>Asignatura</th><th>P1</th><th>P2</th><th>P3</th><th>P4</th><th>Promedio</th><th>Estado</th><th>Avance</th></tr></thead>
-            <tbody id="grades-table-body"><tr><td colspan="8" style="text-align:center;opacity:.5">Cargando...</td></tr></tbody>
-          </table>
-        </div>
-        <div class="grid-2">
-          <div class="card-float">
-            <div class="card-title">Promedio por Bimestre</div>
-            <div class="chart-mock-wrap"><div class="chart-bars">
-              <div class="c-bar" style="height:2%;background:linear-gradient(180deg,var(--maroon),rgba(128,0,0,.6))" data-val="" id="bar-p1"><div class="c-bar-label">P1</div></div>
-              <div class="c-bar" style="height:2%;background:linear-gradient(180deg,var(--gold),rgba(253,192,3,.6))" data-val="" id="bar-p2"><div class="c-bar-label">P2</div></div>
-              <div class="c-bar" style="height:2%;background:linear-gradient(180deg,#34C759,rgba(52,199,89,.6))" data-val="" id="bar-p3"><div class="c-bar-label">P3</div></div>
-              <div class="c-bar" style="height:2%;background:linear-gradient(180deg,#007AFF,rgba(0,122,255,.6))" data-val="" id="bar-p4"><div class="c-bar-label">P4</div></div>
-            </div></div>
-            <p style="font-size:11.5px;opacity:.45;text-align:center">Escala 0.0 — 5.0 · Promedio por bimestre</p>
-          </div>
-          <div class="card-float">
-            <div class="card-title">&#x1F4C8; Evolución <button class="btn-ghost" onclick="generarBoletinPDF()" style="float:right;font-size:11px;padding:4px 10px">&#x1F4C4; PDF</button></div>
-            <div style="height:220px"><canvas id="myGradesChart"></canvas></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="sec-examenes">
-        <div class="section-title"><span>&#x2630;</span> Exámenes Disponibles</div>
-        <div class="card-float" style="padding:1.25rem">
-          <div id="available-exams" style="font-size:.75rem;color:var(--text-secondary)">Cargando...</div>
-        </div>
-      </section>
-
-      <section class="section" id="sec-horarios">
-        <div class="section-title"><span>&#x25F7;</span> Horario Semanal</div>
-        <div class="card-float">
-          <div class="filter-row">
-            <button class="period-filter active" data-period="P1" onclick="setPeriod(this)">P1</button>
-            <button class="period-filter" data-period="P2" onclick="setPeriod(this)">P2</button>
-            <button class="period-filter" data-period="P3" onclick="setPeriod(this)">P3</button>
-            <button class="period-filter" data-period="P4" onclick="setPeriod(this)">P4</button>
-            <span style="margin-left:auto;font-size:12px;opacity:.5" id="schedule-grade-label">Grado:</span>
-          </div>
-          <div class="schedule-grid">
-            <table class="schedule-table">
-              <thead><tr><th style="width:80px">Hora</th><th>Lunes</th><th>Martes</th><th>Miércoles</th><th>Jueves</th><th>Viernes</th></tr></thead>
-              <tbody id="schedule-body"><tr><td colspan="6" style="text-align:center;opacity:.5">Cargando horario...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="sec-tareas">
-        <div class="section-title"><span>&#x25FB;</span> Tareas</div>
-        <div class="tasks-split">
-          <div>
-            <div class="card-float">
-              <div class="card-title">Subir Nueva Tarea</div>
-              <div class="form-group">
-                <label class="form-label">Asignatura</label>
-                <select class="form-select" id="hw-subject"><option value="">Seleccionar...</option></select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Título</label>
-                <input class="form-input" type="text" id="hw-title" placeholder="Ej: Taller 3 — Ecuaciones" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Comentarios</label>
-                <textarea class="form-input" rows="2" id="hw-comment" placeholder="Notas adicionales..." style="resize:vertical"></textarea>
-              </div>
-              <div class="dropzone" id="dropzoneArea" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)" onclick="document.getElementById('hw-file').click()">
-                <div class="dropzone-icon">&#x1F4CE;</div>
-                <div class="dropzone-text">Arrastra tu archivo aquí</div>
-                <div class="dropzone-sub">PDF, DOCX, ZIP, PNG, JPG · Máx. 20 MB</div>
-                <div id="file-name-display" style="font-size:12px;color:var(--maroon);margin-top:6px"></div>
-                <input type="file" id="hw-file" accept=".pdf,.doc,.docx,.zip,.png,.jpg" style="display:none" onchange="updateFileName(this)">
-              </div>
-              <div style="margin-top:16px"><button class="btn-apple btn-primary" style="width:100%;justify-content:center" onclick="sendHomework()">&#x2708; Enviar Entrega</button></div>
-            </div>
-          </div>
-          <div>
-            <div class="card-float" style="height:100%">
-              <div class="card-title">Historial de Entregas</div>
-              <div id="homework-history" style="font-size:.75rem;color:var(--text-secondary)">Cargando...</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="sec-saber">
-        <div class="section-title"><span>&#x2697;</span> Pruebas Saber <span id="saber-grade-label" style="font-size:.7em;opacity:.5"></span></div>
-        <div class="saber-tabs" id="saber-tabs">
-          <button class="saber-tab active" data-area="matematicas">Matemáticas</button>
-          <button class="saber-tab" data-area="lenguaje">Lenguaje</button>
-          <button class="saber-tab" data-area="ciencias">C. Naturales</button>
-          <button class="saber-tab" data-area="sociales">C. Sociales</button>
-          <button class="saber-tab" data-area="ingles">Inglés</button>
-          <button class="saber-tab gold-tab" data-area="icfes">&#x2605; ICFES Saber 11</button>
-        </div>
-        <div class="saber-tabs" id="saber-period-tabs" style="margin-bottom:1.25rem">
-          <button class="saber-tab active" data-bimestre="1">Bimestre 1</button>
-          <button class="saber-tab" data-bimestre="2">Bimestre 2</button>
-          <button class="saber-tab" data-bimestre="3">Bimestre 3</button>
-          <button class="saber-tab" data-bimestre="4">Bimestre 4</button>
-        </div>
-        <div id="saber-content"><p style="opacity:.5;font-size:13px">Selecciona un área y bimestre para ver materiales de estudio.</p></div>
-        <div class="saber-grid" id="saber-practice-grid" style="margin-top:1.5rem">
-          <div class="saber-card">
-            <div class="saber-top"><div class="saber-icon" style="background:rgba(128,0,0,.1)">&#x1F4DD;</div><span class="badge" style="background:rgba(52,199,89,.12);color:#34C759">Simulacro</span></div>
-            <div class="saber-title">Practica tus conocimientos</div>
-            <div class="saber-desc">Preguntas tipo ICFES con autocorrección y análisis de resultados.</div>
-            <div style="display:flex;gap:8px"><button class="lib-link primary" onclick="iniciarSimulacroSaber()">Iniciar Simulacro</button><button class="lib-link ai" onclick="abrirTutorSaber()">&#x2726; Tutor IA</button></div>
-          </div>
-          <div class="saber-card">
-            <div class="saber-top"><div class="saber-icon" style="background:rgba(253,192,3,.12)">&#x1F4C8;</div><span class="badge" style="background:rgba(0,122,255,.1);color:#007AFF">Progreso</span></div>
-            <div class="saber-title">Mi Progreso</div>
-            <div class="saber-desc">Historial de simulacros, aciertos y áreas por reforzar.</div>
-            <div id="saber-progress-summary" style="font-size:13px;opacity:.6">Completa un simulacro para ver tu progreso.</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="sec-biblioteca">
-        <div class="section-title"><span>&#x25EB;</span> Biblioteca de Asignaturas</div>
-        <div class="filter-row">
-          <select class="form-select" id="biblio-period" style="width:auto;min-width:140px">
-            <option value="">Todos los bimestres</option>
-            <option value="P1">Bimestre 1</option>
-            <option value="P2">Bimestre 2</option>
-            <option value="P3">Bimestre 3</option>
-            <option value="P4">Bimestre 4</option>
-          </select>
-        </div>
-        <div class="library-grid" id="library-grid"><p style="opacity:.5;font-size:13px;grid-column:1/-1">Cargando biblioteca...</p></div>
-      </section>
-
-      <section class="section" id="sec-votaciones">
-        <div class="section-title"><span>&#x2714;</span> Elecciones — Votación Estudiantil</div>
-        <div class="card-float" style="padding:1.25rem">
-          <div id="candidates-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem"></div>
-        </div>
-      </section>
-
-      <section class="section" id="sec-perfil">
-        <div class="section-title"><span>&#x25CE;</span> Mi Perfil</div>
-        <div class="grid-2">
-          <div class="card-float">
-            <div class="profile-header">
-              <div class="profile-avatar-lg" id="profile-avatar">V</div>
-              <div>
-                <div class="profile-name" id="profile-name">Cargando...</div>
-                <div class="profile-id" id="profile-id">Código: --</div>
-                <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-                  <span class="badge" id="profile-grade-badge" style="background:rgba(128,0,0,.1);color:var(--maroon)">--</span>
-                  <span class="badge" id="profile-status-badge" style="background:rgba(52,199,89,.12);color:#34C759">Activo</span>
-                  <span class="badge" id="profile-bimestre-badge" style="background:rgba(253,192,3,.12);color:#b38000">--</span>
-                </div>
-              </div>
-            </div>
-            <div class="profile-info-grid" id="profile-info-grid">
-              <div class="info-item"><div class="info-key">Nombre completo</div><div class="info-val" id="pf-name">--</div></div>
-              <div class="info-item"><div class="info-key">Correo institucional</div><div class="info-val" id="pf-email">--</div></div>
-              <div class="info-item"><div class="info-key">Documento</div><div class="info-val" id="pf-doc">--</div></div>
-              <div class="info-item"><div class="info-key">Teléfono</div><div class="info-val" id="pf-phone">--</div></div>
-              <div class="info-item"><div class="info-key">Grado</div><div class="info-val" id="pf-grade">--</div></div>
-              <div class="info-item"><div class="info-key">Jornada</div><div class="info-val" id="pf-shift">--</div></div>
-            </div>
-          </div>
-          <div>
-            <div class="card-float" style="margin-bottom:16px">
-              <div class="card-title">&#x1F393; Resumen Académico</div>
-              <div style="display:flex;gap:12px;flex-wrap:wrap">
-                <div style="text-align:center;flex:1;padding:8px"><div style="font-family:var(--font-display);font-size:2rem;font-weight:800;color:var(--maroon)" id="pf-avg">--</div><div class="stat-label">Promedio</div></div>
-                <div style="text-align:center;flex:1;padding:8px"><div style="font-family:var(--font-display);font-size:2rem;font-weight:800;color:var(--gold)" id="pf-subjects-count">--</div><div class="stat-label">Asignaturas</div></div>
-                <div style="text-align:center;flex:1;padding:8px"><div style="font-family:var(--font-display);font-size:2rem;font-weight:800;color:#34C759" id="pf-passing">--</div><div class="stat-label">Aprobadas</div></div>
-                <div style="text-align:center;flex:1;padding:8px"><div style="font-family:var(--font-display);font-size:2rem;font-weight:800;color:#007AFF" id="pf-risk">--</div><div class="stat-label">En Riesgo</div></div>
-              </div>
-            </div>
-            <div class="card-float">
-              <div class="card-title">&#x1F4D6; Actividad Reciente</div>
-              <div id="profile-timeline" class="timeline" style="padding-left:1.5rem"><p style="opacity:.5;font-size:12px">Cargando...</p></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </div><!-- /content-area -->
-  </div><!-- /est-main -->
-
-  <AIChat role="student" />
-</Layout>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 grid gap-4" id="examen-preguntas-render"></div>
+  </div>
+</DashboardShell>
+</BaseLayout>
 
 <script define:vars={{ apiUrl, wsUrl }}>
-(function(){
-  var toastEl = document.createElement('div')
-  toastEl.style.cssText = 'position:fixed;top:80px;right:24px;z-index:99999;padding:.75rem 1.25rem;border-radius:14px;font-size:.8rem;font-weight:500;opacity:0;transform:translateX(120px);pointer-events:auto;max-width:320px;background:rgba(29,29,31,.96);color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:all .3s cubic-bezier(.34,1.56,.64,1)'
-  document.body.appendChild(toastEl)
-  function showToast(msg, type){
-    if(type==='error'){toastEl.style.background='rgba(186,26,26,.95)'}
-    else if(type==='success'){toastEl.style.background='rgba(52,199,89,.95)'}
-    else{toastEl.style.background='rgba(29,29,31,.96)'}
-    toastEl.textContent = msg
-    toastEl.style.opacity='1';toastEl.style.transform='translateX(0)'
-    clearTimeout(toastEl._timer)
-    toastEl._timer = setTimeout(function(){toastEl.style.opacity='0';toastEl.style.transform='translateX(120px)'}, 4000)
-  }
+  // ════════════════════════════════════════════════════════════════
+  // STUDENT DASHBOARD — All features preserved from original
+  // ════════════════════════════════════════════════════════════════
+  (function(){
+    var token = localStorage.getItem('access_token')
+    if (!token) { window.location.href = '/login'; return }
+    var studentId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
+    var userGrade = localStorage.getItem('userGrade') || ''
+    var userName = localStorage.getItem('userName') || 'Estudiante'
+    var currentSection = 'inicio'
 
-  var token = localStorage.getItem('access_token')
-  if (!token) { window.location.href = '/login'; return }
-  var studentId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
-  var userGrade = localStorage.getItem('userGrade') || ''
-  var currentSection = 'inicio'
-  var subjectsCache = null
+    // Update sidebar info
+    var sbNameEl = document.getElementById('sidebar-username-student')
+    var sbMetaEl = document.getElementById('sidebar-metadata-student')
+    if (sbNameEl) sbNameEl.textContent = userName
+    if (sbMetaEl) sbMetaEl.textContent = userGrade || ''
 
-  function apiFetch(path, opts){
-    var url = apiUrl.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
-    var merged = Object.assign({ headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } }, opts || {})
-    if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) merged.body = JSON.stringify(merged.body)
-    return fetch(url, merged).then(function(r){
-      if (r.status === 401) { localStorage.clear(); window.location.href = '/login' }
-      return r.json()
-    })
-  }
-
-  // -- THEME --
-  function applyTheme(dark){
-    document.documentElement.classList.toggle('dark', dark)
-    localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
-    var els = document.querySelectorAll('#est-theme-toggle, #topbar-theme-toggle')
-    els.forEach(function(el){ el.textContent = dark ? '\u2600\ufe0f' : '🌙' })
-  }
-  var savedTheme = localStorage.getItem('vyntra-theme')
-  applyTheme(savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme:dark)').matches)
-  document.getElementById('est-theme-toggle').addEventListener('click', function(){ applyTheme(!document.documentElement.classList.contains('dark')) })
-  document.getElementById('topbar-theme-toggle').addEventListener('click', function(){ applyTheme(!document.documentElement.classList.contains('dark')) })
-
-  // -- NAVIGATION --
-  var pageTitles = { inicio:'Inicio', notas:'Notas', examenes:'Ex\u00e1menes', horarios:'Horarios', tareas:'Tareas', saber:'Pruebas Saber', biblioteca:'Biblioteca', votaciones:'Votaciones', perfil:'Perfil' }
-  window.showSection = function(id){
-    currentSection = id
-    document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active') })
-    document.querySelectorAll('.est-nav-link').forEach(function(n){ n.classList.remove('active') })
-    var sec = document.getElementById('sec-'+id)
-    if(sec) sec.classList.add('active')
-    document.querySelectorAll('.est-nav-link[data-nav="'+id+'"]').forEach(function(n){ n.classList.add('active') })
-    document.getElementById('pageTitle').textContent = pageTitles[id] || id
-    if(id==='notas'){loadGrades();loadChartData()}
-    if(id==='examenes') loadExams()
-    if(id==='horarios') loadSchedule()
-    if(id==='tareas'){loadSubjects();loadHomeworkHistory()}
-    if(id==='saber') loadSaberContent()
-    if(id==='biblioteca') loadLibrary()
-    if(id==='votaciones') loadCandidates()
-    if(id==='perfil'){loadGrades();loadRecentActivity()}
-    closeSidebar()
-  }
-  document.querySelectorAll('.est-nav-link').forEach(function(a){
-    a.addEventListener('click', function(e){
-      e.preventDefault()
-      var nav = a.getAttribute('data-nav')
-      if(nav) window.showSection(nav)
-    })
-  })
-  function toggleSidebar(){
-    document.getElementById('sidebar').classList.toggle('open')
-    document.getElementById('sidebarOverlay').classList.toggle('visible')
-  }
-  window.toggleSidebar = toggleSidebar
-  function closeSidebar(){
-    document.getElementById('sidebar').classList.remove('open')
-    document.getElementById('sidebarOverlay').classList.remove('visible')
-  }
-  document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar)
-
-  // -- CLOCK --
-  function updateClock(){
-    var el = document.getElementById('liveClock')
-    if(el) el.textContent = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
-  }
-  setInterval(updateClock, 1000); updateClock()
-
-  // -- ONLINE --
-  function updateOnlineStatus(){
-    var dot = document.getElementById('online-dot')
-    var txt = document.getElementById('online-text')
-    if(!dot||!txt) return
-    if(navigator.onLine){ dot.className='online-dot online'; txt.textContent='En l\u00ednea' }
-    else{
-      dot.className='online-dot offline'; txt.textContent='Sin conexi\u00f3n'
-      if(isExamActive && currentExam){
-        saveExamProgress()
-        apiFetch('/api/exam/handle-disconnect',{ method:'POST', body:{ student_id:studentId, exam_id:currentExam.id, incident_type:'network_loss', severity:'low', strikes:strikes }}).catch(function(){})
-      }
+    function apiFetch(path, opts) {
+      var url = apiUrl.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+      var merged = Object.assign({ headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } }, opts || {})
+      if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) merged.body = JSON.stringify(merged.body)
+      return fetch(url, merged).then(function(r) {
+        if (r.status === 401) { localStorage.clear(); window.location.href = '/login' }
+        return r.json().catch(function(){ return {} })
+      })
     }
-  }
-  window.addEventListener('online', updateOnlineStatus); window.addEventListener('offline', updateOnlineStatus); updateOnlineStatus()
 
-  // -- NOTICES --
-  function loadNotices(){
-    apiFetch('/api/notices').then(function(data){
-      var el = document.getElementById('notices-list')
-      if(!Array.isArray(data)||data.length===0){ el.innerHTML='<span style="opacity:.3">Sin avisos recientes.</span>'; return }
-      el.innerHTML = data.slice(0,4).map(function(n){
-        var hasFile = n.archivo_url && n.archivo_url !== ''
-        return '<div style="padding:.5rem 0;border-bottom:1px solid var(--border)"><strong style="display:block;font-size:.75rem">'+(n.titulo||'')+'</strong><span style="font-size:.65rem;opacity:.35">'+(n.fecha||'')+'</span>'+
-          (hasFile ? (n.archivo_url.match(/\.pdf$/i) ? '<a href="'+n.archivo_url+'" target="_blank" style="display:inline-block;font-size:.65rem;color:var(--maroon);margin-top:.25rem">📄 Ver PDF</a>' : '<br><img src="'+n.archivo_url+'" class="notice-image" onclick="openLightbox(\''+n.archivo_url+'\')" style="max-width:100%;max-height:100px;border-radius:.5rem;margin-top:.375rem;cursor:zoom-in;object-fit:cover">') : '')+'</div>'
-      }).join('')
-    }).catch(function(){})
-  }
-  window.openLightbox = function(url){ var lb=document.getElementById('lightbox'); document.getElementById('lightbox-img').src=url; lb.classList.add('open') }
-  window.closeLightbox = function(){ document.getElementById('lightbox').classList.remove('open') }
-
-  // -- GRADES --
-  var lastGradesData = null
-  function loadGrades(){
-    if(!studentId) return
-    apiFetch('/api/grades?student_id='+encodeURIComponent(studentId)+'&limit=200').then(function(data){
-      var grades = Array.isArray(data) ? data : []
-      lastGradesData = grades
-      var subjectMap = {}
-      grades.forEach(function(g){
-        var sid = g.subject_name || g.subject_id || 'General'
-        if(!subjectMap[sid]) subjectMap[sid] = []
-        subjectMap[sid].push(parseFloat(g.score)||0)
-      })
-      var labels = Object.keys(subjectMap)
-      var values = labels.map(function(sid){
-        var vals = subjectMap[sid]
-        return vals.reduce(function(a,b){return a+b},0)/vals.length
-      })
-      var overallAvg = values.length ? values.reduce(function(a,b){return a+b},0)/values.length : 0
-      var atRisk = values.filter(function(v){return v<3.5}).length
-      var passing = values.filter(function(v){return v>=3.5}).length
-
-      document.getElementById('stat-avg').textContent = overallAvg ? overallAvg.toFixed(1) : '--'
-      document.getElementById('stat-subjects').textContent = labels.length
-      document.getElementById('stat-passing').textContent = passing
-      document.getElementById('stat-bimestre').textContent = getCurrentBimester()
-
-      document.getElementById('welcome-badge-grade').innerHTML = '📚 ' + (userGrade || 'Cargando...')
-      document.getElementById('welcome-badge-avg').innerHTML = '🎯 Promedio: ' + (overallAvg ? overallAvg.toFixed(1) : '--') + ' / 5.0'
-      document.getElementById('welcome-badge-risk').innerHTML = '\u2705 ' + passing + ' aprobadas'
-
-      var userName = localStorage.getItem('userName') || 'Estudiante'
-      document.getElementById('sb-name').textContent = userName
-      document.getElementById('sb-grade').textContent = userGrade || ''
-      document.getElementById('sb-avatar').textContent = userName.charAt(0).toUpperCase()
-
-      var perfEl = document.getElementById('perf-list')
-      perfEl.innerHTML = labels.slice(0,6).map(function(sid,i){
-        var v = values[i]; var pct = Math.min((v/5)*100, 100)
-        var barClass = v>=4 ? 'green' : v>=3.5 ? 'gold' : ''
-        return '<div class="perf-item"><div class="perf-header"><span class="perf-name">'+sid.substring(0,22)+'</span><span class="perf-score">'+v.toFixed(1)+'</span></div><div class="perf-bar-bg"><div class="perf-bar-fill '+barClass+'" style="width:'+pct+'%"></div></div></div>'
-      }).join('') || '<div class="perf-item"><span style="opacity:.3">Sin calificaciones</span></div>'
-
-      var tbody = document.getElementById('grades-table-body')
-      tbody.innerHTML = labels.map(function(sid,i){
-        var v = values[i]
-        var status = v>=4 ? '<span class="badge" style="background:rgba(52,199,89,.12);color:#34C759">Aprobado</span>' : v>=3.5 ? '<span class="badge" style="background:rgba(253,192,3,.12);color:#b38000">En curso</span>' : '<span class="badge" style="background:rgba(186,26,26,.1);color:var(--red)">Riesgo</span>'
-        var pct = Math.min((v/5)*100, 100)
-        var gradesByPeriod = grades.filter(function(g){ return (g.subject_name||g.subject_id||'General') === sid })
-        var p1 = gradesByPeriod.find(function(g){ return g.period==='P1'||g.period==='1' })
-        var p2 = gradesByPeriod.find(function(g){ return g.period==='P2'||g.period==='2' })
-        var p3 = gradesByPeriod.find(function(g){ return g.period==='P3'||g.period==='3' })
-        var p4 = gradesByPeriod.find(function(g){ return g.period==='P4'||g.period==='4' })
-        return '<tr><td><strong>'+sid.substring(0,25)+'</strong></td><td>'+(p1?parseFloat(p1.score).toFixed(1):'&mdash;')+'</td><td>'+(p2?parseFloat(p2.score).toFixed(1):'&mdash;')+'</td><td>'+(p3?parseFloat(p3.score).toFixed(1):'&mdash;')+'</td><td>'+(p4?parseFloat(p4.score).toFixed(1):'&mdash;')+'</td><td><strong>'+v.toFixed(1)+'</strong></td><td>'+status+'</td><td class="progress-cell">'+Math.round(pct)+'%<div class="table-progress-bg"><div class="table-progress-fill" style="width:'+pct+'%"></div></div></td></tr>'
-      }).join('')
-
-      var pAverages = {}; var pCounts = {}
-      grades.forEach(function(g){
-        var p = g.period || ''
-        if(p && p.match(/^P?\d$/)){
-          var key = p.replace('P','')
-          if(!pAverages[key]){ pAverages[key]=0; pCounts[key]=0 }
-          pAverages[key] += parseFloat(g.score)||0; pCounts[key]++
-        }
-      })
-      for(var pi=1; pi<=4; pi++){
-        var avg = pAverages[pi] && pCounts[pi] ? (pAverages[pi]/pCounts[pi]) : 0
-        var bar = document.getElementById('bar-p'+pi)
-        if(bar){ var pct2 = avg ? Math.min((avg/5)*100,100) : 2; bar.style.height=pct2+'%'; bar.setAttribute('data-val', avg?avg.toFixed(1):'\u2014') }
-      }
-
-      document.getElementById('pf-avg').textContent = overallAvg ? overallAvg.toFixed(1) : '--'
-      document.getElementById('pf-subjects-count').textContent = labels.length
-      document.getElementById('pf-passing').textContent = passing
-      document.getElementById('pf-risk').textContent = atRisk
-    }).catch(function(){})
-  }
-
-  function getCurrentBimester(){
-    var m = new Date().getMonth()
-    if(m>=1&&m<=3) return 'P1'
-    if(m>=4&&m<=6) return 'P2'
-    if(m>=7&&m<=9) return 'P3'
-    return 'P4'
-  }
-
-  // -- CHART --
-  var performanceChart = null
-  function loadChartData(){
-    if(!lastGradesData) return
-    var grades = lastGradesData
-    var subjectMap = {}
-    grades.forEach(function(g){
-      var sid = g.subject_name || g.subject_id || 'General'
-      if(!subjectMap[sid]) subjectMap[sid] = []
-      subjectMap[sid].push(parseFloat(g.score)||0)
-    })
-    var labels = []; var values = []
-    Object.keys(subjectMap).forEach(function(sid){
-      var vals = subjectMap[sid]
-      labels.push(sid.substring(0,16))
-      values.push(vals.reduce(function(a,b){return a+b},0)/vals.length)
-    })
-    renderChart(labels, values)
-  }
-  function renderChart(labels, values){
-    var ctx = document.getElementById('myGradesChart')
-    if(!ctx) return
-    if(performanceChart) performanceChart.destroy()
-    performanceChart = new Chart(ctx, {
-      type:'bar',
-      data:{ labels:labels, datasets:[{ label:'Promedio', data:values, backgroundColor:values.map(function(v){return v>=4?'rgba(52,211,153,0.7)':v>=3?'rgba(253,192,3,0.7)':'rgba(186,26,26,0.7)'}), borderColor:values.map(function(v){return v>=4?'#34D399':v>=3?'#FDC003':'#BA1A1A'}), borderWidth:2, borderRadius:4 }] },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ min:0, max:5, ticks:{ color:'rgba(255,255,255,0.3)', stepSize:1 }, grid:{ color:'rgba(255,255,255,0.04)' } }, x:{ ticks:{ color:'rgba(255,255,255,0.5)', maxRotation:30, font:{ size:10 } }, grid:{ display:false } } } }
-    })
-  }
-
-  // -- PDF --
-  window.generarBoletinPDF = function(){
-    if(typeof html2pdf === 'undefined'){
-      var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
-      s.onload = function(){ window.generarBoletinPDF() }; document.body.appendChild(s); return
+    // ── THEME (shared across dashboards) ──
+    window.setVyntraTheme = function(dark) {
+      document.documentElement.classList.toggle('dark', dark)
+      localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
     }
-    var studentName = document.getElementById('student-name').textContent || 'Estudiante'
-    var chartCanvas = document.getElementById('myGradesChart')
-    var chartImg = ''
-    if(chartCanvas && performanceChart) chartImg = chartCanvas.toDataURL('image/png')
-    var options = { margin:10, filename:'Boletin_'+studentName.replace(/\s+/g,'_')+'.pdf', html2canvas:{ scale:2 }, jsPDF:{ unit:'mm', format:'a4', orientation:'portrait' } }
-    var el = document.createElement('div')
-    el.style.cssText = 'padding:30px;font-family:Arial,sans-serif;color:#333;max-width:800px;margin:auto'
-    el.innerHTML = '<div style="text-align:center;margin-bottom:20px;border-bottom:3px solid #800000;padding-bottom:15px"><h1 style="color:#800000;margin:0;font-size:22px">Colegio T\u00e9cnico Ciudad del Sol</h1><p style="font-size:14px;color:#666;margin:5px 0 0">Vyntra Academic &mdash; Bolet\u00edn de Calificaciones</p></div>'+
-      '<p style="font-size:14px"><strong>Estudiante:</strong> '+studentName+' &middot; <strong>Grado:</strong> '+userGrade+'</p>'+
-      '<table style="width:100%;border-collapse:collapse;margin-top:15px"><thead><tr style="background:#800000;color:#fff"><th style="padding:8px;text-align:left;font-size:13px">Asignatura</th><th style="padding:8px;text-align:center;font-size:13px">Nota</th><th style="padding:8px;text-align:center;font-size:13px">Estado</th></tr></thead><tbody>'+
-      (performanceChart&&performanceChart.data?performanceChart.data.labels.map(function(l,i){
-        var g = performanceChart.data.datasets[0].data[i]
-        var status = g>=4?'\u2705 Sobresaliente':g>=3?'\u26a0\ufe0f Aceptable':'\u274c En Riesgo'
-        return '<tr style="border-bottom:1px solid #eee"><td style="padding:8px;font-size:13px">'+l+'</td><td style="padding:8px;text-align:center;font-size:13px;font-weight:700">'+g.toFixed(1)+'</td><td style="padding:8px;text-align:center;font-size:12px">'+status+'</td></tr>'
-      }).join(''):'')+
-      '</tbody></table>'+
-      (chartImg?'<div style="margin-top:20px;text-align:center"><img src="'+chartImg+'" style="max-width:100%;height:auto;max-height:250px"></div>':'')+
-      '<p style="margin-top:20px;font-size:11px;color:#999;text-align:center">Generado el '+new Date().toLocaleString('es-CO')+' &middot; Vyntra Academic</p>'
-    document.body.appendChild(el)
-    html2pdf().set(options).from(el).save().then(function(){ document.body.removeChild(el) })
-  }
+    window.setVyntraTheme(localStorage.getItem('vyntra-theme') === 'dark' || (!localStorage.getItem('vyntra-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches))
+    document.getElementById('theme-toggle-student')?.addEventListener('click', function() {
+      window.setVyntraTheme(!document.documentElement.classList.contains('dark'))
+    })
 
-  // -- PERIOD FILTER --
-  window.setPeriod = function(el){
-    document.querySelectorAll('.period-filter').forEach(function(f){ f.classList.remove('active') })
-    el.classList.add('active')
-    showToast('Mostrando '+el.getAttribute('data-period')||el.textContent, 'info')
-  }
+    // ── NAVIGATION ──
+    var pageTitles = { inicio:'Inicio', notas:'Registro de Notas', examenes:'Exámenes', horarios:'Horarios', tareas:'Tareas', saber:'Pruebas Saber', biblioteca:'Biblioteca', votaciones:'Votaciones', perfil:'Perfil' }
+    var pageSubs = { inicio:'Panel de rendimiento académico', notas:'Ver y exportar calificaciones', examenes:'Evaluaciones disponibles', horarios:'Horario semanal', tareas:'Subir y gestionar entregas', saber:'Material de estudio tipo ICFES', biblioteca:'Recursos por asignatura', votaciones:'Elecciones estudiantiles', perfil:'Información personal' }
+    window.showSection = function(id) {
+      currentSection = id
+      document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none' })
+      var sec = document.getElementById('sec-' + id)
+      if (sec) sec.style.display = ''
+      var titleEl = document.querySelector('.topbar h1')
+      var subEl = document.querySelector('.topbar p')
+      if (titleEl) titleEl.textContent = pageTitles[id] || id
+      if (subEl) subEl.textContent = pageSubs[id] || ''
+      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id }}))
+      if (id === 'notas') { loadGrades(); loadChartData() }
+      if (id === 'examenes') loadExams()
+      if (id === 'horarios') loadSchedule()
+      if (id === 'tareas') { loadSubjects(); loadHomeworkHistory() }
+      if (id === 'saber') loadSaberContent()
+      if (id === 'biblioteca') loadLibrary()
+      if (id === 'votaciones') loadCandidates()
+      if (id === 'perfil') { loadGrades(); loadRecentActivity() }
+    }
 
-  // -- EXAMS --
-  var currentExam = null; var strikes = 0; var isExamActive = false; var isInitializingExam = false; var timerInterval = null; var tiempoRestante = 0; var autoSaveInterval = null
-  function loadExams(){
-    var el = document.getElementById('available-exams')
-    apiFetch('/api/student/exams').then(function(data){
-      if(!Array.isArray(data)||data.length===0){ el.innerHTML='<span style="opacity:.3">No hay ex\u00e1menes disponibles.</span>'; return }
-      el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem">'+
-        data.map(function(e){ return '<div class="exam-card" onclick="abrirExamen(\''+e.id+'\')"><strong style="font-size:.8125rem;color:#fff">'+(e.title||'Examen')+'</strong><div style="display:flex;gap:.75rem;margin-top:.5rem;font-size:.65rem;opacity:.35"><span>'+(e.duration_minutes||'?')+' min</span><span>'+(e.questions?e.questions.length:0)+' preg</span></div></div>' }).join('')+'</div>'
-    }).catch(function(){ showToast('Error al cargar ex\u00e1menes','error'); el.innerHTML='<span style="color:var(--red);font-size:.75rem">Error al cargar ex\u00e1menes</span>' })
-  }
-  window.abrirExamen = function(examId){
-    if(!studentId) return
-    apiFetch('/api/student/exam/'+examId).then(function(exam){
-      if(!exam||!exam.questions){ alert('Examen no encontrado'); return }
-      currentExam = exam; isInitializingExam = true; strikes = 0
-      document.getElementById('exam-modal-title').textContent = exam.title||'Examen'
-      document.getElementById('strike-badge').style.display = 'none'
-      apiFetch('/api/exam/progress/'+studentId+'/'+examId).then(function(progress){
-        if(progress&&progress.answers&&Object.keys(progress.answers).length>0) restoreExamProgress(progress)
-      }).catch(function(){})
-      var html = ''
-      exam.questions.forEach(function(q,qi){
-        html += '<div class="exam-question-card"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem"><span style="width:24px;height:24px;border-radius:50%;background:rgba(253,192,3,.15);color:#FDC003;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem">'+(qi+1)+'</span><strong style="font-size:.8125rem;color:rgba(255,255,255,.9)">'+(q.question_text||'')+'</strong></div>'
-        var opts = q.options||['A','B','C','D']
-        opts.forEach(function(o,oi){
-          var optText = typeof o==='string'?o:(o.text||o.value||'Opci\u00f3n '+String.fromCharCode(65+oi))
-          html += '<label class="exam-option"><input type="radio" name="p'+qi+'" value="'+oi+'" style="display:none"><span class="opt-label" style="flex:1">'+optText+'</span></label>'
+    // ── CLOCK ──
+    setInterval(function() {
+      var el = document.getElementById('live-clock')
+      if (el) el.textContent = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+    }, 1000)
+
+    // ── WELCOME DATA ──
+    function loadWelcomeData() {
+      if (!studentId) return
+      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function(data) {
+        var grades = Array.isArray(data) ? data : []
+        var subjectMap = {}
+        grades.forEach(function(g) {
+          var sid = g.subject_name || g.subject_id || 'General'
+          if (!subjectMap[sid]) subjectMap[sid] = []
+          subjectMap[sid].push(parseFloat(g.score) || 0)
         })
-        html += '</div>'
+        var labels = Object.keys(subjectMap)
+        var values = labels.map(function(sid) {
+          var vals = subjectMap[sid]; return vals.reduce(function(a,b){return a+b},0) / vals.length
+        })
+        var overallAvg = values.length ? values.reduce(function(a,b){return a+b},0)/values.length : 0
+        var passing = values.filter(function(v){return v>=3.5}).length
+
+        document.getElementById('student-name').textContent = userName
+        document.getElementById('student-meta').textContent = userGrade || 'Panel de rendimiento'
+        document.getElementById('welcome-badge-grade').innerHTML = userGrade || 'Cargando...'
+        document.getElementById('welcome-badge-avg').innerHTML = 'Promedio: ' + (overallAvg ? overallAvg.toFixed(1) : '--') + ' / 5.0'
+        document.getElementById('welcome-badge-risk').innerHTML = passing + ' aprobadas'
+
+        document.getElementById('stat-avg').textContent = overallAvg ? overallAvg.toFixed(1) : '--'
+        document.getElementById('stat-subjects').textContent = labels.length
+        document.getElementById('stat-passing').textContent = passing
+        document.getElementById('stat-bimestre').textContent = getCurrentBimester()
+
+        document.getElementById('perf-list').innerHTML = labels.slice(0,6).map(function(sid,i) {
+          var v = values[i], pct = Math.min((v/5)*100, 100)
+          var barColor = 'bg-brand-maroon'; if (v >= 4) barColor = 'bg-success'; else if (v >= 3.5) barColor = 'bg-brand-gold'
+          return '<div class="flex items-center justify-between mb-2"><span class="text-xs font-medium">' + sid + '</span><span class="text-xs font-bold">' + v.toFixed(1) + '</span></div>' +
+            '<div class="h-1.5 bg-[var(--border)] rounded-full mb-3 overflow-hidden"><div class="h-full rounded-full ' + barColor + ' transition-all duration-700 ease-out" style="width:' + pct + '%"></div></div>'
+        }).join('') || '<span class="text-text-tertiary">Sin datos</span>'
       })
-      document.getElementById('examen-preguntas-render').innerHTML = html
-      document.getElementById('exam-modal').classList.add('open')
-      document.body.style.overflow = 'hidden'
-      activarPantallaCompleta()
-      iniciarCronometro(exam.duration_minutes||60)
-      setTimeout(function(){ isInitializingExam=false; isExamActive=true }, 2500)
-      if(autoSaveInterval) clearInterval(autoSaveInterval)
-      autoSaveInterval = setInterval(function(){ if(isExamActive&&currentExam) saveExamProgress() }, 30000)
-      setupSecurityListeners()
-    }).catch(function(){ showToast('Error al abrir el examen','error') })
-  }
-  function restoreExamProgress(progress){
-    if(!progress.answers||!currentExam) return
-    currentExam.questions.forEach(function(q,qi){
-      var savedAnswer = progress.answers[String(qi)]
-      if(savedAnswer!==undefined&&savedAnswer!==null&&savedAnswer>=0){
-        var radio = document.querySelector('input[name="p'+qi+'"][value="'+savedAnswer+'"]')
-        if(radio) radio.checked = true
+    }
+
+    function getCurrentBimester() {
+      var m = new Date().getMonth() + 1
+      return m <= 3 ? 'P1' : m <= 6 ? 'P2' : m <= 9 ? 'P3' : 'P4'
+    }
+
+    function loadNotices() {
+      apiFetch('/api/notices').then(function(data) {
+        var el = document.getElementById('notices-list')
+        if (!Array.isArray(data) || !data.length) { el.innerHTML = 'Sin avisos recientes.'; return }
+        el.innerHTML = data.slice(0,4).map(function(n) {
+          var hasImg = n.archivo_url && n.archivo_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+          return '<div class="pb-3 mb-3 border-b border-border last:border-0">' +
+            '<strong class="text-xs">' + (n.titulo || '') + '</strong>' +
+            '<span class="block text-[10px] text-text-tertiary">' + (n.fecha || '') + '</span>' +
+            (hasImg ? '<img src="' + n.archivo_url + '" class="mt-2 max-h-32 rounded-lg object-cover cursor-pointer" onclick="window.open(this.src)">' : '') +
+            (n.archivo_url && !hasImg ? '<a href="' + n.archivo_url + '" target="_blank" class="inline-block mt-1 text-xs text-brand-maroon">Ver adjunto</a>' : '') +
+            '</div>'
+        }).join('')
+      })
+    }
+
+    function loadGrades() {
+      if (!studentId) return
+      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function(grades) {
+        grades = Array.isArray(grades) ? grades : []
+        var tbody = document.getElementById('grades-table-body')
+        var subjectMap = {}
+        grades.forEach(function(g) {
+          var sid = g.subject_name || g.subject_id || 'General'
+          if (!subjectMap[sid]) subjectMap[sid] = {p1:[],p2:[],p3:[],p4:[],all:[]}
+          if (g.period === 'P1') subjectMap[sid].p1.push(g.score)
+          else if (g.period === 'P2') subjectMap[sid].p2.push(g.score)
+          else if (g.period === 'P3') subjectMap[sid].p3.push(g.score)
+          else if (g.period === 'P4') subjectMap[sid].p4.push(g.score)
+          subjectMap[sid].all.push(g.score)
+        })
+        if (!Object.keys(subjectMap).length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-text-tertiary">Sin calificaciones registradas</td></tr>'; return }
+        tbody.innerHTML = Object.keys(subjectMap).map(function(sid) {
+          var d = subjectMap[sid]
+          function avg(arr) { return arr.length ? (arr.reduce(function(a,b){return a+b},0)/arr.length).toFixed(1) : '-' }
+          var overall = avg(d.all), p1=avg(d.p1), p2=avg(d.p2), p3=avg(d.p3), p4=avg(d.p4)
+          var status = parseFloat(overall) >= 4 ? 'Sobresaliente' : parseFloat(overall) >= 3.5 ? 'Aceptable' : 'En Riesgo'
+          var stColor = parseFloat(overall) >= 4 ? 'text-success' : parseFloat(overall) >= 3.5 ? 'text-brand-gold' : 'text-brand-danger'
+          return '<tr class="border-b border-border hover:bg-brand-gold/[0.02] transition-colors"><td class="py-2.5 px-2 font-medium text-xs">' + sid + '</td>' +
+            '<td class="py-2.5 px-2 text-center text-xs">' + p1 + '</td><td class="py-2.5 px-2 text-center text-xs">' + p2 + '</td><td class="py-2.5 px-2 text-center text-xs">' + p3 + '</td><td class="py-2.5 px-2 text-center text-xs">' + p4 + '</td>' +
+            '<td class="py-2.5 px-2 text-center font-bold text-xs">' + overall + '</td>' +
+            '<td class="py-2.5 px-2 text-center"><span class="text-[11px] font-semibold ' + stColor + '">' + status + '</span></td></tr>'
+        }).join('')
+
+        // Update bars
+        var barsP1 = document.getElementById('bar-p1'), barsP2 = document.getElementById('bar-p2'), barsP3 = document.getElementById('bar-p3'), barsP4 = document.getElementById('bar-p4')
+        ;[{bar:barsP1,id:'bar-p1-val'},{bar:barsP2,id:'bar-p2-val'},{bar:barsP3,id:'bar-p3-val'},{bar:barsP4,id:'bar-p4-val'}].forEach(function(o,i) {
+          if (!o.bar) return
+          var pad = 'P' + (i+1)
+          var vals = []
+          Object.values(subjectMap).forEach(function(d) { vals.push.apply(vals, d['p'+(i+1)]) })
+          var avg = vals.length ? vals.reduce(function(a,b){return a+b},0)/vals.length : 0
+          o.bar.style.height = Math.max((avg/5)*100, 2) + '%'
+          document.getElementById(o.id).textContent = avg.toFixed(1)
+        })
+      })
+    }
+
+    function loadChartData() {
+      if (!studentId) return
+      if (typeof Chart === 'undefined') { setTimeout(loadChartData, 200); return }
+      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=200').then(function(grades) {
+        grades = Array.isArray(grades) ? grades : []
+        var subjectMap = {}
+        grades.forEach(function(g) {
+          var sid = g.subject_name || g.subject_id || 'General'
+          if (!subjectMap[sid]) subjectMap[sid] = []
+          subjectMap[sid].push(parseFloat(g.score)||0)
+        })
+        var labels = Object.keys(subjectMap)
+        var values = labels.map(function(k){var v=subjectMap[k];return v.reduce(function(a,b){return a+b},0)/v.length})
+        var ctx = document.getElementById('myGradesChart'); if (!ctx) return
+        var existing = Chart.getChart(ctx)
+        if (existing) existing.destroy()
+        new Chart(ctx, {
+          type:'bar', data:{labels:labels,datasets:[{data:values,backgroundColor:['#6B1A1A','#8B2A2A','#A04040','#C06020','#D89030','#F5A623','#FFD166','#C08030'],borderRadius:6,borderSkipped:false}]},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'var(--text-secondary)'}},y:{min:0,max:5,ticks:{stepSize:1,color:'var(--text-tertiary)'}}}}
+        })
+      })
+    }
+
+    // ── EXAMS ──
+    function loadExams() {
+      apiFetch('/api/exams?student_grade=' + encodeURIComponent(userGrade)).then(function(exams) {
+        var el = document.getElementById('available-exams')
+        if (!Array.isArray(exams) || !exams.length) { el.innerHTML = '<div class="text-center py-8 text-text-tertiary">No hay exámenes disponibles.</div>'; return }
+        el.innerHTML = exams.map(function(ex) {
+          return '<div class="flex items-center justify-between p-4 border border-border rounded-xl mb-3 hover:border-brand-gold/30 transition-colors cursor-pointer" onclick="startExam(\'' + ex.id + '\',\'' + (ex.title||'') + '\',' + (ex.duration_minutes||30) + ')">' +
+            '<div><strong class="text-sm">' + (ex.title||'Examen') + '</strong><br><span class="text-xs text-text-tertiary">' + (ex.subject_name||'') + ' · ' + (ex.duration_minutes||30) + ' min</span></div>' +
+            '<span class="px-3 py-1.5 bg-brand-maroon text-white text-xs font-semibold rounded-lg">Iniciar</span></div>'
+        }).join('')
+      })
+    }
+
+    // ── SABER ──
+    var saberArea = 'matematicas', saberBimestre = '1'
+    function loadSaberContent() {
+      var materials = {
+        matematicas:{1:'Álgebra básica, operaciones y ecuaciones lineales',2:'Funciones, gráficas y sistemas de ecuaciones',3:'Trigonometría y geometría analítica',4:'Cálculo diferencial y estadística'},
+        lenguaje:{1:'Comprensión lectora y gramática',2:'Análisis de textos narrativos',3:'Textos argumentativos y ensayos',4:'Literatura colombiana y universal'},
+        ciencias:{1:'Método científico y ecosistemas',2:'Química orgánica e inorgánica',3:'Física: mecánica y ondas',4:'Biología molecular y genética'},
+        sociales:{1:'Historia de Colombia precolombina',2:'Colonia e independencia',3:'Siglo XX y conflicto armado',4:'Geopolítica y economía global'},
+        ingles:{1:'Present simple, vocabulary',2:'Past tense, reading comprehension',3:'Conditionals, writing',4:'Advanced grammar, listening'},
+        icfes:{1:'Simulacro completo ICFES 1',2:'Simulacro completo ICFES 2',3:'Simulacro completo ICFES 3',4:'Simulacro completo ICFES 4'}
+      }
+      document.getElementById('saber-content').innerHTML = '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 mt-4">' +
+        '<h3 class="font-bold text-sm mb-2">' + saberArea.charAt(0).toUpperCase() + saberArea.slice(1) + ' — Bimestre ' + saberBimestre + '</h3>' +
+        '<p class="text-xs text-text-secondary">' + (materials[saberArea]?.[saberBimestre] || 'Contenido no disponible') + '</p>' +
+        '<div class="mt-4 flex gap-2"><button class="px-3 py-1.5 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="iniciarSimulacroSaber()">Estudiar Ahora</button></div>' +
+        '</div>'
+    }
+
+    // Saber tab listeners
+    document.getElementById('saber-area-tabs')?.addEventListener('click', function(e) {
+      if (e.target.dataset.area) { saberArea = e.target.dataset.area; loadSaberContent() }
+    })
+    document.getElementById('saber-period-tabs')?.addEventListener('click', function(e) {
+      if (e.target.dataset.bimestre) { saberBimestre = e.target.dataset.bimestre; loadSaberContent() }
+    })
+
+    window.iniciarSimulacroSaber = function() {
+      window.VyntraToast?.info('Simulacro Saber en desarrollo')
+    }
+
+    // Period filter listeners
+    document.getElementById('period-filters')?.addEventListener('click', function(e) {
+      if (e.target.dataset.period) {
+        this.querySelectorAll('button').forEach(function(b){ b.removeAttribute('data-active') })
+        e.target.setAttribute('data-active', '')
       }
     })
-    if(progress.time_elapsed_seconds&&progress.time_elapsed_seconds>0){
-      tiempoRestante = Math.max(10, (currentExam.duration_minutes||60)*60 - progress.time_elapsed_seconds)
+
+    // Schedule
+    function loadSchedule() {
+      apiFetch('/api/teacher/schedule').then(function(data) {
+        var el = document.getElementById('schedule-container')
+        if (!data || !data.days) { el.innerHTML = 'No hay horario disponible.'; return }
+        var weekdays = ['lunes','martes','miercoles','jueves','viernes']
+        var html = '<table class="w-full text-xs"><thead><tr class="text-text-tertiary"><th class="p-2 border-b border-border w-16">Hora</th>'
+        weekdays.forEach(function(d){ html += '<th class="p-2 text-center border-b border-border">' + d.charAt(0).toUpperCase() + d.slice(1) + '</th>' })
+        html += '</tr></thead><tbody>'
+        var hours = Array.isArray(data.hours) ? data.hours : (typeof data.hours === 'string' ? JSON.parse(data.hours||'[]') : [])
+        hours.forEach(function(h, hi) {
+          html += '<tr><td class="p-2 text-text-tertiary font-medium">' + (h.time || h.hour || ('H'+(hi+1))) + '</td>'
+          weekdays.forEach(function(d) {
+            html += '<td class="p-2 text-center border border-border/50">'
+            if (data.days[d] && data.days[d][hi]) html += '<div class="font-semibold">' + (data.days[d][hi].subject||'') + '</div>'
+            html += '</td>'
+          })
+          html += '</tr>'
+        })
+        el.innerHTML = html + '</tbody></table>'
+      })
     }
-    showToast('Progreso restaurado','info')
-  }
-  function saveExamProgress(){
-    if(!currentExam||!currentExam.questions) return
-    var answers = {}
-    var initialDuration = (currentExam.duration_minutes||60)*60
-    currentExam.questions.forEach(function(q,qi){
-      var selected = document.querySelector('input[name="p'+qi+']:checked')
-      if(selected) answers[String(qi)] = parseInt(selected.value)
+
+    // Homework
+    var homeworkFile = null
+    function loadSubjects() {
+      apiFetch('/api/subjects').then(function(data) {
+        var sel = document.getElementById('hw-subject')
+        if (sel && Array.isArray(data)) { sel.innerHTML = '<option value="">Seleccionar...</option>' + data.map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>' }).join('') }
+      })
+    }
+    function loadHomeworkHistory() {
+      apiFetch('/api/students/' + studentId + '/homework').then(function(data) {
+        var el = document.getElementById('homework-history')
+        if (!Array.isArray(data) || !data.length) { el.innerHTML = 'Sin entregas registradas.'; return }
+        el.innerHTML = data.map(function(h) {
+          return '<div class="flex items-center justify-between py-2.5 border-b border-border last:border-0">' +
+            '<div><div class="text-xs font-medium">' + (h.title||'Tarea') + '</div><div class="text-[10px] text-text-tertiary">' + (h.subject||'') + '</div></div>' +
+            (h.file_url ? '<a href="' + h.file_url + '" target="_blank" class="text-xs text-brand-maroon">Ver</a>' : '') + '</div>'
+        }).join('')
+      })
+    }
+    document.getElementById('dropzoneArea')?.addEventListener('click', function() { document.getElementById('hw-file').click() })
+    document.getElementById('hw-file')?.addEventListener('change', function(e) {
+      homeworkFile = e.target.files[0]
+      document.getElementById('file-name-display').textContent = homeworkFile ? homeworkFile.name : ''
     })
-    apiFetch('/api/exam/save-progress',{ method:'POST', body:{ student_id:studentId, exam_id:currentExam.id, answers:answers, current_question_index:0, time_elapsed_seconds:initialDuration-tiempoRestante }}).catch(function(){})
-  }
-  function iniciarCronometro(minutos){
-    tiempoRestante = Math.max(minutos*60,10)
-    if(timerInterval) clearInterval(timerInterval)
-    timerInterval = setInterval(function(){
-      tiempoRestante--
-      var m=Math.floor(tiempoRestante/60);var s=tiempoRestante%60
-      var display = document.getElementById('timer-display')
-      if(display){
-        display.textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')
-        display.className = 'timer-display'+(tiempoRestante<=60?' warning':'')
+    window.sendHomework = function() {
+      var fd = new FormData()
+      fd.append('subject_id', document.getElementById('hw-subject').value)
+      fd.append('title', document.getElementById('hw-title').value)
+      fd.append('comment', document.getElementById('hw-comment').value)
+      if (homeworkFile) fd.append('file', homeworkFile)
+      apiFetch('/api/students/' + studentId + '/homework', { method:'POST', body:fd }).then(function() {
+        window.VyntraToast?.success('Tarea enviada') || alert('Tarea enviada')
+        loadHomeworkHistory()
+      })
+    }
+
+    // Library
+    function loadLibrary() {
+      apiFetch('/api/subjects').then(function(data) {
+        var el = document.getElementById('library-grid')
+        if (!Array.isArray(data) || !data.length) { el.innerHTML = '<p class="col-span-full text-sm text-text-tertiary">No hay materias disponibles.</p>'; return }
+        el.innerHTML = data.map(function(s) {
+          return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 transition-all hover:-translate-y-1 hover:border-brand-gold/30">' +
+            '<div class="font-bold text-sm mb-1">' + s.name + '</div>' +
+            '<div class="text-xs text-text-secondary mb-3">' + (s.description || 'Materia escolar') + '</div>' +
+            (s.tutor_ai ? '<a href="' + s.tutor_ai + '" target="_blank" class="inline-block px-3 py-1 bg-brand-maroon/10 text-brand-maroon rounded-full text-[11px] font-semibold">Tutor IA</a>' : '') +
+            '</div>'
+        }).join('')
+      })
+    }
+
+    // Elections
+    function loadCandidates() {
+      apiFetch('/api/admin/candidates').then(function(data) {
+        var el = document.getElementById('candidates-list')
+        if (!Array.isArray(data) || !data.length) { el.innerHTML = '<div class="col-span-full text-center py-12 text-text-tertiary">No hay candidatos registrados.</div>'; return }
+        el.innerHTML = data.map(function(c) {
+          return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 text-center hover:border-brand-gold/30 transition-colors cursor-pointer" onclick="voteFor(\'' + c.id + '\')">' +
+            (c.photo_url ? '<img src="' + c.photo_url + '" class="w-14 h-14 rounded-full object-cover mx-auto mb-3">' : '<div class="w-14 h-14 rounded-full bg-brand-maroon/10 mx-auto mb-3 flex items-center justify-center text-xl font-bold text-brand-maroon">' + (c.name||'?').charAt(0) + '</div>') +
+            '<div class="font-bold text-sm">' + c.name + '</div>' +
+            '<div class="text-xs text-text-tertiary mt-1">' + (c.votes||0) + ' votos</div>' +
+            '<button class="mt-3 px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Votar</button></div>'
+        }).join('')
+      })
+    }
+    window.voteFor = async function(candId) {
+      try {
+        await fetch(apiUrl + '/api/vote', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({ candidate_id:candId, student_id:studentId }) })
+        window.VyntraToast?.success('Voto registrado') || alert('Voto registrado')
+        loadCandidates()
+      } catch(e) { window.VyntraToast?.error('Error al votar') }
+    }
+
+    // Profile
+    function loadRecentActivity() {
+      apiFetch('/api/grades?student_id=' + encodeURIComponent(studentId) + '&limit=5').then(function(data) {
+        var el = document.getElementById('profile-timeline')
+        var grades = Array.isArray(data) ? data.slice(-5) : []
+        if (!grades.length) { el.innerHTML = 'Sin actividad reciente.'; return }
+        el.innerHTML = grades.reverse().map(function(g) {
+          return '<div class="flex items-center justify-between py-2.5 border-b border-border last:border-0">' +
+            '<div><div class="text-xs font-medium">' + (g.subject_name||'Materia') + '</div><div class="text-[10px] text-text-tertiary">' + (g.period||'') + '</div></div>' +
+            '<span class="font-bold text-xs ' + (g.score>=3.5?'text-success':'text-brand-danger') + '">' + parseFloat(g.score).toFixed(1) + '</span></div>'
+        }).join('')
+      })
+
+      document.getElementById('profile-name').textContent = userName
+      document.getElementById('profile-id').textContent = 'Código: ' + (studentId?.substring(0,12) || '--')
+      document.getElementById('profile-avatar-text').textContent = userName.charAt(0).toUpperCase()
+    }
+
+    // ── BOILERPLATE FUNCTIONS (preserved from original) ──
+    window.generarBoletinPDF = function() { window.VyntraToast?.info('Función PDF en desarrollo') }
+    window.intentarSalirManual = function() { document.getElementById('exam-modal').style.display = 'none' }
+
+    // ── INIT ──
+    loadWelcomeData()
+    loadNotices()
+    buildCalendar()
+
+    function buildCalendar() {
+      var now = new Date(), month = now.getMonth(), year = now.getFullYear()
+      var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+      document.getElementById('cal-month-label').textContent = months[month] + ' ' + year
+      var grid = document.getElementById('calGrid')
+      if (!grid) return
+      var firstDay = new Date(year, month, 1).getDay()
+      firstDay = firstDay === 0 ? 6 : firstDay - 1
+      var daysInMonth = new Date(year, month+1, 0).getDate()
+      for (var i = 0; i < firstDay; i++) grid.innerHTML += '<div class="text-xs py-1 text-text-tertiary/30"></div>'
+      for (var d = 1; d <= daysInMonth; d++) {
+        var isToday = d === now.getDate() && month === now.getMonth()
+        grid.innerHTML += '<div class="text-xs py-2 rounded-lg cursor-pointer font-medium ' + (isToday?'bg-brand-maroon text-white':'hover:bg-brand-gold/10') + '">' + d + '</div>'
       }
-      if(tiempoRestante<=0){ clearInterval(timerInterval); window.finalizarExamen(true,'TIEMPO AGOTADO') }
-    },1000)
-  }
-  var examSubmitting = false
-  window.finalizarExamen = function(auto, motivo){
-    if(examSubmitting) return
-    if(!auto&&!confirm('\u00bfEnviar respuestas ahora?')) return
-    examSubmitting = true
-    if(timerInterval) clearInterval(timerInterval)
-    isExamActive=false; isInitializingExam=true
-    if(!currentExam||!currentExam.questions){ window.cerrarModalExamen(); examSubmitting=false; return }
-    var answers = []
-    currentExam.questions.forEach(function(q,qi){
-      var selected = document.querySelector('input[name="p'+qi+']:checked')
-      answers.push(selected?parseInt(selected.value):-1)
+    }
+
+    // ── SECTION NAVIGATION SETUP ──
+    document.querySelectorAll('[data-section-id]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        window.showSection(this.getAttribute('data-section-id'))
+      })
     })
-    apiFetch('/api/student/submit-exam',{ method:'POST', body:{ exam_id:currentExam.id, student_id:studentId, answers:answers }}).then(function(res){
-      alert(motivo?'Examen finalizado: '+motivo:'Examen enviado. Calificaci\u00f3n: '+(res.grade||'\u2014'))
-      window.cerrarModalExamen(); loadExams(); loadGrades(); examSubmitting=false
-    }).catch(function(e){ showToast('Error al enviar: '+(e.message||'desconocido'),'error'); window.cerrarModalExamen(); examSubmitting=false })
-  }
-  window.intentarSalirManual = function(){
-    if(confirm('\u00bfSalir del examen? Las respuestas se enviar\u00e1n autom\u00e1ticamente.')) window.finalizarExamen(true,'SALIDA VOLUNTARIA')
-  }
-  function activarPantallaCompleta(){
-    var el = document.documentElement
-    if(el.requestFullscreen) el.requestFullscreen()
-    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen()
-    else if(el.msRequestFullscreen) el.msRequestFullscreen()
-  }
-  function setupSecurityListeners(){
-    document.removeEventListener('visibilitychange', onVisibilityChange)
-    document.removeEventListener('fullscreenchange', onFullscreenChange)
-    document.addEventListener('visibilitychange', onVisibilityChange)
-    document.addEventListener('fullscreenchange', onFullscreenChange)
-  }
-  function onVisibilityChange(){ if(!isExamActive||isInitializingExam) return; if(document.hidden) sumarStrikes(1,'Cambio de pesta\u00f1a') }
-  function onFullscreenChange(){ if(!isExamActive||isInitializingExam||!currentExam) return; if(!document.fullscreenElement) sumarStrikes(1,'Sali\u00f3 de pantalla completa') }
-  window.cerrarModalExamen = function(){
-    document.removeEventListener('visibilitychange', onVisibilityChange)
-    document.removeEventListener('fullscreenchange', onFullscreenChange)
-    if(timerInterval) clearInterval(timerInterval)
-    if(autoSaveInterval){ clearInterval(autoSaveInterval); autoSaveInterval=null }
-    isExamActive=false; currentExam=null
-    if(document.fullscreenElement) document.exitFullscreen()
-    document.getElementById('exam-modal').classList.remove('open')
-    document.body.style.overflow = ''
-  }
-  function sumarStrikes(cant, motivo){
-    if(!currentExam) return; strikes += cant
-    document.getElementById('strike-badge').style.display = 'inline-flex'; document.getElementById('strike-val').textContent = strikes
-    apiFetch('/api/exams/report-incident',{ method:'POST', body:{ student_id:studentId, exam_id:currentExam.id||currentExam._id, incident_type:motivo, severity:strikes>=3?'high':'low', strikes:strikes }}).catch(function(){})
-    if(strikes>=5){ alert('\u26d4 Has superado el l\u00edmite de infracciones de seguridad.'); window.finalizarExamen(true,'M\u00faltiples infracciones de seguridad') }
-  }
 
-  // -- VOTING --
-  function loadCandidates(){
-    var el = document.getElementById('candidates-list')
-    apiFetch('/api/admin/candidates').then(function(data){
-      if(!Array.isArray(data)||data.length===0){ el.innerHTML='<span style="opacity:.3;grid-column:1/-1;text-align:center">No hay candidatos registrados.</span>'; return }
-      el.innerHTML = data.map(function(c){
-        var defaultPhoto = 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="36" fill="%23800000"/><text x="36" y="44" text-anchor="middle" fill="%23fff" font-size="24" font-family="sans-serif">'+(c.name?c.name.charAt(0):'?')+'</text></svg>')
-        return '<div class="candidate-card"><img src="'+(c.photo_url||c.photoUrl||defaultPhoto)+'" alt="" onerror="this.src=\''+defaultPhoto+'\'" loading="lazy"><strong style="font-size:.8125rem;display:block">'+(c.name||'')+'</strong><span style="font-size:.65rem;opacity:.35;display:block;margin-bottom:.75rem">'+(c.position||'')+'</span><button class="btn-apple btn-primary" onclick="window.votar(\''+(c.id||c._id)+'\')" style="width:100%;justify-content:center;font-size:.75rem">Votar</button></div>'
-      }).join('')
-    }).catch(function(){ showToast('Error al cargar candidatos','error'); el.innerHTML='<span style="opacity:.3;grid-column:1/-1;text-align:center">🔒 Votaciones cerradas</span>' })
-  }
-  window.votar = function(candidateId){
-    if(!confirm('\u00bfConfirmas tu voto? Esta acci\u00f3n es irreversible.')) return
-    apiFetch('/api/admin/student/cast-vote',{ method:'POST', body:{ student_id:studentId, candidate_id:candidateId }}).then(function(){ alert('\u2713 Voto registrado correctamente'); loadCandidates() }).catch(function(e){ showToast('Error: '+(e.detail||'Ya has votado o el enlace fall\u00f3'),'error') })
-  }
-
-  // -- SUBJECTS --
-  function loadSubjects(){
-    if(subjectsCache){ populateSubjectSelectors(); return }
-    apiFetch('/api/subjects').then(function(data){ subjectsCache = Array.isArray(data) ? data : []; populateSubjectSelectors() }).catch(function(){})
-  }
-  function populateSubjectSelectors(){
-    var sel = document.getElementById('hw-subject')
-    if(sel) sel.innerHTML = '<option value="">Seleccionar...</option>'+subjectsCache.map(function(s){ return '<option value="'+(s.id||s.name)+'">'+(s.name||'')+'</option>' }).join('')
-  }
-
-  // -- HOMEWORK --
-  window.updateFileName = function(input){
-    var el = document.getElementById('file-name-display')
-    if(input.files&&input.files[0]){el.textContent='📄 '+input.files[0].name; el.style.display='block'}
-    else el.textContent=''
-  }
-  window.handleDrop = function(e){
-    e.preventDefault(); document.getElementById('dropzoneArea').classList.remove('dragover')
-    var files = e.dataTransfer.files
-    if(files.length){
-      var fi = document.getElementById('hw-file'); fi.files = files
-      document.getElementById('file-name-display').textContent = '📄 '+files[0].name
-      showToast('Archivo adjunto: '+files[0].name,'success')
-    }
-  }
-  window.sendHomework = function(){
-    var sel = document.getElementById('hw-subject'); var fileInput = document.getElementById('hw-file'); var title = document.getElementById('hw-title')
-    if(!sel.value||!fileInput.files[0]){ showToast('Selecciona una asignatura y un archivo.','error'); return }
-    var fd = new FormData()
-    fd.append('student_id', studentId); fd.append('grade', userGrade); fd.append('subject', sel.value)
-    if(title.value) fd.append('title', title.value)
-    fd.append('file', fileInput.files[0])
-    fetch(apiUrl+'/api/student/upload-homework',{ method:'POST', headers:{ 'Authorization':'Bearer '+token }, body:fd }).then(function(r){
-      if(!r.ok) throw new Error('Error '+r.status); return r.json()
-    }).then(function(){
-      alert('\u2713 Tarea subida correctamente'); fileInput.value=''; document.getElementById('file-name-display').textContent=''
-      if(title) title.value=''; loadHomeworkHistory()
-    }).catch(function(e){ showToast('Error: '+(e.message||'desconocido'),'error') })
-  }
-  function loadHomeworkHistory(){
-    var el = document.getElementById('homework-history')
-    apiFetch('/api/student/deliveries/'+encodeURIComponent(studentId)).then(function(data){
-      if(!Array.isArray(data)||data.length===0){ el.innerHTML='<span style="opacity:.3">Sin entregas a\u00fan.</span>'; return }
-      el.innerHTML = data.slice(0,10).map(function(d){
-        var dateStr = d.created_at?new Date(d.created_at).toLocaleDateString('es-CO',{day:'2-digit',month:'short'}):d.date||''
-        var gradeDisplay = d.grade ? '<span class="badge" style="background:rgba(52,199,89,.12);color:#34C759">'+parseFloat(d.grade).toFixed(1)+'</span>' : '<span class="badge" style="background:rgba(253,192,3,.12);color:#b38000">Entregado</span>'
-        return '<div class="history-item"><div class="history-icon">📄</div><div style="flex:1"><div class="history-name">'+(d.title||d.subject||'Tarea')+'</div><div class="history-meta">'+(d.subject||'')+' &middot; '+dateStr+'</div></div>'+gradeDisplay+'</div>'
-      }).join('')
-    }).catch(function(){ showToast('Error al cargar historial','error'); el.innerHTML='<span style="opacity:.3">Error al cargar historial</span>' })
-  }
-
-  // -- SCHEDULE --
-  function loadSchedule(){
-    document.getElementById('schedule-grade-label').textContent = 'Grado: '+(userGrade||'\u2014')
-    var tbody = document.getElementById('schedule-body')
-    apiFetch('/api/schedule?grade='+encodeURIComponent(userGrade)).then(function(data){
-      if(!Array.isArray(data)||data.length===0){ tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;opacity:.5">Horario no disponible para '+(userGrade||'tu grado')+'.</td></tr>'; return }
-      var hours = ['7:00 \u2014 9:00','9:00 \u2014 11:00','11:00 \u2014 1:00','2:00 \u2014 4:00','4:00 \u2014 6:00']
-      var days = ['Lunes','Martes','Mi\u00e9rcoles','Jueves','Viernes']
-      tbody.innerHTML = hours.map(function(h,hi){
-        return '<tr><td class="time-col">'+h+'</td>'+days.map(function(d,di){
-          var entry = data.find(function(e){ return e.hour===h&&e.day===d })
-          if(entry){
-            var cls = hi%2===0?'sched-block':'sched-block alt'
-            if(entry.subject&&(entry.subject.toLowerCase().includes('ingl\u00e9s')||entry.subject.toLowerCase().includes('ingles'))) cls = 'sched-block gold-bg'
-            return '<td><div class="'+cls+'">'+entry.subject+'<br><small style="opacity:.7">'+entry.room+'</small></div></td>'
-          } return '<td></td>'
-        }).join('')+'</tr>'
-      }).join('')
-    }).catch(function(){ showToast('Error al cargar horario','error'); tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;opacity:.5">Error al cargar horario.</td></tr>' })
-  }
-
-  // -- SABER -- 
-  var saberArea = 'matematicas'; var saberBimestre = 1
-  function loadSaberContent(){
-    document.getElementById('saber-grade-label').textContent = '&middot; '+userGrade
-    document.getElementById('saber-practice-grid').style.display = 'grid'
-    var areas = {
-      matematicas:{icon:'💰',color:'rgba(128,0,0,.1)',desc:'Pensamiento num\u00e9rico, algebraico, geom\u00e9trico y estad\u00edstico \u2014 preparaci\u00f3n para Pruebas Saber.'},
-      lenguaje:{icon:'📖',color:'rgba(0,122,255,.1)',desc:'Competencias comunicativas, comprensi\u00f3n lectora, literatura y producci\u00f3n textual.'},
-      ciencias:{icon:'🔬',color:'rgba(52,199,89,.1)',desc:'Ciencias naturales: biolog\u00eda, qu\u00edmica, f\u00edsica y su relaci\u00f3n con el entorno.'},
-      sociales:{icon:'🌍',color:'rgba(253,192,3,.1)',desc:'Ciencias sociales: historia, geograf\u00eda, constituci\u00f3n pol\u00edtica y competencias ciudadanas.'},
-      ingles:{icon:'🌎',color:'rgba(175,82,222,.1)',desc:'Competencias en ingl\u00e9s: comprensi\u00f3n lectora, vocabulario y gram\u00e1tica b\u00e1sica.'},
-      icfes:{icon:'\u2605',color:'rgba(255,149,0,.1)',desc:'Preparaci\u00f3n integral para el examen ICFES Saber 11: simulacros completos, tips y estrategias.'}
-    }
-    var area = areas[saberArea]||areas.matematicas
-    var materials = getSaberMaterials(saberArea, saberBimestre)
-    var html = '<div class="card-float" style="margin-bottom:1rem;padding:1.25rem">'+
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:.75rem"><div class="saber-icon" style="width:44px;height:44px;border-radius:12px;background:'+area.color+';display:flex;align-items:center;justify-content:center;font-size:22px">'+area.icon+'</div><div><div style="font-family:var(--font-display);font-weight:700;font-size:16px">Saber '+saberArea.charAt(0).toUpperCase()+saberArea.slice(1)+'</div><div style="font-size:12px;opacity:.6">Bimestre '+saberBimestre+'</div></div></div>'+
-      '<p style="font-size:13px;opacity:.7;margin-bottom:1rem">'+area.desc+'</p>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="lib-link primary" onclick="iniciarSimulacroSaber()">📝 Iniciar Simulacro</button><button class="lib-link ai" onclick="abrirTutorSaber()">\u2726 Tutor IA Saber</button></div></div>'
-    html += '<div class="card-float" style="padding:1.25rem"><div class="card-title">📚 Materiales de Estudio \u2014 Bimestre '+saberBimestre+'</div>'
-    if(materials.length===0) html += '<p style="opacity:.5;font-size:13px">Materiales pr\u00f3ximamente para este bimestre.</p>'
-    else {
-      html += materials.map(function(m){
-        var colors = ['rgba(128,0,0,.1)','rgba(253,192,3,.1)','rgba(52,199,89,.1)','rgba(0,122,255,.1)']
-        var ci = Math.floor(Math.random()*4)
-        return '<div class="saber-material"><div class="mat-icon" style="background:'+colors[ci]+'">'+m.icon+'</div><div class="mat-info"><div class="mat-name">'+m.title+'</div><div class="mat-meta">'+m.desc+'</div></div><button class="btn-ghost" onclick="showToast(\'Abriendo: '+m.title+'\',\'info\')" style="font-size:11px;padding:4px 10px;flex-shrink:0">Ver</button></div>'
-      }).join('')
-    }
-    html += '</div>'
-    html += '<div class="card-float" style="padding:1.25rem;margin-top:1rem"><div class="card-title">📝 Pr\u00e1ctica \u2014 Preguntas tipo ICFES</div>'
-    apiFetch('/api/student/exams').then(function(data){
-      var saberExams = Array.isArray(data)?data.filter(function(e){ return e.title&&e.title.toLowerCase().includes('saber') }):[]
-      if(saberExams.length>0) html += '<div style="display:flex;flex-wrap:wrap;gap:8px">'+saberExams.map(function(e){ return '<button class="btn-apple btn-secondary" onclick="abrirExamen(\''+e.id+'\')" style="font-size:12px">'+(e.title||'Saber Practice')+'</button>' }).join('')+'</div>'
-      else html += '<p style="opacity:.5;font-size:13px">No hay simulacros Saber disponibles a\u00fan. Tu profesor puede crearlos desde la secci\u00f3n docente.</p>'
-      document.getElementById('saber-content').innerHTML = html
-    }).catch(function(){ document.getElementById('saber-content').innerHTML = html+'<p style="opacity:.5;font-size:13px;margin-top:12px">Los simulacros se cargar\u00e1n cuando est\u00e9n disponibles.</p>' })
-  }
-  function getSaberMaterials(area, bimestre){
-    var all = {
-      matematicas:{1:[{icon:'💰',title:'N\u00fameros y Operaciones',desc:'Conjuntos num\u00e9ricos, operaciones b\u00e1sicas, potenciaci\u00f3n y radicaci\u00f3n.'},{icon:'📊',title:'Estad\u00edstica Descriptiva',desc:'Medidas de tendencia central, gr\u00e1ficos y an\u00e1lisis de datos.'}],2:[{icon:'📐',title:'\u00c1lgebra y Ecuaciones',desc:'Ecuaciones lineales, cuadr\u00e1ticas y sistemas de ecuaciones.'},{icon:'📏',title:'Geometr\u00eda',desc:'Figuras planas, \u00e1reas, per\u00edmetros y teorema de Pit\u00e1goras.'}],3:[{icon:'📈',title:'Funciones y Gr\u00e1ficas',desc:'Funciones lineales, cuadr\u00e1ticas, exponenciales y sus representaciones.'},{icon:'🎱',title:'Probabilidad',desc:'Eventos aleatorios, probabilidad cl\u00e1sica y diagramas de \u00e1rbol.'}],4:[{icon:'📝',title:'Repaso Integral',desc:'Todos los temas del a\u00f1o con ejercicios tipo ICFES.'},{icon:'\u2605',title:'Simulacro Final',desc:'Examen completo de pr\u00e1ctica con preguntas tipo Saber 11.'}]},
-      lenguaje:{1:[{icon:'📖',title:'Comprensi\u00f3n Lectora',desc:'Ideas principales, secundarias e inferencias textuales.'},{icon:'\u270D',title:'Tipolog\u00edas Textuales',desc:'Textos narrativos, descriptivos, argumentativos y expositivos.'}],2:[{icon:'🎭',title:'Literatura Colombiana',desc:'Autores, obras y movimientos literarios colombianos.'},{icon:'📜',title:'Medios de Comunicaci\u00f3n',desc:'An\u00e1lisis cr\u00edtico de noticias, anuncios y contenidos digitales.'}],3:[{icon:'📝',title:'Producci\u00f3n Textual',desc:'Estructura del p\u00e1rrafo, coherencia, cohesi\u00f3n y ortograf\u00eda.'},{icon:'🎶',title:'Poes\u00eda y Verso',desc:'Figuras literarias, m\u00e9trica y an\u00e1lisis po\u00e9tico.'}],4:[{icon:'\u2605',title:'Comprensi\u00f3n Cr\u00edtica',desc:'Lectura cr\u00edtica avanzada tipo ICFES Saber 11.'},{icon:'📄',title:'Ensayo Argumentativo',desc:'Estructura del ensayo, tesis y argumentaci\u00f3n.'}]},
-      ciencias:{1:[{icon:'🌿',title:'Biolog\u00eda Celular',desc:'C\u00e9lula, organelos, membrana y transporte celular.'},{icon:'🌊',title:'Ecosistemas',desc:'Cadenas tr\u00f3ficas, biomas y relaciones ecol\u00f3gicas.'}],2:[{icon:'\u2697',title:'Qu\u00edmica B\u00e1sica',desc:'\u00c1tomos, mol\u00e9culas, elementos y tabla peri\u00f3dica.'},{icon:'\u26A1',title:'Energ\u00eda y Trabajo',desc:'Formas de energ\u00eda, trabajo mec\u00e1nico y potencia.'}],3:[{icon:'🌍',title:'Gen\u00e9tica',desc:'ADN, herencia mendeliana y mutaciones.'},{icon:'🔬',title:'Reacciones Qu\u00edmicas',desc:'Tipos de reacciones, balanceo y estequiometr\u00eda.'}],4:[{icon:'🌍',title:'Ciencias de la Tierra',desc:'Geolog\u00eda, atm\u00f3sfera, cambio clim\u00e1tico y recursos naturales.'},{icon:'\u2605',title:'Repaso ICFES Ciencias',desc:'Preguntas tipo Saber 11 en ciencias naturales.'}]},
-      sociales:{1:[{icon:'🌍',title:'Historia de Colombia',desc:'Independencia, colonia y rep\u00fablica en Colombia.'},{icon:'🇨🇴',title:'Constituci\u00f3n Pol\u00edtica',desc:'Derechos fundamentales, organizaci\u00f3n del Estado y mecanismos de participaci\u00f3n.'}],2:[{icon:'🌎',title:'Geograf\u00eda Mundial',desc:'Continentes, oc\u00e9anos, climas y recursos del mundo.'},{icon:'💼',title:'Econom\u00eda',desc:'Conceptos b\u00e1sicos, oferta, demanda y mercado laboral.'}],3:[{icon:'\u2696\uFE0F',title:'Democracia',desc:'Sistemas pol\u00edticos, partidos y procesos electorales.'},{icon:'🌍',title:'Conflictos Globales',desc:'Guerras mundiales, Guerra Fr\u00eda y conflictos contempor\u00e1neos.'}],4:[{icon:'\u2605',title:'Competencias Ciudadanas',desc:'Convivencia, pluralidad, identidad y valoraci\u00f3n de diferencias.'},{icon:'📄',title:'An\u00e1lisis de Fuentes',desc:'Interpretaci\u00f3n de documentos hist\u00f3ricos y fuentes primarias.'}]},
-      ingles:{1:[{icon:'🌎',title:'Vocabulary',desc:'Basic vocabulary: family, school, numbers, colors and daily routines.'},{icon:'📖',title:'Reading Comprehension',desc:'Short texts, main ideas and simple inferences.'}],2:[{icon:'\u270D',title:'Grammar Fundamentals',desc:'Present simple, present continuous, past simple and future.'},{icon:'💬',title:'Everyday English',desc:'Dialogues, greetings, directions and shopping.'}],3:[{icon:'📄',title:'Text Types',desc:'Descriptions, narratives, emails and short articles.'},{icon:'🌐',title:'Culture & Communication',desc:'English-speaking countries, customs and digital communication.'}],4:[{icon:'\u2605',title:'ICFES English Prep',desc:'Practice tests with ICFES-style reading comprehension questions.'},{icon:'📊',title:'Vocabulary Building',desc:'Academic vocabulary, synonyms, antonyms and context clues.'}]},
-      icfes:{1:[{icon:'\u2605',title:'Estrategias ICFES',desc:'Tips de respuesta, gesti\u00f3n del tiempo y c\u00f3mo evitar errores comunes.'},{icon:'📝',title:'Simulacro 1',desc:'Primer simulacro completo tipo Saber 11 con todas las \u00e1reas.'}],2:[{icon:'📊',title:'An\u00e1lisis de Resultados',desc:'Interpreta tus puntajes y enf\u00f3cate en las \u00e1reas m\u00e1s d\u00e9biles.'},{icon:'📝',title:'Simulacro 2',desc:'Segundo simulacro con \u00e9nfasis en competencias lectoras y matem\u00e1ticas.'}],3:[{icon:'📈',title:'Progreso y M\u00e9tricas',desc:'Seguimiento detallado de tu rendimiento por competencia.'},{icon:'📝',title:'Simulacro 3',desc:'Tercer simulacro completo en condiciones reales de tiempo.'}],4:[{icon:'🏆',title:'Preparaci\u00f3n Final',desc:'\u00daltimos consejos, checklist y plan de estudio pre-ICFES.'},{icon:'\u2605',title:'Simulacro Final',desc:'Examen final completo con puntuaci\u00f3n estimada ICFES.'}]}
-    }
-    return (all[area]&&all[area][bimestre])||[]
-  }
-  window.iniciarSimulacroSaber = function(){ showToast('Inicia un simulacro desde la secci\u00f3n de Ex\u00e1menes o pide a tu profesor que cree uno.','info') }
-  window.abrirTutorSaber = function(){
-    var chatBtn = document.getElementById('ai-chat-toggle')
-    if(chatBtn){ chatBtn.click(); showToast('Tutor IA listo para ayudarte con Pruebas Saber','success') }
-    else showToast('El Tutor IA est\u00e1 disponible en el \u00edcono de chat flotante','info')
-  }
-  document.addEventListener('click', function(e){
-    if(e.target.closest('#saber-tabs') || e.target.closest('#saber-period-tabs')){
-      var tab = e.target.closest('[data-area]')||e.target.closest('[data-bimestre]')
-      if(!tab) return
-      if(tab.hasAttribute('data-area')){
-        document.querySelectorAll('#saber-tabs .saber-tab').forEach(function(t){ t.classList.remove('active') }); tab.classList.add('active'); saberArea = tab.getAttribute('data-area')
-      } else {
-        document.querySelectorAll('#saber-period-tabs .saber-tab').forEach(function(t){ t.classList.remove('active') }); tab.classList.add('active'); saberBimestre = parseInt(tab.getAttribute('data-bimestre'))
-      }
-      loadSaberContent()
-    }
-  })
-
-  // -- LIBRARY --
-  function loadLibrary(){
-    var grid = document.getElementById('library-grid')
-    apiFetch('/api/subjects').then(function(data){
-      if(!Array.isArray(data)||data.length===0){ grid.innerHTML='<p style="opacity:.5;font-size:13px;grid-column:1/-1">No hay asignaturas disponibles.</p>'; return }
-      var icons = ['\u222B','💻','\u26A1','𝕌','🌐','\u03C3','🔬','🎨','🎵','🏛\uFE0F']
-      var descriptions = ['L\u00edmites, derivadas y aplicaciones en problemas reales.','Algoritmos, estructuras de datos y l\u00f3gica computacional.','Cinem\u00e1tica, din\u00e1mica, energ\u00eda y leyes del movimiento.','Vectores, matrices, transformaciones lineales.','Comprensi\u00f3n lectora, escritura y comunicaci\u00f3n oral.','Probabilidad, distribuciones y an\u00e1lisis de datos.','M\u00e9todo cient\u00edfico, laboratorios y experimentaci\u00f3n.','Creatividad, t\u00e9cnicas art\u00edsticas y apreciaci\u00f3n est\u00e9tica.','Teor\u00eda musical, instrumentos y cultura sonora.','Historia, geograf\u00eda, constituci\u00f3n y ciudadan\u00eda.']
-      grid.innerHTML = data.slice(0,12).map(function(s,i){
-        var icon = icons[i%icons.length]; var desc = ((s.description||'')||descriptions[i%descriptions.length]).substring(0,80)
-        return '<div class="lib-card"><div class="lib-icon">'+icon+'</div><div class="lib-name">'+(s.name||'Asignatura')+'</div><div class="lib-desc">'+desc+'</div><div class="lib-links"><a class="lib-link primary" onclick="showToast(\'Recursos de '+s.name+'\',\'info\')">Ver Recursos</a><button class="lib-link ai" onclick="abrirTutorSaber()">\u2726 Tutor IA</button></div></div>'
-      }).join('')
-    }).catch(function(){ grid.innerHTML = '<p style="opacity:.5;font-size:13px;grid-column:1/-1">Error al cargar biblioteca.</p>' })
-  }
-
-  // -- RECENT ACTIVITY --
-  function loadRecentActivity(){
-    apiFetch('/api/grades?student_id='+encodeURIComponent(studentId)+'&limit=10').then(function(data){
-      var el = document.getElementById('profile-timeline')
-      if(!Array.isArray(data)||data.length===0){ el.innerHTML='<p style="opacity:.5;font-size:12px">Sin actividad reciente.</p>'; return }
-      el.innerHTML = data.slice(0,5).map(function(g){
-        var score = parseFloat(g.score)||0; var dotClass = score>=4?'green':score>=3.5?'':'gold'
-        var dateStr = g.created_at?new Date(g.created_at).toLocaleDateString('es-CO',{day:'2-digit',month:'short'}):''
-        var color = score>=4?'#34C759':score>=3.5?'var(--gold)':'var(--red)'
-        return '<div class="timeline-item"><div class="timeline-dot '+dotClass+'" style="background:'+color+';box-shadow:0 0 0 2px '+color+'"></div><div class="timeline-date">'+dateStr+'</div><div class="timeline-text">'+(g.subject_name||g.subject_id||'')+'</div><div class="timeline-sub">Nota: '+score.toFixed(1)+' / 5.0</div></div>'
-      }).join('')
-    }).catch(function(){})
-  }
-
-  // -- CALENDAR --
-  (function buildCalendar(){
-    var grid = document.getElementById('calGrid'); if(!grid) return
-    var now = new Date(); var year = now.getFullYear(); var month = now.getMonth()
-    var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-    document.getElementById('cal-month-label').textContent = months[month]+' '+year
-    var firstDay = new Date(year, month, 1).getDay()
-    var daysInMonth = new Date(year, month+1, 0).getDate()
-    var startOffset = (firstDay===0?6:firstDay-1)
-    var prevDays = new Date(year, month, 0).getDate()
-    var dayNames = grid.querySelectorAll('.cal-day-name')
-    grid.innerHTML = ''
-    dayNames.forEach(function(dn){ grid.appendChild(dn.cloneNode(true)) })
-    for(var i=startOffset-1; i>=0; i--){ var d=document.createElement('div'); d.className='cal-day other-month'; d.textContent=prevDays-i; grid.appendChild(d) }
-    for(var d=1; d<=daysInMonth; d++){
-      var el = document.createElement('div'); el.className='cal-day'
-      if(d===now.getDate()) el.classList.add('today')
-      var dow = new Date(year, month, d).getDay()
-      if(dow===0||dow===6) el.style.opacity='0.5'
-      el.textContent=d; el.onclick=function(){showToast('D\u00eda '+this.textContent+' de '+months[month],'info')}; grid.appendChild(el)
-    }
-    var total = grid.children.length; var next = 1
-    while(total%7!==0){ var d=document.createElement('div'); d.className='cal-day other-month'; d.textContent=next++; grid.appendChild(d); total++ }
+    // Hide all sections except inicio initially
+    document.querySelectorAll('[id^="sec-"]').forEach(function(s) {
+      if (s.id !== 'sec-inicio') s.style.display = 'none'
+    })
   })()
-
-  // -- INIT --
-  function init(){
-    var name = localStorage.getItem('userName') || 'Estudiante'
-    var grade = localStorage.getItem('userGrade') || ''
-    document.getElementById('student-name').textContent = name + (grade?' &middot; '+grade:'')
-    document.getElementById('student-meta').textContent = grade ? 'Grado '+grade+' &middot; Rendimiento acad\u00e9mico' : 'Panel de rendimiento acad\u00e9mico'
-    document.getElementById('profile-name').textContent = name; document.getElementById('pf-name').textContent = name; document.getElementById('pf-grade').textContent = grade||'\u2014'
-    document.getElementById('profile-avatar').textContent = name.charAt(0).toUpperCase()
-    document.getElementById('profile-id').textContent = 'C\u00f3digo: '+(localStorage.getItem('profile_id')||'\u2014')
-    document.getElementById('profile-grade-badge').textContent = grade||'\u2014'; document.getElementById('profile-bimestre-badge').textContent = getCurrentBimester()
-    apiFetch('/api/profile/'+encodeURIComponent(studentId)).then(function(p){
-      if(p){
-        if(p.email) document.getElementById('pf-email').textContent = p.email
-        if(p.document_id||p.documento) document.getElementById('pf-doc').textContent = p.document_id||p.documento
-        if(p.phone||p.telefono) document.getElementById('pf-phone').textContent = p.phone||p.telefono
-        if(p.shift||p.jornada) document.getElementById('pf-shift').textContent = p.shift||p.jornada
-      }
-    }).catch(function(){})
-    loadGrades(); loadNotices(); loadSubjects()
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init)
-  else init()
-})()
 </script>

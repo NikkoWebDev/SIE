@@ -1,10 +1,25 @@
-// VYNTRA Academic — Session Manager v1.0
-// Shared auth verification + server wake-up
+// VYNTRA Academic — Session Manager v2.0
+// Security: Supports both httpOnly cookie and localStorage JWT
 (function () {
   var API_URL = (window.__API_URL__ || document.querySelector('meta[name="api-url"]')?.getAttribute('content')) || 'https://vyntra-backend.onrender.com'
-  // Fallback to localhost if running locally
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     API_URL = 'http://localhost:8000'
+  }
+
+  // ── Get token from cookie or localStorage ──
+  function getCookie(name) {
+    var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+    return match ? decodeURIComponent(match[2]) : null
+  }
+
+  function getToken() {
+    // Prefer httpOnly cookie (set by backend, more secure)
+    var cookieToken = getCookie('access_token')
+    if (cookieToken) return cookieToken
+    // Fallback to localStorage for backward compatibility
+    try {
+      return localStorage.getItem('access_token')
+    } catch(e) { return null }
   }
 
   // ── Wake-up: ping server on every page load ──
@@ -19,7 +34,7 @@
   // ── Auth check ──
   function checkAuth() {
     try {
-      var token = localStorage.getItem('access_token')
+      var token = getToken()
       var userId = localStorage.getItem('userId')
       var publicPages = ['/', '/login', '/api/health']
 
@@ -36,7 +51,7 @@
     } catch(e) { return null }
   }
 
-  // ── Parse JWT payload ──
+  // ── Parse JWT payload (client-side, no signature verification) ──
   function parseToken(token) {
     try {
       var parts = token.split('.')
@@ -67,7 +82,6 @@
       return origOpen.apply(this, arguments)
     }
 
-    // Also intercept fetch
     var origFetch = window.fetch
     window.fetch = function (url, opts) {
       return origFetch(url, opts).then(function (r) {
@@ -98,4 +112,5 @@
   window.VYNTRA.parseToken = parseToken
   window.VYNTRA.isTokenExpired = isTokenExpired
   window.VYNTRA.getApiUrl = function () { return API_URL }
+  window.VYNTRA.getToken = getToken
 })()

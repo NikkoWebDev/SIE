@@ -1,5 +1,5 @@
 import logging
-import random
+import secrets
 import string
 from datetime import datetime, timedelta, timezone
 
@@ -31,7 +31,7 @@ class ResetPasswordRequest(BaseModel):
 
 
 def _generate_reset_code(length: int = RESET_CODE_LENGTH) -> str:
-    return "".join(random.choices(string.digits, k=length))
+    return "".join(secrets.choice(string.digits) for _ in range(length))
 
 
 @router.post("/forgot-password")
@@ -61,11 +61,10 @@ async def forgot_password(data: ForgotPasswordRequest) -> JSONResponse:
         "expires_at": expires_at.isoformat(),
     }).execute()
 
-    logger.info("reset code for %s: %s (expires %s)", data.login_credential, code, expires_at.isoformat())
+    logger.info("reset code generated for credential=%s (expires %s)", data.login_credential, expires_at.isoformat())
 
     return JSONResponse(content={
         "message": "Si el usuario existe, recibirás un código de recuperación.",
-        "debug_code": code,
     })
 
 

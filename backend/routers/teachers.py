@@ -25,6 +25,27 @@ from models import GradeSubmission
 logger = logging.getLogger("siee.teachers")
 router = APIRouter(prefix="/api/teacher", tags=["teachers"])
 
+# ── File Upload Validation ──
+ALLOWED_UPLOAD_MIME_TYPES: frozenset[str] = frozenset({
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/msword",
+    "text/plain",
+    "text/markdown",
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+})
+MAX_UPLOAD_SIZE_BYTES: int = 20 * 1024 * 1024  # 20 MB
+
+
+def _validate_file_upload(file: UploadFile) -> None:
+    if file.content_type and file.content_type not in ALLOWED_UPLOAD_MIME_TYPES:
+        raise HTTPException(status_code=400, detail=f"Tipo de archivo no permitido: {file.content_type}")
+    if file.size and file.size > MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail=f"Archivo demasiado grande ({file.size // (1024*1024)} MB). Máximo 20 MB.")
+
+
 # ── Upload progress tracker (FASE 6.2) ──
 _upload_tasks: dict[str, dict[str, Any]] = {}
 _UPLOAD_CLEANUP_SECONDS = 300
@@ -348,10 +369,9 @@ async def upload_material(
     grade_id: Optional[str] = Form(None),
     user_id: str = Depends(teacher_dependency),
 ) -> JSONResponse:
-    print(f"[INPUT TRACE] Filename: {file.filename}, Content-Type: {file.content_type}")
-    print(f"[INPUT TRACE] subject_id: {subject_id}, grade_id: {grade_id}")
     if not subject_id or not grade_id:
         raise HTTPException(status_code=400, detail="Faltan parámetros críticos: subject_id o grade_id vacíos.")
+    _validate_file_upload(file)
     raw = await file.read()
     if not raw:
         raise HTTPException(status_code=400, detail="Archivo vacío")
@@ -577,8 +597,9 @@ async def upload_guide_v2(
     grade: str = Form(...),
     teacher_id: str = Form(...),
     file: UploadFile = File(...),
-    user_id: str = Depends(auth_dependency),
+    user_id: str = Depends(teacher_dependency),
 ) -> JSONResponse:
+    _validate_file_upload(file)
     try:
         import cloudinary
         import cloudinary.uploader

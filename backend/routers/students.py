@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from supabase import Client
 
 from config.database import get_db
-from dependencies import auth_dependency, financial_guard, is_financial_locked_path
+from dependencies import admin_dependency, audit, auth_dependency, financial_guard, is_financial_locked_path
 from models import StudentUpdate, StudentMetadataSchema, grade_status, OutageReport
 
 logger = logging.getLogger("siee.students")
@@ -90,8 +90,12 @@ async def get_student(profile_id: str, user_id: str = Depends(auth_dependency)) 
 
 
 @router.get("/students/{student_id}/grades")
-async def get_student_grades(student_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def get_student_grades(student_id: str, request: Request, user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())
+    # IDOR guard: student can only view own grades; teachers/admins can view any
+    role: str = getattr(request.state, "user_role", "")
+    if role == "student" and user_id != student_id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver las notas de otro estudiante")
     result = db.table("grades").select("*").eq("student_id", student_id).order("created_at", desc=True).execute()
     grades: list[dict[str, Any]] = []
     for g in result.data:
@@ -106,8 +110,12 @@ async def get_student_grades(student_id: str, user_id: str = Depends(auth_depend
 
 
 @router.get("/students/{student_id}/report")
-async def get_student_report(student_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def get_student_report(student_id: str, request: Request, user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())
+    # IDOR guard
+    role: str = getattr(request.state, "user_role", "")
+    if role == "student" and user_id != student_id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver el reporte de otro estudiante")
     if is_financial_locked_path("/api/students/report"):
         req = type("_R", (), {"query_params": {"student_id": student_id}})()
         await financial_guard(req)
@@ -155,7 +163,7 @@ async def update_student(profile_id: str, data: StudentUpdate, user_id: str = De
 
 
 @router.post("/admin/students/{profile_id}/toggle-payment")
-async def toggle_payment(profile_id: str, data: StudentMetadataSchema, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def toggle_payment(profile_id: str, data: StudentMetadataSchema, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     meta_result = db.table("student_metadata").select("*").eq("profile_id", profile_id).execute()
     if not meta_result.data:
@@ -168,13 +176,17 @@ async def toggle_payment(profile_id: str, data: StudentMetadataSchema, user_id: 
         "financial_override": data.financial_override,
         "current_status": new_status,
     }).eq("profile_id", profile_id).execute()
-
+    audit.log("payment_toggle", user_id, profile_id, f"months={data.months_in_arrears}, override={data.financial_override}")
     return JSONResponse(content={"message": "Estado financiero actualizado"})
 
 
 @router.get("/students/{profile_id}/financial-status")
-async def check_financial_status(profile_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def check_financial_status(profile_id: str, request: Request, user_id: str = Depends(auth_dependency)) -> JSONResponse:
     db: Client = next(get_db())
+    # IDOR guard: students can only check own status
+    role: str = getattr(request.state, "user_role", "")
+    if role == "student" and user_id != profile_id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver el estado financiero de otro estudiante")
     meta_result = db.table("student_metadata").select("*").eq("profile_id", profile_id).execute()
     if not meta_result.data:
         return JSONResponse(content={"is_blocked": False, "reason": "No metadata found"})
@@ -191,24 +203,20 @@ async def check_financial_status(profile_id: str, user_id: str = Depends(auth_de
 
 
 @router.post("/students/{profile_id}/bypass-override")
-async def toggle_financial_override(profile_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def toggle_financial_override(profile_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
-    admin = db.table("profiles").select("role").eq("id", user_id).execute()
-    if not admin.data or admin.data[0].get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Solo rector puede modificar override")
 
     meta_result = db.table("student_metadata").select("*").eq("profile_id", profile_id).execute()
     if not meta_result.data:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
 
     current = meta_result.data[0].get("financial_override", False)
-    from datetime import datetime, timezone
     db.table("student_metadata").update({
         "financial_override": not current,
         "financial_override_by": user_id,
         "financial_override_at": datetime.now(timezone.utc).isoformat(),
     }).eq("profile_id", profile_id).execute()
-
+    audit.log("financial_override_toggle", user_id, profile_id, f"new_value={not current}")
     return JSONResponse(content={
         "message": "Override toggled",
         "financial_override": not current,
@@ -216,10 +224,11 @@ async def toggle_financial_override(profile_id: str, user_id: str = Depends(auth
 
 
 @router.delete("/admin/students/{profile_id}")
-async def delete_student(profile_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def delete_student(profile_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     db.table("student_metadata").delete().eq("profile_id", profile_id).execute()
     db.table("profiles").delete().eq("id", profile_id).execute()
+    audit.log("student_deleted", user_id, profile_id)
     return JSONResponse(content={"message": "Estudiante eliminado"})
 
 

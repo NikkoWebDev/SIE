@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from supabase import Client
 
 from config.database import get_db
-from dependencies import encode_jwt, TOKEN_EXPIRY_HOURS
+from dependencies import encode_jwt, set_jwt_cookie, clear_jwt_cookie, TOKEN_EXPIRY_HOURS
 from models import LoginRequest, UserCreate, UserLogin
 
 logger = logging.getLogger("siee.auth")
@@ -123,7 +123,7 @@ async def login(data: UserLogin, request: Request) -> JSONResponse:
     }
     token = encode_jwt(claims)
 
-    return JSONResponse(content={
+    response = JSONResponse(content={
         "access_token": token,
         "token_type": "bearer",
         "expires_in_hours": TOKEN_EXPIRY_HOURS,
@@ -134,6 +134,8 @@ async def login(data: UserLogin, request: Request) -> JSONResponse:
             "nombre": profile["fullname"],
         },
     })
+    set_jwt_cookie(response, token)
+    return response
 
 
 @router.post("/login-legacy")
@@ -162,7 +164,7 @@ async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
             "fullname": profile["fullname"],
         }
         token = encode_jwt(claims)
-        return JSONResponse(content={
+        response = JSONResponse(content={
             "access_token": token,
             "token": token,
             "token_type": "bearer",
@@ -174,5 +176,14 @@ async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
                 "documento": data.document_id,
             },
         })
+        set_jwt_cookie(response, token)
+        return response
 
     raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+
+@router.post("/logout")
+async def logout() -> JSONResponse:
+    response = JSONResponse(content={"message": "Sesión cerrada"})
+    clear_jwt_cookie(response)
+    return response

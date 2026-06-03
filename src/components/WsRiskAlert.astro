@@ -2,88 +2,60 @@
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
 ---
-<div id="risk-alert-slot" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 max-w-sm w-full pointer-events-none" style="top:max(1rem,env(safe-area-inset-top,1rem));right:max(1rem,env(safe-area-inset-right,1rem))"></div>
+
+<div id="risk-alert-slot" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 w-full max-w-xs sm:max-w-sm pointer-events-none" style="top:max(1rem,env(safe-area-inset-top));right:max(1rem,env(safe-area-inset-right))"></div>
+
 <script define:vars={{ wsUrl }}>
   (function () {
     var container = document.getElementById('risk-alert-slot')
     if (!container) return
-    var ws = null
-    var reconnectTimer = null
-    var MAX_RECONNECT_DELAY = 30000
-    var delay = 1000
+    var ws = null, reconnectTimer = null, delay = 1000
 
     function connect() {
-      var token
-      try { token = localStorage.getItem('access_token') } catch(e) {}
+      var token = localStorage.getItem('access_token')
       if (!token) { scheduleReconnect(); return }
-      try {
-        ws = new WebSocket(wsUrl + '?token=' + encodeURIComponent(token))
-      } catch (e) { scheduleReconnect(); return }
-
-      ws.onopen = function () { delay = 1000 }
-
-      ws.onmessage = function (e) {
+      try { ws = new WebSocket(wsUrl + '?token=' + encodeURIComponent(token)) } catch(e) { scheduleReconnect(); return }
+      ws.onopen = function() { delay = 1000 }
+      ws.onmessage = function(e) {
         try {
           var msg = JSON.parse(e.data)
-          if (msg.type === 'RISK_ALERT') {
-            showRiskAlert(msg)
-            playAlertSound()
-          }
-        } catch (_) {}
+          if (msg.type === 'RISK_ALERT') { showRiskAlert(msg); playAlertSound() }
+        } catch(_) {}
       }
-
-      ws.onclose = function () {
-        ws = null
-        scheduleReconnect()
-      }
-
-      ws.onerror = function () { ws && ws.close() }
+      ws.onclose = function() { ws = null; scheduleReconnect() }
+      ws.onerror = function() { ws && ws.close() }
     }
 
     function scheduleReconnect() {
       if (reconnectTimer) clearTimeout(reconnectTimer)
-      reconnectTimer = setTimeout(function () {
-        delay = Math.min(delay * 1.5, MAX_RECONNECT_DELAY)
-        connect()
-      }, delay)
-    }
-
-    function escapeHtml(t) {
-      var d = document.createElement('div')
-      d.appendChild(document.createTextNode(t || ''))
-      return d.innerHTML
+      reconnectTimer = setTimeout(function() { delay = Math.min(delay * 1.5, 30000); connect() }, delay)
     }
 
     function showRiskAlert(msg) {
-      var mainContainer = document.querySelector('.relative.min-h-screen')
-      if (mainContainer && !mainContainer.classList.contains('ambient-risk-active')) {
-        mainContainer.classList.add('ambient-risk-active')
-      }
       var el = document.createElement('div')
-      el.className =
-        'pointer-events-auto animate-slide-down rounded-2xl border-2 border-brand-danger/40 bg-white dark:bg-gray-900 shadow-2xl p-4 flex items-start gap-3 transition-all duration-500'
+      el.className = 'pointer-events-auto rounded-xl border border-brand-danger/30 bg-white dark:bg-surface-dark-elevated shadow-xl p-3 sm:p-4 flex items-start gap-3 sm:gap-4 animate-toast-slide-in'
+      el.style.animation = 'toastSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both'
       el.innerHTML =
-        '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-danger/10"><svg class="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>' +
-        '<div class="flex-1 min-w-0"><p class="text-sm font-bold text-brand-danger truncate">' +
-        escapeHtml(msg.msg || 'Alerta académica') +
-        '</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">Estudiante: ' +
-        escapeHtml(msg.student_id || '') +
-        ' · Nota: ' + escapeHtml(msg.score || '') +
-        '</p></div>' +
-        '<button class="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-brand-danger/10 hover:text-brand-danger transition-colors" data-dismiss-risk>&times;</button>'
+        '<div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-danger/10 flex items-center justify-center shrink-0">' +
+        '<svg class="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>' +
+        '</div>' +
+        '<div class="flex-1 min-w-0">' +
+        '<p class="text-xs sm:text-sm font-bold text-brand-danger truncate">' + (msg.msg || 'Alerta académica') + '</p>' +
+        '<p class="text-[10px] sm:text-xs text-text-tertiary mt-0.5">Estudiante: ' + (msg.student_id || '') + ' · Nota: ' + (msg.score || '--') + '</p>' +
+        '</div>' +
+        '<button class="shrink-0 rounded-lg p-1 text-text-tertiary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors text-sm" onclick="this.parentElement.remove()">&times;</button>'
       container.appendChild(el)
-      el.querySelector('[data-dismiss-risk]').addEventListener('click', function () {
+
+      var autoDismiss = setTimeout(function() {
+        if (el.parentNode) { el.style.opacity = '0'; el.style.transform = 'translateX(100%)'; setTimeout(function(){ el.remove() }, 300) }
+      }, 8000)
+
+      el.querySelector('button').addEventListener('click', function() {
+        clearTimeout(autoDismiss)
         el.style.opacity = '0'
         el.style.transform = 'translateX(100%)'
-        setTimeout(function () { el.remove() }, 300)
+        setTimeout(function() { el.remove() }, 300)
       })
-      setTimeout(function () {
-        if (el.parentNode) {
-          el.style.opacity = '0'
-          el.style.transform = 'translateX(100%)'
-          setTimeout(function () { el.remove() }, 300)
-        }
-      }, 8000)
     }
 
     function playAlertSound() {
@@ -91,15 +63,14 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
         var ctx = new (window.AudioContext || window.webkitAudioContext)()
         var osc = ctx.createOscillator()
         var gain = ctx.createGain()
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-        osc.frequency.setValueAtTime(800, ctx.currentTime)
-        osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.1)
-        gain.gain.setValueAtTime(0.15, ctx.currentTime)
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3)
-        osc.start(ctx.currentTime)
-        osc.stop(ctx.currentTime + 0.3)
-      } catch (_) {}
+        osc.connect(gain); gain.connect(ctx.destination)
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(523, ctx.currentTime)
+        osc.frequency.setValueAtTime(784, ctx.currentTime + 0.08)
+        gain.gain.setValueAtTime(0.12, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35)
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35)
+      } catch(_) {}
     }
 
     document.addEventListener('DOMContentLoaded', connect)

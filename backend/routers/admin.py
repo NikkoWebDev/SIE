@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from supabase import Client
 
 from config.database import get_db
-from dependencies import admin_dependency, auth_dependency
+from dependencies import admin_dependency, audit, auth_dependency
 from models import FinancialToggleSchema, UserCreate, VoteRequest
 
 logger = logging.getLogger("siee.admin")
@@ -91,7 +91,7 @@ async def add_candidate(
     name: str = Form(...),
     position: str = Form(...),
     file: UploadFile = File(...),
-    user_id: str = Depends(auth_dependency),
+    user_id: str = Depends(admin_dependency),
 ) -> JSONResponse:
     try:
         import cloudinary
@@ -120,7 +120,7 @@ async def list_candidates() -> JSONResponse:
 
 
 @router.delete("/candidates/{candidate_id}")
-async def delete_candidate(candidate_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def delete_candidate(candidate_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     db.table("candidates").delete().eq("id", candidate_id).execute()
     return JSONResponse(content={"message": "Candidato eliminado"})
@@ -138,6 +138,7 @@ async def reset_election(user_id: str = Depends(admin_dependency)) -> JSONRespon
     db: Client = next(get_db())
     db.table("votes").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
     db.table("candidates").update({"votes": 0}).neq("id", "00000000-0000-0000-0000-000000000000").execute()
+    audit.log("election_reset", user_id, detail="All votes and candidate tallies reset")
     return JSONResponse(content={"message": "Elección reiniciada — todos los votos eliminados"})
 
 
@@ -157,6 +158,7 @@ async def enroll_student(data: UserCreate, user_id: str = Depends(admin_dependen
     }
     result = db.table("profiles").insert(profile_doc).execute()
     profile_id = result.data[0]["id"]
+    audit.log("student_enrolled", user_id, profile_id, f"credential={data.login_credential}")
     grade = getattr(data, "grade", "")
     if grade:
         db.table("student_metadata").insert({
@@ -194,7 +196,9 @@ async def register_teacher(data: TeacherRegisterRequest, user_id: str = Depends(
         "is_active": True,
     }
     result = db.table("profiles").insert(profile_doc).execute()
-    return JSONResponse(content={"message": "Docente registrado", "profile_id": result.data[0]["id"]}, status_code=201)
+    profile_id = result.data[0]["id"]
+    audit.log("teacher_registered", user_id, profile_id, f"credential={data.document_id}")
+    return JSONResponse(content={"message": "Docente registrado", "profile_id": profile_id}, status_code=201)
 
 
 # ── Admin Account Creation ──
@@ -362,7 +366,7 @@ async def admin_list_students(user_id: str = Depends(auth_dependency)) -> JSONRe
 
 
 @router.patch("/students/{profile_id}/financial")
-async def admin_toggle_financial(profile_id: str, body: FinancialToggleSchema, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def admin_toggle_financial(profile_id: str, body: FinancialToggleSchema, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     is_paid = body.is_paid
     update = {
@@ -370,6 +374,7 @@ async def admin_toggle_financial(profile_id: str, body: FinancialToggleSchema, u
         "current_status": "AL_DIA" if is_paid else "EN_MORA",
     }
     db.table("student_metadata").update(update).eq("profile_id", profile_id).execute()
+    audit.log("financial_toggle", user_id, profile_id, f"is_paid={is_paid}")
     return JSONResponse(content={"message": "Estado actualizado"})
 
 

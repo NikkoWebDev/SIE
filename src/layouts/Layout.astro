@@ -8,9 +8,10 @@ export interface Props {
 const { titulo, sinMenu } = Astro.props
 const title = titulo ? `VYNTRA · ${titulo}` : 'VYNTRA Academic'
 
+const SCRIPT_SRC = "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
 const CSP = process.env.NODE_ENV === 'production'
-  ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss:; frame-src 'self' https:; media-src 'self' https:;"
-  : "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:8000 ws://localhost:8000 https: wss:; frame-src 'self' https:; media-src 'self' https:;"
+  ? `default-src 'self'; script-src ${SCRIPT_SRC}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss:; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'`
+  : `default-src 'self'; script-src ${SCRIPT_SRC}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:8000 ws://localhost:8000 https: wss:; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'`
 Astro.response.headers.set('Content-Security-Policy', CSP)
 ---
 
@@ -27,7 +28,7 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <script is:inline>
+  <script>
     (function() {
       try {
         var t = localStorage.getItem('vyntra-theme')
@@ -41,7 +42,7 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
   <script src="/js/session.js" defer></script>
 </head>
 <body>
-  <a href="#main-content" class="skip-link" style="position:fixed;top:-100%;left:0;z-index:99999;padding:.75rem 1.5rem;background:var(--maroon);color:white;font-size:.85rem;font-weight:600;border-radius:0 0 var(--radius-md) 0;text-decoration:none;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-100%'">Ir al contenido</a>
+  <a href="#main-content" class="skip-link" id="skip-link" style="position:fixed;top:-100%;left:0;z-index:99999;padding:.75rem 1.5rem;background:var(--maroon);color:white;font-size:.85rem;font-weight:600;border-radius:0 0 var(--radius-md) 0;text-decoration:none;transition:top .2s">Ir al contenido</a>
   {
     !sinMenu && (
       <>
@@ -117,6 +118,11 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
     const menuBtn = document.getElementById('menu-toggle')
     const themeBtn = document.getElementById('theme-toggle')
     const themeLabel = document.getElementById('theme-label')
+    const skipLink = document.getElementById('skip-link')
+
+    // ── Skip link keyboard access ──
+    skipLink?.addEventListener('focus', () => { skipLink.style.top = '0' })
+    skipLink?.addEventListener('blur', () => { skipLink.style.top = '-100%' })
 
     // ── Mobile menu ──
     menuBtn?.addEventListener('click', () => sidebar?.classList.toggle('open'))

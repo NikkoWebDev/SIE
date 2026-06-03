@@ -5,9 +5,21 @@
 [build.environment]
   NODE_VERSION = "20"
   PUBLIC_API_URL = "https://sie-8agt.onrender.com"
+  # GOOGLE_CLIENT_ID is public by design — set via Netlify UI env vars
   PUBLIC_GOOGLE_CLIENT_ID = "456201263142-u1r9mr35dccoj6u2ukcp1cn88af883cd.apps.googleusercontent.com"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# ── Security Headers ──
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "0"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"

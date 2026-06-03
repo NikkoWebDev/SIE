@@ -1,0 +1,46 @@
+<div id="toast-container" class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col gap-2 pointer-events-none" style="max-width:calc(100vw - 2rem)">
+  <slot />
+</div>
+
+<script>
+  window.VyntraToast = (function() {
+    var container = document.getElementById('toast-container')
+    if (!container) {
+      container = document.createElement('div')
+      container.id = 'toast-container'
+      container.className = 'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col gap-2 pointer-events-none'
+      container.style.maxWidth = 'calc(100vw - 2rem)'
+      document.body.appendChild(container)
+    }
+
+    function show(message, type, duration) {
+      type = type || 'info'
+      duration = duration || 4000
+      var el = document.createElement('div')
+      var colors = {
+        success: 'bg-success/95 text-white border-success',
+        error: 'bg-brand-danger/95 text-white border-brand-danger',
+        warning: 'bg-brand-gold/95 text-solar-shadow border-brand-gold',
+        info: 'bg-[var(--bg-card)] dark:bg-surface-dark-elevated text-text border-border shadow-toast'
+      }
+      var icons = {
+        success: '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
+        error: '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
+        warning: '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>',
+        info: '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+      }
+      el.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl backdrop-blur-xl border shadow-lg text-sm font-medium w-80 sm:w-96 animate-toast-slide-in'
+      el.style.cssText = 'animation:toastSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;'
+      var color = colors[type] || colors.info
+      el.classList.add(...color.split(' '))
+      el.innerHTML = '<span class="shrink-0">'+(icons[type]||icons.info)+'</span><span class="flex-1 leading-tight">'+String(message).replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>'
+      container.appendChild(el)
+      setTimeout(function() {
+        el.style.animation = 'toastSlideOut 0.3s ease-in forwards'
+        setTimeout(function() { el.remove() }, 300)
+      }, duration)
+    }
+
+    return { show: show, success: function(m,d){show(m,'success',d)}, error: function(m,d){show(m,'error',d)}, warning: function(m,d){show(m,'warning',d)}, info: function(m,d){show(m,'info',d)} }
+  })()
+</script>
