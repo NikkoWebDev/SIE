@@ -47,7 +47,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           <select id="filter-grade-notas" class="flex-1 min-w-[140px] bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon"><option value="">Grado...</option></select>
           <select id="filter-subject-notas" class="flex-1 min-w-[140px] bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon"><option value="">Primero elija grado</option></select>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto -mx-5 sm:mx-0">
           <table class="w-full text-xs min-w-[650px]">
             <thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold">
               <th scope="col" class="text-left p-2 border-b border-border">Estudiante</th>
@@ -124,7 +124,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Seguridad en Exámenes</h2>
           <span class="px-2 py-0.5 rounded-full bg-brand-danger/10 text-brand-danger text-[10px] font-semibold uppercase">Monitor activo</span>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto -mx-5 sm:mx-0">
           <table class="w-full text-xs min-w-[550px]">
             <thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold">
               <th class="text-left p-2 border-b border-border">Estudiante</th><th class="text-left p-2 border-b border-border">Examen</th>
@@ -154,7 +154,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
   (function () {
     var API = apiUrl
     var role = (localStorage.getItem('userRole')||'').toUpperCase()
-    if (!role) { window.location.href = '/login'; return }
+    if (!role) { window.VyntraToast?.error('Sesión no encontrada.'); setTimeout(function(){ window.location.href='/login' },1500); return }
     if (!['PROFESOR','TEACHER','DOCENTE'].includes(role)) { window.location.href = '/'; return }
     var userId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
     var userName = localStorage.getItem('userName') || 'Docente'
@@ -261,9 +261,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var avg = row.querySelector('.avg-cell')
       var obs = row.querySelector('td:nth-child(7) input')
       try {
-        await fetch(API+'/api/teacher/submit-grade', {
+        await vfetch(API, '/api/teacher/submit-grade', {
           method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
           body:JSON.stringify({
             student_id:String(studentId),subject:String(subject),
             p1:inputs[0]?.value||'0',p2:inputs[1]?.value||'0',p3:inputs[2]?.value||'0',p4:inputs[3]?.value||'0',
@@ -288,7 +287,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       fd.append('title',title); fd.append('subject_name',subject); fd.append('grade',grade)
       fd.append('teacher_id',userId); fd.append('file',file)
       try {
-        await fetch(API+'/api/teacher/guides', { method:'POST', headers:{'Authorization':'Bearer '+token}, body:fd })
+        await fetch(API+'/api/teacher/guides', { method:'POST', credentials:'include', body:fd })
         window.VyntraToast?.success('Guía publicada')
         loadGuides()
       } catch(e) { window.VyntraToast?.error('Error publicando guía: ' + (e?.message || 'Reintente')) }
@@ -334,7 +333,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       })
       var parts = subjectVal.split('|'), subject=parts[0], grade=parts[1]
       try {
-        await fetch(API+'/api/teacher/exams', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({ title,subject_name:subject,grade,teacher_id:userId,questions,duration_minutes:30 }) })
+        await vfetch(API, '/api/teacher/exams', { method:'POST', body:JSON.stringify({ title,subject_name:subject,grade,teacher_id:userId,questions,duration_minutes:30 }) })
         window.VyntraToast?.success('Examen publicado')
         loadMyExams()
       } catch(e) { window.VyntraToast?.error('Error publicando examen: ' + (e?.message || 'Reintente')) }

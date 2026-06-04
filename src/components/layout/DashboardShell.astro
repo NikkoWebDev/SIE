@@ -54,6 +54,8 @@ const {
       window.setVyntraTheme(stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme:dark)').matches))
     } catch (_) {}
 
+    document.querySelectorAll('[id^="sec-"]').forEach(function (s) { s.setAttribute('aria-live', 'polite') })
+
     window.createShowSection = function (configs) {
       var titles = configs.titles || {}, subs = configs.subs || {}, onN = configs.onNavigate || function () {}
       return function showSection(id) {
@@ -70,9 +72,21 @@ const {
 
     window.vfetch = function (apiUrl, path, opts) {
       var headers = Object.assign({ 'Content-Type': 'application/json' }, opts && opts.headers)
-      return fetch(apiUrl + path, Object.assign({ credentials: 'include' }, opts, { headers: headers })).then(function (r) {
-        if (r.status === 401) { try { localStorage.clear() } catch (_) {}; window.location.href = '/login'; throw new Error('Sesión expirada') }
+      var ctrl = new AbortController()
+      var timer = setTimeout(function () { ctrl.abort() }, 15000)
+      var merged = Object.assign({ credentials: 'include', signal: ctrl.signal }, opts, { headers: headers })
+      return fetch(apiUrl + path, merged).then(function (r) {
+        clearTimeout(timer)
+        if (r.status === 401) {
+          try { localStorage.clear() } catch (_) {}
+          window.VyntraToast?.error('Sesión expirada. Redirigiendo al inicio...')
+          setTimeout(function () { window.location.href = '/login' }, 1500)
+          throw new Error('Sesión expirada')
+        }
         return r
+      }).catch(function (e) {
+        clearTimeout(timer)
+        throw e
       })
     }
 

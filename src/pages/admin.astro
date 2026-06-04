@@ -48,7 +48,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
           <select id="filter-payment" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none"><option value="">Todos los estados</option><option value="paid">Al día</option><option value="debt">En mora</option></select>
           <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border" onclick="exportCSV()">Exportar CSV</button>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto -mx-5 sm:mx-0">
           <table class="w-full text-xs min-w-[600px]">
             <thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold"><th scope="col" class="text-left p-2 border-b border-border">Documento</th><th scope="col" class="text-left p-2 border-b border-border">Nombre</th><th scope="col" class="text-left p-2 border-b border-border">Grado</th><th scope="col" class="text-left p-2 border-b border-border">Estado</th><th scope="col" class="text-left p-2 border-b border-border">Acciones</th></tr></thead>
             <tbody id="students-list"></tbody>
@@ -64,7 +64,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
           <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Cuerpo Docente</h2>
           <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="openModal('docente')">Registrar Docente</button>
         </div>
-        <div class="overflow-x-auto"><table class="w-full text-xs min-w-[500px]"><thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold"><th class="text-left p-2 border-b border-border">Docente</th><th class="text-left p-2 border-b border-border">ID</th><th class="text-left p-2 border-b border-border">Carga</th><th class="text-left p-2 border-b border-border">Acciones</th></tr></thead><tbody id="teachers-list"></tbody></table></div>
+        <div class="overflow-x-auto -mx-5 sm:mx-0"><table class="w-full text-xs min-w-[500px]"><thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold"><th class="text-left p-2 border-b border-border">Docente</th><th class="text-left p-2 border-b border-border">ID</th><th class="text-left p-2 border-b border-border">Carga</th><th class="text-left p-2 border-b border-border">Acciones</th></tr></thead><tbody id="teachers-list"></tbody></table></div>
       </div>
     </section>
 
@@ -143,7 +143,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
   (function() {
     var API = apiUrl
     var role = (localStorage.getItem('userRole')||'').toUpperCase()
-    if (!role) { window.location.href = '/login'; return }
+    if (!role) { window.VyntraToast?.error('Sesión no encontrada.'); setTimeout(function(){ window.location.href='/login' },1500); return }
     if (!['ADMIN','RECTOR'].includes(role)) { window.location.href = '/'; return }
     var userName = localStorage.getItem('userName') || 'Admin'
 
@@ -271,7 +271,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     window.deleteCandidate = async function(id) { try { await vfetch(API, '/api/admin/candidates/'+id,{method:'DELETE'}); loadElectionData() } catch(e) { window.VyntraToast?.error('Error al eliminar candidato') } }
 
     // CRUD
-    window.togglePayment = async function(id, current) { try { await fetch(API+'/api/admin/students/'+id+'/financial',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({is_paid:!current})}); loadAllData() } catch(e) { window.VyntraToast?.error('Error cambiando estado') } }
+    window.togglePayment = async function(id, current) { try { await vfetch(API, '/api/admin/students/'+id+'/financial',{method:'PATCH',body:JSON.stringify({is_paid:!current})}); loadAllData() } catch(e) { window.VyntraToast?.error('Error cambiando estado') } }
     window.deleteStudent = async function(id) { if(!confirm('¿Eliminar?')) return; try { await vfetch(API, '/api/admin/students/'+id,{method:'DELETE'}); loadAllData() } catch(e) { window.VyntraToast?.error('Error eliminando estudiante') } }
     window.deleteTeacher = async function(docId) { if(!confirm('¿Eliminar?')) return; try { await vfetch(API, '/api/admin/teachers/'+docId,{method:'DELETE'}); loadAllData() } catch(e) { window.VyntraToast?.error('Error eliminando docente') } }
     window.deleteSubject = async function(id) { try { await vfetch(API, '/api/admin/subjects/'+id,{method:'DELETE'}); loadAllData() } catch(e) { window.VyntraToast?.error('Error eliminando materia') } }

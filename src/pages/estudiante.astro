@@ -232,7 +232,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
 <script define:vars={{ apiUrl, wsUrl }}>
 (function(){
   var studentId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
-  if (!studentId) { window.location.href = '/login'; return }
+  if (!studentId) { window.VyntraToast?.error('Sesión no encontrada.'); setTimeout(function(){ window.location.href='/login' },1500); return }
   var userGrade = localStorage.getItem('userGrade') || ''
   var userName = localStorage.getItem('userName') || 'Estudiante'
   var currentSection = 'inicio'
@@ -245,12 +245,18 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
   function apiFetch(path, opts) {
     var url = apiUrl.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
     var headers = { 'Content-Type': 'application/json' }
-    var merged = Object.assign({ credentials: 'include', headers: headers }, opts || {})
+    var ctrl = new AbortController()
+    var timer = setTimeout(function () { ctrl.abort() }, 15000)
+    var merged = Object.assign({ credentials: 'include', signal: ctrl.signal, headers: headers }, opts || {})
     if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) merged.body = JSON.stringify(merged.body)
     if (merged.body instanceof FormData) delete merged.headers['Content-Type']
     return fetch(url, merged).then(function(r) {
-      if (r.status === 401) { localStorage.clear(); window.location.href = '/login'; return {} }
+      clearTimeout(timer)
+      if (r.status === 401) { localStorage.clear(); window.VyntraToast?.error('Sesión expirada. Redirigiendo...'); setTimeout(function(){ window.location.href='/login' },1500); return {} }
       return r.json().catch(function(){ return {} })
+    }).catch(function(e) {
+      clearTimeout(timer)
+      throw e
     })
   }
 
@@ -539,7 +545,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
   }
   window.voteFor = async function(candId) {
     try {
-      await fetch(apiUrl + '/api/vote', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({ candidate_id:candId, student_id:studentId }) })
+      await apiFetch('/api/vote', { method:'POST', body:{ candidate_id:candId, student_id:studentId } })
       window.VyntraToast?.success('Voto registrado') || alert('Voto registrado')
       loadCandidates()
     } catch(e) { window.VyntraToast?.error('Error al votar') }

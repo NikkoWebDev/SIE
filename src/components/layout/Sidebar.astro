@@ -72,7 +72,7 @@ const cfg = configs[role]
     {cfg.sections.map(s => (
       <button
         data-section-id={s.id}
-        class={`sidebar-link w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 text-text-secondary hover:text-text hover:bg-brand-maroon/5 dark:hover:bg-brand-gold/5 ${activeSection === s.id ? 'active bg-brand-maroon/8 dark:bg-brand-gold/10 text-brand-maroon dark:text-brand-gold-light font-semibold border-l-[3px] border-brand-maroon dark:border-brand-gold' : 'border-l-[3px] border-transparent'}`}
+        class={`sidebar-link w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 text-text-secondary hover:text-text hover:bg-brand-maroon/5 dark:hover:bg-brand-gold/5 ${activeSection === s.id ? 'active bg-brand-maroon/8 dark:bg-brand-gold/10 font-semibold border-l-[3px] border-brand-maroon dark:border-brand-gold' : 'border-l-[3px] border-transparent'}`}
         onclick={`window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: '${s.id}' }}))`}
       >
         <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -111,6 +111,18 @@ const cfg = configs[role]
 <script define:vars={{ role }}>
   document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('vyntra-sidebar-' + role)
+    const overlay = document.getElementById('sidebar-overlay-' + role)
+
+    // Close sidebar on mobile when a nav item is clicked
+    sidebar?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-section-id]')
+      if (!btn || window.innerWidth >= 1024) return
+      const isMobile = true
+      sidebar.classList.add('-translate-x-full')
+      sidebar.classList.remove('translate-x-0')
+      if (overlay) overlay.classList.add('hidden')
+    })
+
     window.addEventListener('vyntra:navigate', (e) => {
       const section = (e).detail.section
       if (!section) return
@@ -118,14 +130,10 @@ const cfg = configs[role]
         const sid = btn.getAttribute('data-section-id')
         const isActive = sid === section
         btn.classList.toggle('active', isActive)
-        btn.classList.toggle('bg-brand-maroon/8', isActive)
+        btn.classList.toggle('bg-brand-maroon/8', isActive && !document.documentElement.classList.contains('dark'))
         btn.classList.toggle('dark:bg-brand-gold/10', isActive)
-        btn.classList.toggle('text-brand-maroon', isActive)
-        btn.classList.toggle('dark:text-brand-gold-light', isActive)
         btn.classList.toggle('font-semibold', isActive)
         btn.classList.toggle('border-transparent', !isActive)
-        btn.classList.toggle('border-l-brand-maroon', isActive)
-        btn.classList.toggle('dark:border-l-brand-gold', isActive)
         if (isActive) btn.setAttribute('aria-current', 'page')
         else btn.removeAttribute('aria-current')
       })
