@@ -111,24 +111,24 @@ const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
   </main>
 
   <!-- Forgot Password Modal -->
-  <div id="forgot-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+  <div id="forgot-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Recuperar acceso">
     <div class="bg-white dark:bg-surface-dark-elevated border border-border rounded-2xl shadow-modal p-6 max-w-sm w-11/12 mx-auto animate-scale-in">
       <div id="forgot-step-1">
         <h3 class="font-bold text-base mb-1" style="font-family:'Fraunces',serif">Recuperar Acceso</h3>
         <p class="text-xs text-text-tertiary mb-4">Ingresa tu identificación para recibir un código de recuperación.</p>
         <input type="text" id="forgot-credential" placeholder="Identificación institucional" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
         <button id="forgot-send-btn" class="w-full h-10 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Enviar Código</button>
-        <div id="forgot-step-1-error" class="hidden mt-2 text-xs text-brand-danger text-center"></div>
+      <div id="forgot-step-1-error" class="hidden mt-2 text-xs text-brand-danger text-center" role="alert"></div>
       </div>
       <div id="forgot-step-2" class="hidden">
-        <h3 class="font-bold text-base mb-1" style="font-family:'Fraunces',serif">Nueva Contraseña</h3>
-        <p class="text-xs text-text-tertiary mb-4">Ingresa el código y tu nueva contraseña.</p>
+        <h3 class="font-bold text-base mb-1" style="font-family:'Fraunces',serif">Restablecer Contraseña</h3>
+        <p class="text-xs text-text-tertiary mb-4">Ingresa el código recibido y tu nueva contraseña.</p>
         <input type="text" id="forgot-code" placeholder="Código de 6 dígitos" maxlength="6" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
         <input type="password" id="forgot-new-pass" placeholder="Nueva contraseña" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
         <input type="password" id="forgot-confirm-pass" placeholder="Confirmar contraseña" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
         <button id="forgot-reset-btn" class="w-full h-10 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Restablecer</button>
-        <div id="forgot-step-2-error" class="hidden mt-2 text-xs text-brand-danger text-center"></div>
-        <div id="forgot-step-2-success" class="hidden mt-2 text-xs text-success text-center"></div>
+        <div id="forgot-step-2-error" class="hidden mt-2 text-xs text-brand-danger text-center" role="alert"></div>
+        <div id="forgot-step-2-success" class="hidden mt-2 text-xs text-success text-center" role="status"></div>
       </div>
       <button class="mt-4 text-xs text-text-tertiary hover:text-text" onclick="document.getElementById('forgot-modal').classList.add('hidden');document.getElementById('forgot-modal').classList.remove('flex')">Cerrar</button>
     </div>

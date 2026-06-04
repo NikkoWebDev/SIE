@@ -28,7 +28,7 @@ const {
   <Sidebar role={role} activeSection={activeSection} userName={userName} userGrade={userGrade} />
 
   <main class="flex-1 flex flex-col lg:ml-60 transition-[margin] duration-300 ease-out" role="main" aria-label="Contenido principal">
-    <Topbar role={role} pageTitle={pageTitle} pageSubtitle={pageSubtitle} userName={userName}>
+    <Topbar role={role} pageTitle={pageTitle} pageSubtitle={pageSubtitle}>
       <slot name="topbar-actions" slot="actions" />
     </Topbar>
 

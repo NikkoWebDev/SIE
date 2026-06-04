@@ -4,11 +4,10 @@ export interface Props {
   pageTitle?: string
   pageSubtitle?: string
   onMobileMenu?: boolean
-  userName?: string
   class?: string
 }
 
-const { role, pageTitle = 'Panel', pageSubtitle = '', onMobileMenu = true, userName = '', class: extraClass = '' } = Astro.props
+const { role, pageTitle = 'Panel', pageSubtitle = '', onMobileMenu = true, class: extraClass = '' } = Astro.props
 ---
 
 <header class={`sticky top-0 z-20 nav-blur flex items-center gap-3 px-4 sm:px-6 h-14 ${extraClass}`}>

@@ -59,6 +59,7 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
   <slot name="head" />
 </head>
 <body class="antialiased">
+  <a href="#main-content" class="skip-link absolute -top-full left-4 z-[99999] px-4 py-2.5 rounded-lg bg-brand-maroon text-white text-sm font-semibold focus:top-4 transition-[top] duration-200">Saltar al contenido</a>
   {withNoise && <div class="noise-overlay" aria-hidden="true"></div>}
   <slot />
 </body>
