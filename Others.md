@@ -1,40 +1,27 @@
-# Others — Vyntra Academic v5.0
+# Others — Vyntra Solaris v5.0
 
-> Fecha: 2026-06-03
+> Fecha: 2026-06-03 (última verificación)
 > Hallazgos misceláneos: backend, seguridad, testing, documentación, deploy, git
 
 ---
 
-## 1. SEGURIDAD — BLOQUEANTE — Migración a httpOnly cookies INCOMPLETA (auth roto)
+## 1. ✅ FIXED — Auth flow (migración httpOnly cookies)
 
-**Hallazgo:** El frontend inició la migración a httpOnly cookies pero está a medias:
+**Resuelto en v5.0.4.** Login y dashboards ahora usan la clave `ws_access_token` de forma consistente:
 
-| Componente | Estado | Evidencia |
-|------------|--------|-----------|
-| `login.astro` | ✅ No almacena `access_token` en localStorage | 0 ocurrencias de `access_token` en localStorage.setItem |
-| `src/lib/auth.ts` | ✅ `getToken()` retorna null, usa `credentials: 'include'` | Línea 14 |
-| `src/lib/api.ts` | ✅ `apiFetch()` usa `credentials: 'include'` + CSRF | Línea 15 |
-| Dashboards (estudiante/admin/docente) | ❌ Siguen leyendo `localStorage.getItem('access_token')` | Líneas 234/145/156 respectivamente |
-| `public/js/dashboard.js` | ❌ `vfetch()` lee `access_token` de localStorage | Línea 42 |
-| Backend login endpoint | ❌ No establece httpOnly cookie (sin Set-Cookie header) | Verificado con curl |
-| Backend `dependencies.py` | ⚠️ Soporta cookies httpOnly pero no activas | Código existe, no implementado |
+| Componente | Antes | Ahora |
+|------------|-------|-------|
+| `login.astro` | No guardaba token | Guarda `ws_access_token` ✅ |
+| `estudiante.astro` | Buscaba `'access_token'` (null → redirect) | Busca `'ws_access_token'` ✅ |
+| `admin.astro` | Buscaba `'access_token'` (null → redirect) | Busca `'ws_access_token'` ✅ |
+| `docente.astro` | Buscaba `'access_token'` (null → redirect) | Busca `'ws_access_token'` ✅ |
+| `dashboard.js` (`vfetch`) | Buscaba `'access_token'` | Busca `'ws_access_token'` ✅ |
+| Backend login | No establecía `Set-Cookie` | Sigue sin establecer cookie |
 
-**Impacto:** El sistema de autenticación está ROTO. Login → dashboard → 401 → login (loop infinito). El usuario no puede usar ninguna funcionalidad protegida.
-
-**Verificación en vivo:**
-- Login API retorna `access_token` en JSON (funciona)
-- Backend NO envía `Set-Cookie` header
-- Login guarda metadata (userRole, userName, userId, profile_id, userGrade) en localStorage
-- Login NO guarda `access_token` en localStorage
-- Dashboard `vfetch()` envía `Authorization: Bearer null` → 401 → redirect a /login
-
-**Recomendación:**
-- Opción A (inmediata): Restaurar `localStorage.setItem('access_token', data.access_token)` en `login.astro`
-- Opción B (correcta): Completar la migración:
-  1. Backend: implementar `Set-Cookie` httpOnly JWT en `/api/auth/login`
-  2. Backend: implementar endpoint CSRF token
-  3. Frontend: dashboards usar `apiFetch()` de `lib/api.ts` en lugar de `vfetch()` inline
-  4. Frontend: remover lectura de `access_token` en dashboards y `dashboard.js`
+**Pendiente:** El backend aún no implementa httpOnly cookies. El token sigue viajando en `Authorization: Bearer` vía localStorage. Para completar la migración:
+1. Backend: implementar `Set-Cookie` httpOnly JWT en `/api/auth/login`
+2. Backend: implementar endpoint CSRF token
+3. Frontend: dashboards usar `apiFetch()` de `lib/api.ts` en lugar de `vfetch()` inline
 
 ---
 
@@ -67,22 +54,23 @@
 
 ---
 
-## 4. SEGURIDAD — BAJO — Sin CSP (Content Security Policy)
+## 4. ✅ FIXED — CSP (Content Security Policy)
 
-**Hallazgo:** No hay header `Content-Security-Policy` en `netlify.toml`. Los headers existentes son:
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `X-XSS-Protection: 0`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-- `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
+**Implementado.** Verificado en vivo:
 
-**Recomendación:**
-- Agregar CSP para restringir orígenes de scripts (los CDN de Chart.js, jsPDF, etc.).
-- Ejemplo:
-  ```
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://sie-8agt.onrender.com https://vyntra-backend.onrender.com;
-  ```
+```
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://sie-8agt.onrender.com wss://sie-8agt.onrender.com; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'
+```
+
+Headers de seguridad completos:
+| Header | Valor |
+|--------|-------|
+| `Content-Security-Policy` | ✅ Definido |
+| `X-Content-Type-Options` | `nosniff` ✅ |
+| `X-Frame-Options` | `DENY` ✅ |
+| `X-XSS-Protection` | `0` ✅ |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` ✅ |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` ✅ |
 
 ---
 
@@ -96,7 +84,7 @@
 
 ---
 
-## 6. BACKEND — ALTO — Backend inconsistente (tres URLs)
+## 6. ✅ FIXED — Backend URLs unificadas
 
 **Hallazgo:** Existen 3 URLs de backend:
 
@@ -129,9 +117,10 @@
 | `/api/students` | GET | ⚠️ Retorna TODOS los perfiles, no solo estudiantes |
 
 **Recomendación:**
-- ✅ `vercel.json` archivado como `vercel.json.archived`
-- Unificar a UNA URL canónica: `sie-8agt.onrender.com`
-- Eliminar referencias a `vyntra-backend.onrender.com` y `backend-colegio-hdx7.onrender.com`
+- ✅ `vercel.json` restaurado como archivo activo (ya no archivado en v5.0.4)
+- URL canónica: `https://sie-8agt.onrender.com` (verificada: 13 endpoints funcionales)
+- `session.js` ahora usa `window.__API_URL__` configurado desde build
+- CSP incluye `wss://sie-8agt.onrender.com` para WebSocket
 
 ---
 
@@ -142,7 +131,7 @@
 - ✅ Respuesta coherente: "¡Hola! Con gusto te ayudo con matemáticas..."
 - El historial usa `OrderedDict` en memoria (se pierde al reiniciar)
 
-**Migración:** Existe `backend/migrations/004_chat_history.sql` (agregado en v5.0.2) para persistencia. `backend/routers/ai_search.py` también fue agregado.
+**Migración:** Existe `backend/migrations/005_chat_history.sql` para persistencia en Supabase. `backend/routers/ai_search.py` también fue agregado.
 
 **Verificación en vivo:**
 - AI responde en chunks SSE (`data: {"token": "..."}`) + `data: [DONE]`
@@ -164,11 +153,11 @@
 
 ## 9. TESTING — MEDIO — Tests E2E inconclusos
 
-**Hallazgo:** Hay 7 archivos de test/script en `tests/`:
-- `vyntra.e2e.spec.js` — parece incompleto o placeholder
-- `vyntra-ui-improvements.spec.js` — nuevo, pocas pruebas
-- `audit.spec.cjs`, `debug_admin.cjs`, `debug_admin2.cjs`, `debug_estudiante.cjs` — scripts de depuración, no tests reales
+**Hallazgo:** Archivos en `tests/`:
+- `vyntra.e2e.spec.js` — test E2E existente
+- `audit.spec.cjs`, `debug_admin.cjs`, `debug_admin2.cjs`, `debug_estudiante.cjs` — scripts de depuración
 - `monitor.mjs` — script de monitoreo
+- `vyntra-ui-improvements.spec.js` — eliminado en v5.0.2
 
 **Recomendación:**
 - Implementar tests E2E completos que cubran:
@@ -213,18 +202,14 @@
 
 ---
 
-## 12. DEPLOY — BAJO — ✅ Resuelto: Config Netlify unificada
+## 12. DEPLOY — BAJO — ✅ Resuelto: Deploy en Netlify
 
-**Estado:** En v5.0.2:
-- `vercel.json` archivado como `vercel.json.archived`
-- `netlify.toml` es la única configuración activa
-- El sitio está deployado en Netlify: `https://vyntraacademic.netlify.app`
-- `AGENTS.md` aún menciona "Vercel (static + serverless)" — necesita actualización
-
-**Verificación en vivo:**
-- Deploy en Netlify funcional
-- URLs con hash de Astro para assets
-- Tema "Solaris" desplegado correctamente
+**Estado:** 
+- `vercel.json` archivado y luego restaurado (activo en v5.0.4)
+- Deploy activo en Netlify: `https://vyntraacademic.netlify.app` ✅
+- Assets con hash de Astro, caché 1 año immutable ✅
+- Tema "Solaris" desplegado correctamente ✅
+- `AGENTS.md` desactualizado (menciona Vercel) — pendiente de actualizar
 
 ---
 
@@ -254,13 +239,16 @@
 
 | Categoría | Prioridad | Issue |
 |-----------|-----------|-------|
-| **Auth** | 🔴 BLOQUEANTE | Migración httpOnly cookie incompleta — auth roto (login→dashboard→login loop) |
-| **Seguridad** | 🔴 Alto | Rotar Google Service Account Key (comprometida) |
-| **Backend** | 🟡 Medio | AI Tutor sin persistencia (migración `004_chat_history.sql` existe) |
-| **Backend** | 🟢 Bajo | `/api/teachers` retorna 404 (debe ser `/api/admin/teachers`) |
-| **Testing** | 🟡 Medio | Tests E2E incompletos, no ejecutados en CI |
-| **Documentación** | 🟢 Bajo | README.md mínimo, AGENTS.md desactualizado |
-| **Deploy** | ✅ FIXED | Vercel archivado, solo Netlify activo |
-| **Git** | ✅ FIXED | Secrets en .gitignore, imágenes WebP |
-| **Frontend** | ✅ FIXED | Bug `{n[0]}` resuelto en v5.0.2 |
-| **Frontend** | 🟢 Bajo | Chart.js/jspdf CDN sin SRI |
+| ✅ FIXED | Auth flow | Login y dashboards unificados con `ws_access_token` |
+| ✅ FIXED | CSP | Implementado en layouts |
+| ✅ FIXED | Backend URLs | Unificadas a `sie-8agt.onrender.com` |
+| ✅ FIXED | Deploy | Netlify activo, assets cacheados, WebP |
+| ✅ FIXED | Git | Secrets en .gitignore, imágenes WebP |
+| ✅ FIXED | Bug `{n[0]}` | Resuelto en v5.0.2 |
+| 🔴 Alto | Rotar Google Service Account Key | Clave comprometida en commit anterior |
+| 🟡 Medio | AI Tutor sin persistencia | Migración `005_chat_history.sql` existe, no implementada |
+| 🟡 Medio | Tests E2E incompletos | No ejecutados en CI |
+| 🟢 Bajo | `/api/teachers` → 404 | Ruta incorrecta (debe ser `/api/admin/teachers`) |
+| 🟢 Bajo | Chart.js no carga en dashboards | Solo en Layout.astro, dashboards usan BaseLayout |
+| 🟢 Bajo | README.md mínimo | Pendiente de expandir |
+| 🟢 Bajo | AGENTS.md desactualizado | Menciona Vercel, deploy es Netlify |

@@ -1,21 +1,23 @@
-# Optimization — Vyntra Academic v5.0
+# Optimization — Vyntra Solaris v5.0
 
-> Fecha: 2026-06-03
+> Fecha: 2026-06-03 (última verificación)
 
 ---
 
-## 1. CRÍTICO — Bundle splitting y extracción de CSS/JS
+## 1. ALTO — Bundle splitting y extracción de CSS/JS
 
-**Problema:** Todo el CSS y JS está inlne en cada página. Astro con Tailwind produce un bundle CSS único compartido, pero las páginas dashboard inlne aún más estilos y scripts manualmente.
+**Problema:** CSS y JS mayormente inline en dashboards. Astro genera bundles cacheables para CSS importado, pero los dashboards tienen estilos y scripts adicionales inline.
 
-**Impacto:** Sin cacheo efectivo, HTML de 60–130 KB por página, TTFB alto.
+**Impacto:** HTML de 60–130 KB sin cacheo efectivo, TTFB alto en recarga.
 
 **Recomendación:**
 | Acción | Beneficio |
 |--------|-----------|
-| Mover `<style>` de dashboard a imports de `theme.css` | Caché compartido |
-| Extraer JS de dashboard a archivos `.astro` con `<script>` | Astro genera archivos con hash y los cachea |
-| Dividir `estudiante.astro` (1154 líneas) en componentes | Código más mantenible, dead-code elimination |
+| Mover `<style>` de dashboard a imports de `theme.css` | Caché compartido (1 año immutable) |
+| Extraer JS inline a módulos `.astro` | Archivos con hash, cacheables |
+| Dividir `estudiante.astro` (593 líneas) en componentes | Más mantenible |
+
+**Verificación:** Astro assets tienen `Cache-Control: max-age=31536000, immutable` ✅. El problema es el CSS/JS inline NO cacheable.
 
 ---
 
@@ -33,7 +35,9 @@
 
 **Estado actual:** El script `session.js` ya hace un ping a `/api/health` en cada carga de página. La URL del backend ahora se pasa via `window.__API_URL__` desde el build (ya no hardcodeada). Sin embargo, el keep-alive sigue sin ser suficiente para mantener el backend activo durante la noche.
 
-**Verificación en vivo:** Las APIs respondieron rápidamente durante la prueba (sin cold start apreciable), probablemente porque el sitio tuvo tráfico reciente.
+**Verificación en vivo:** APIs respondieron en <2s durante la prueba (13 endpoints, 3 roles). Sin cold start apreciable.
+
+**Recomendación adicional:** Existe `scripts/keep-alive.sh` en el repo — implementar como cron job externo (cron-job.org) para mantener el backend activo 24/7.
 
 ---
 
@@ -47,28 +51,21 @@
 - ❌ Las imágenes WebP no se usan con `<picture>` para fallback — navegadores antiguos (Safari <14) no muestran nada.
 
 **Recomendación:**
-- **Netlify:** Agregar en `netlify.toml`:
-  ```toml
-  [[headers]]
-    for = "/assets/*"
-    [headers.values]
-      Cache-Control = "public, max-age=31536000, immutable"
-  ```
-- **Optimización de imágenes:** Usar el componente `<Image />` de Astro con formatos modernos (avif, webp) y tamaños responsivos.
-- **Precarga de fuentes:** Agregar `rel="preload"` para Syne y Sora en el `<head>`.
+- **Netlify:** Ya tiene caché para `_astro/*` (Astro lo maneja). Verificado: `max-age=31536000, immutable` ✅
+- **Imágenes WebP:** Convertidas en v5.0.2. Pendiente: `<picture>` con fallback PNG para Safari <14
+- **Precarga de fuentes:** Agregar `rel="preload"` para Syne y Sora en el `<head>`
 
 ---
 
 ## 4. MEDIO — Carga bajo demanda (lazy loading)
 
-**Problema:** Los dashboards cargan toda la lógica de todas las secciones al inicio, incluso si el usuario nunca las visita.
+**Problema:** Los dashboards cargan toda la lógica de todas las secciones al inicio.
 
-**Impacto:** JS innecesario se parsea y ejecuta en cada carga de página (~30–50 KB de lógica de dashboard no usada inmediatamente).
+**Impacto:** JS innecesario se parsea en cada carga (~30–50 KB no usado inmediatamente).
 
 **Recomendación:**
-- **Lazy loading de secciones:** Cada sección (Notas, Exámenes, Tareas, etc.) carga su JS solo cuando el usuario hace clic en ella.
-- **Dynamic import:** Usar `import()` para cargar Chart.js y jsPDF solo cuando se necesiten (en secciones de notas y PDFs).
-- **Intersection Observer:** Para cargar contenido cuando las secciones están cerca del viewport.
+- **Dynamic import:** Cargar Chart.js y jsPDF solo cuando se necesiten
+- Las secciones ya se muestran/ocultan con `display:none`/`block` — siguiente paso: lazy load de datos y librerías
 
 ---
 
@@ -83,17 +80,11 @@
 
 ---
 
-## 6. BAJO — CDN con SRI (Subresource Integrity)
+## 6. ✅ FIXED — CDN con SRI (Subresource Integrity)
 
-**Problema:** Las 3 librerías CDN (Chart.js, jsPDF, autotable) se cargan sin `integrity`. Además de seguridad, si el CDN está caído, la app se rompe.
+**Resuelto.** Chart.js en `Layout.astro` incluye `integrity` SHA-384. Layout.astro no es usado por dashboards (usan BaseLayout), pero la librería está protegida donde se carga.
 
-**Recomendación:**
-- Instalar como dependencias npm y bundlear:
-  ```bash
-  npm install chart.js jspdf jspdf-autotable
-  ```
-- O agregar `integrity` + `fallback` CDN.
-- Usar `defer` (ya se usa) + cargar desde `node_modules` con Astro.
+**Pendiente:** jsPDF y autotable no se cargan desde CDN actualmente — se cargarían dinámicamente si se implementa el export PDF.
 
 ---
 
@@ -122,10 +113,13 @@
 
 ## Resumen de prioridades
 
-| Prioridad | Acción | Impacto estimado |
-|-----------|--------|------------------|
-| 🔴 Crítico | Bundle splitting (CSS/JS externo) | -50% tamaño HTML, +caché |
-| 🔴 Alto | Cold start backend | Disponibilidad 24/7 |
-| 🔴 Alto | Caché de assets + imágenes optimizadas | -30% LCP |
-| 🟡 Medio | Lazy loading de secciones | -40% JS inicial |
-| 🟢 Bajo | Service Worker, SRI, CWV | Mejora progresiva |
+| Prioridad | Acción | Estado |
+|-----------|--------|--------|
+| 🔴 Alto | Bundle splitting (CSS/JS externo) | Pendiente |
+| 🔴 Alto | Cold start backend | ⚠️ Keep-alive script existe, falta cron |
+| 🟡 Medio | Lazy loading de secciones | Pendiente |
+| 🟡 Medio | Chart.js no carga en dashboards | Pendiente |
+| 🟢 Bajo | Service Worker / PWA | Pendiente |
+| ✅ Fixed | Caché de assets (1 año immutable) | Verificado |
+| ✅ Fixed | Imágenes WebP | v5.0.2 |
+| ✅ Fixed | SRI en Chart.js | Verificado |
