@@ -801,7 +801,9 @@ async def _stream_with_react(
 
             if finish_reason == "tool_calls" or (finish_reason == "stop" and tool_calls_buffer):
                 if tool_call_names and iteration == 1:
-                    yield f"data: {json.dumps({'tool_status': f'Consultando datos: {", ".join(tool_call_names)}'})}\n\n"
+                    tool_names_str = ", ".join(tool_call_names)
+                    status = json.dumps({"tool_status": f"Consultando datos: {tool_names_str}"})
+                    yield f"data: {status}\n\n"
                 current_messages.append({"role": "assistant", "content": assistant_content or None})
                 tool_calls_list = list(tool_calls_buffer.values())
                 current_messages[-1]["tool_calls"] = [
