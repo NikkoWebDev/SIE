@@ -231,9 +231,8 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
 
 <script define:vars={{ apiUrl, wsUrl }}>
 (function(){
-  var token = localStorage.getItem('access_token')
-  if (!token) { window.location.href = '/login'; return }
   var studentId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
+  if (!studentId) { window.location.href = '/login'; return }
   var userGrade = localStorage.getItem('userGrade') || ''
   var userName = localStorage.getItem('userName') || 'Estudiante'
   var currentSection = 'inicio'
@@ -245,7 +244,8 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
 
   function apiFetch(path, opts) {
     var url = apiUrl.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
-    var merged = Object.assign({ headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } }, opts || {})
+    var headers = { 'Content-Type': 'application/json' }
+    var merged = Object.assign({ credentials: 'include', headers: headers }, opts || {})
     if (merged.body && typeof merged.body === 'object' && !(merged.body instanceof FormData)) merged.body = JSON.stringify(merged.body)
     if (merged.body instanceof FormData) delete merged.headers['Content-Type']
     return fetch(url, merged).then(function(r) {

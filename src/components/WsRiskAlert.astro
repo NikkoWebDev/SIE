@@ -12,7 +12,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
     var ws = null, reconnectTimer = null, delay = 1000
 
     function connect() {
-      var token = localStorage.getItem('access_token')
+      var token = localStorage.getItem('ws_access_token')
       if (!token) { scheduleReconnect(); return }
       try { ws = new WebSocket(wsUrl + '?token=' + encodeURIComponent(token)) } catch(e) { scheduleReconnect(); return }
       ws.onopen = function() { delay = 1000 }

@@ -58,7 +58,7 @@ export function login(user: AuthUser): void {
 }
 
 export function logout(): void {
-  localStorage.clear()
+  localStorage.clear() // clears ws_access_token too
   const API_URL = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
   fetch(`${API_URL}/api/auth/logout`, {
     method: 'POST',

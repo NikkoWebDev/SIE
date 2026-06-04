@@ -69,11 +69,9 @@ const {
     }
 
     window.vfetch = function (apiUrl, path, opts) {
-      var token = null
-      try { token = localStorage.getItem('access_token') } catch (_) {}
-      var headers = Object.assign({ 'Authorization': 'Bearer ' + token }, opts && opts.headers)
-      return fetch(apiUrl + path, Object.assign({}, opts, { headers: headers })).then(function (r) {
-        if (r.status === 401) { try { localStorage.clear() } catch (_) {}; window.location.href = '/login'; throw new Error('Token expirado') }
+      var headers = Object.assign({ 'Content-Type': 'application/json' }, opts && opts.headers)
+      return fetch(apiUrl + path, Object.assign({ credentials: 'include' }, opts, { headers: headers })).then(function (r) {
+        if (r.status === 401) { try { localStorage.clear() } catch (_) {}; window.location.href = '/login'; throw new Error('Sesión expirada') }
         return r
       })
     }

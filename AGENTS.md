@@ -2,12 +2,12 @@
 
 ## Project Overview
 Full-stack Academic Platform (VYNTRA Solaris v5.0) — Sogamoso, Boyacá, Colombia.
-- **Framework**: Astro v5 (static + serverless SSR)
+- **Framework**: Astro v5 (SSG)
 - **UI**: Tailwind CSS v3 + CSS design tokens (`src/styles/theme.css`)
-- **Deployment**: Netlify (primary) + Vercel (secondary)
+- **Deployment**: Netlify (static, redirects to Render backend)
 - **Backend**: FastAPI (Python, hosted on Render)
 - **Database**: Supabase (Postgres)
-- **Auth**: JWT (stored in localStorage)
+- **Auth**: JWT in httpOnly cookie (Set-Cookie by backend). `ws_access_token` in localStorage only for WebSocket.
 - **AI**: OpenRouter API streaming chat (VYNTRA Tutor)
 
 ## Design System — "Solar Technocratic"
@@ -56,16 +56,17 @@ Full-stack Academic Platform (VYNTRA Solaris v5.0) — Sogamoso, Boyacá, Colomb
 - **404.astro** — Solar eclipse themed error page.
 
 ## API Integration
-- **Auth**: `POST /api/auth/login` → JWT token → localStorage (`access_token`, `userId`, `userRole`, `userName`)
+- **Backend URL**: `https://sie-8agt.onrender.com` (canonical)
+- **Auth**: `POST /api/auth/login` → backend sets httpOnly `Set-Cookie`. Response JSON has `access_token` (for WebSocket only). User metadata stored in localStorage (`userId`, `userRole`, etc.)
 - **Grades**: `GET /api/grades?student_id=X`, `GET /api/grades?teacher_id=X`, `POST /api/teacher/submit-grade`
 - **Financial**: `GET /api/students/X/financial-status`, `PATCH /api/admin/students/X/financial`
-- **Risk**: `GET /api/students/risk`, WebSocket at `ws://.../ws?token=JWT`
+- **Risk**: `GET /api/students/risk`, WebSocket at `wss://sie-8agt.onrender.com/ws?token=JWT`
 - **Notices**: `GET /api/notices`, `POST /api/admin/notices`
 - **Stats**: `GET /api/admin/stats`
 - **Candidates**: `GET/POST/DELETE /api/admin/candidates`, `POST /api/admin/election-reset`
 - **AI**: `POST /api/ai/student-tutor`, `POST /api/ai/teacher-tutor`, `POST /api/ai/admin-assistant` (SSE streaming)
 - **PDF**: `GET /api/grades/download-pdf?student_id=X`
-- **URL**: Centralized via `import.meta.env.PUBLIC_API_URL` (set in `.env` local, `netlify.toml` deploy)
+- **URL**: Set via `import.meta.env.PUBLIC_API_URL` (`.env` local, Netlify build env)
 
 ## Build & Run
 ```bash
@@ -79,7 +80,7 @@ npm run preview      # astro preview
 1. All dashboard pages use `BaseLayout` + `<DashboardShell role={role}>` wrapper pattern
 2. `Sidebar.astro` uses `define:vars` for role-specific IDs (sidebar-username-{role}, sidebar-metadata-{role})
 3. Theme toggle: `window.setVyntraTheme(dark)` available via shared dashboard lib
-4. API calls: use inline `fetch` with `Authorization: Bearer ${token}` header; 401 → redirect
+4. API calls: use `window.vfetch()` or inline `fetch` with `credentials: 'include'` (cookie auth); 401 → redirect
 5. Error handling: use `window.VyntraToast?.error()` (available on all DashboardShell pages)
 6. Section navigation: `window.showSection(id)` — dispatches `vyntra:navigate` CustomEvent for sidebar sync
 7. Fonts: loaded from Google Fonts CDN in BaseLayout `<head>`; use Tailwind font classes

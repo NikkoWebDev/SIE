@@ -153,9 +153,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 <script define:vars={{ apiUrl }}>
   (function () {
     var API = apiUrl
-    var token = localStorage.getItem('access_token')
-    if (!token) { window.location.href = '/login'; return }
     var role = (localStorage.getItem('userRole')||'').toUpperCase()
+    if (!role) { window.location.href = '/login'; return }
     if (!['PROFESOR','TEACHER','DOCENTE'].includes(role)) { window.location.href = '/'; return }
     var userId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
     var userName = localStorage.getItem('userName') || 'Docente'

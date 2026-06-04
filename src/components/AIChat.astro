@@ -80,7 +80,6 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     var userNameText = root.getAttribute('data-username') || 'Usuario'
     var welcomeText = root.getAttribute('data-welcome') || ''
     var storageKey = 'vyntra-chat-' + role
-    var token = localStorage.getItem('access_token') || ''
     var userName = localStorage.getItem('userName') || userNameText
 
     var toggle = document.getElementById('ai-chat-toggle')
@@ -193,7 +192,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       try {
         var res = await fetch(apiUrl + endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ message: text }),
         })
         if (!res.ok) { bubble.innerHTML = '<span style="color:var(--danger)">Error del asistente.</span>'; setSending(false); return }

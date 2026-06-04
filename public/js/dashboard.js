@@ -36,17 +36,18 @@
     }
   }
 
-  // ── API Fetch Helper ──
+  // ── API Fetch Helper (auth via httpOnly cookie, not localStorage) ──
   window.vfetch = function (apiUrl, path, opts) {
-    var token = null
-    try { token = localStorage.getItem('access_token') } catch (_) {}
-    var headers = Object.assign({ 'Authorization': 'Bearer ' + token }, opts && opts.headers)
-    var options = Object.assign({}, opts, { headers: headers })
+    var headers = Object.assign({}, opts && opts.headers)
+    if (headers['Content-Type'] === undefined && !(opts && opts.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json'
+    }
+    var options = Object.assign({ credentials: 'include' }, opts, { headers: headers })
     return fetch(apiUrl + path, options).then(function (r) {
       if (r.status === 401) {
         try { localStorage.clear() } catch (_) {}
         window.location.href = '/login'
-        throw new Error('Token expirado')
+        throw new Error('Sesión expirada')
       }
       return r
     })

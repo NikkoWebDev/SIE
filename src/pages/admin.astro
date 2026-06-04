@@ -142,9 +142,8 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
 <script define:vars={{ apiUrl, GRADOS }}>
   (function() {
     var API = apiUrl
-    var token = localStorage.getItem('access_token')
-    if (!token) { window.location.href = '/login'; return }
     var role = (localStorage.getItem('userRole')||'').toUpperCase()
+    if (!role) { window.location.href = '/login'; return }
     if (!['ADMIN','RECTOR'].includes(role)) { window.location.href = '/'; return }
     var userName = localStorage.getItem('userName') || 'Admin'
 

@@ -60,17 +60,26 @@ def decode_jwt(token: str) -> dict[str, Any]:
     )
 
 
+def _cookie_samesite() -> str:
+    """SameSite=None for cross-origin (Netlify→Render), Lax for localhost development."""
+    return "none" if os.getenv("ENV", "development") == "production" else "lax"
+
+
+def _cookie_secure() -> bool:
+    """Secure=True for production (required with SameSite=None)."""
+    return os.getenv("ENV", "development") == "production"
+
+
 def set_jwt_cookie(response: Response, token: str, token_type: str = "bearer") -> None:
-    """Set JWT as an httpOnly, SameSite=Strict cookie. Secure only in production."""
-    is_secure = os.getenv("ENV", "development") == "production"
+    """Set JWT as httpOnly cookie. Cross-origin safe (SameSite=None + Secure in prod)."""
     max_age = TOKEN_EXPIRY_HOURS * 3600
     response.set_cookie(
         key="access_token",
         value=token,
         max_age=max_age,
         httponly=True,
-        secure=is_secure,
-        samesite="strict",
+        secure=_cookie_secure(),
+        samesite=_cookie_samesite(),
         path="/",
     )
     response.set_cookie(
@@ -78,17 +87,16 @@ def set_jwt_cookie(response: Response, token: str, token_type: str = "bearer") -
         value=token_type,
         max_age=max_age,
         httponly=True,
-        secure=is_secure,
-        samesite="strict",
+        secure=_cookie_secure(),
+        samesite=_cookie_samesite(),
         path="/",
     )
 
 
 def clear_jwt_cookie(response: Response) -> None:
     """Clear JWT cookies (logout)."""
-    is_secure = os.getenv("ENV", "development") == "production"
-    response.delete_cookie(key="access_token", path="/", httponly=True, secure=is_secure, samesite="strict")
-    response.delete_cookie(key="token_type", path="/", httponly=True, secure=is_secure, samesite="strict")
+    response.delete_cookie(key="access_token", path="/", httponly=True, secure=_cookie_secure(), samesite=_cookie_samesite())
+    response.delete_cookie(key="token_type", path="/", httponly=True, secure=_cookie_secure(), samesite=_cookie_samesite())
 
 
 def auth_dependency(request: Request) -> str:
@@ -163,24 +171,22 @@ CSRF_SKIP_PATHS: frozenset[str] = frozenset({
 def set_csrf_cookie(response: Response) -> str:
     """Set a CSRF token cookie (non-httpOnly so JS can read it for header)."""
     token = secrets.token_hex(32)
-    is_secure = os.getenv("ENV", "development") == "production"
     response.set_cookie(
         key="csrf_token",
         value=token,
         max_age=TOKEN_EXPIRY_HOURS * 3600,
         httponly=False,
-        secure=is_secure,
-        samesite="strict",
+        secure=_cookie_secure(),
+        samesite=_cookie_samesite(),
         path="/",
     )
     return token
 
 
 def clear_csrf_cookie(response: Response) -> None:
-    is_secure = os.getenv("ENV", "development") == "production"
     response.delete_cookie(
         key="csrf_token", path="/", httponly=False,
-        secure=is_secure, samesite="strict",
+        secure=_cookie_secure(), samesite=_cookie_samesite(),
     )
 
 
