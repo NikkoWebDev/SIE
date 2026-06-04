@@ -289,7 +289,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       try {
         await fetch(API+'/api/teacher/guides', { method:'POST', credentials:'include', body:fd })
         window.VyntraToast?.success('Guía publicada')
-        loadGuides()
+        loadGuides(); loadTasks()
       } catch(e) { window.VyntraToast?.error('Error publicando guía: ' + (e?.message || 'Reintente')) }
     }
 
@@ -299,7 +299,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       try {
         var data = await vfetch(API, '/api/teacher/guides/'+userId).then(function(r){return r.json()})
         list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(g){ return '<div class="flex justify-between p-2.5 border-b border-border"><div><strong class="text-xs">'+window.escapeHtml(g.title)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(g.subject_name)+' · Grado '+window.escapeHtml(g.grade)+'</span></div>'+(g.file_url?'<a href="'+g.file_url+'" target="_blank" class="text-xs text-brand-maroon">Ver</a>':'')+'</div>' }).join('') : '<p class="py-4">No hay guías.</p>'
-      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando guías</p>' } {
+      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando guías</p>' }
+    }
+
+    async function loadTasks() {
       var list = document.getElementById('tasks-list')
       if (!list) return
       try {

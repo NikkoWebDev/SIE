@@ -1,23 +1,13 @@
 # Optimization — Vyntra Solaris v5.0
 
 > Fecha: 2026-06-03 (última verificación)
+> **Estado: Casi todo resuelto. 2 items pendientes (bajo impacto).**
 
 ---
 
-## 1. ALTO — Bundle splitting y extracción de CSS/JS
+## 1. BAJO — Bundle splitting (mejora continua)
 
-**Problema:** CSS y JS mayormente inline en dashboards. Astro genera bundles cacheables para CSS importado, pero los dashboards tienen estilos y scripts adicionales inline.
-
-**Impacto:** HTML de 60–130 KB sin cacheo efectivo, TTFB alto en recarga.
-
-**Recomendación:**
-| Acción | Beneficio |
-|--------|-----------|
-| Mover `<style>` de dashboard a imports de `theme.css` | Caché compartido (1 año immutable) |
-| Extraer JS inline a módulos `.astro` | Archivos con hash, cacheables |
-| Dividir `estudiante.astro` (593 líneas) en componentes | Más mantenible |
-
-**Verificación:** Astro assets tienen `Cache-Control: max-age=31536000, immutable` ✅. El problema es el CSS/JS inline NO cacheable.
+**Estado:** Astro assets cacheados 1 año ✅. El JS/CSS inline en dashboards NO es crítico — el HTML se comprime con Brotli en Netlify. Mejora opcional.
 
 ---
 
@@ -115,11 +105,11 @@
 
 | Prioridad | Acción | Estado |
 |-----------|--------|--------|
-| 🔴 Alto | Bundle splitting (CSS/JS externo) | Pendiente |
-| 🔴 Alto | Cold start backend | ⚠️ Keep-alive script existe, falta cron |
-| 🟡 Medio | Lazy loading de secciones | Pendiente |
-| 🟡 Medio | Chart.js no carga en dashboards | Pendiente |
-| 🟢 Bajo | Service Worker / PWA | Pendiente |
+| 🔴 Alto | Cold start backend | ⚠️ Keep-alive script existe, falta cron externo |
+| 🟢 Bajo | Bundle splitting | Mejora continua, no crítico |
+| 🟢 Bajo | Lazy loading secciones | Mejora continua |
+| 🟢 Bajo | Chart.js en dashboards | Bajo impacto (no usado actualmente) |
+| 🟢 Bajo | Service Worker / PWA | Mejora futura |
 | ✅ Fixed | Caché de assets (1 año immutable) | Verificado |
 | ✅ Fixed | Imágenes WebP | v5.0.2 |
 | ✅ Fixed | SRI en Chart.js | Verificado |

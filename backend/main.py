@@ -111,16 +111,31 @@ def _get_cors_origin(request: Request) -> str:
     return "https://colegiociudaddelsol.edu.co"
 
 
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    origin = _get_cors_origin(request)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+        },
+    )
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error("Unhandled exception: %s\n%s", exc, traceback.format_exc())
-    status = exc.status_code if isinstance(exc, StarletteHTTPException) else 500
-    detail = exc.detail if isinstance(exc, StarletteHTTPException) else "Error interno del servidor"
+    status = getattr(exc, "status_code", 500)
+    detail = getattr(exc, "detail", "Error interno del servidor")
     origin = _get_cors_origin(request)
     return JSONResponse(
         status_code=status,
         content={"detail": detail},
-        headers={"Access-Control-Allow-Origin": origin},
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+        },
     )
 
 
@@ -132,14 +147,8 @@ ALLOWED_ORIGINS: list[str] = [
 _env_origins = os.getenv("ALLOWED_ORIGINS", "")
 if _env_origins:
     ALLOWED_ORIGINS.extend([o.strip() for o in _env_origins.split(",") if o.strip()])
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Remove wildcard to avoid CORS + credentials conflicts
+ALLOWED_ORIGINS = [o for o in ALLOWED_ORIGINS if o != "*"]
 
 
 @app.middleware("http")
@@ -151,7 +160,10 @@ async def csrf_middleware(request: Request, call_next: Any) -> Response:
         return JSONResponse(
             status_code=e.status_code,
             content={"detail": e.detail},
-            headers={"Access-Control-Allow-Origin": origin},
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+            },
         )
     return await call_next(request)
 
@@ -166,13 +178,30 @@ async def rate_limit_middleware(request: Request, call_next: Any) -> Response:
         return JSONResponse(
             status_code=429,
             content={"detail": "Demasiadas solicitudes. Intenta de nuevo en un minuto."},
-            headers={"Access-Control-Allow-Origin": origin, "Retry-After": "60"},
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Retry-After": "60",
+            },
         )
     return await call_next(request)
 
 
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next: Any) -> Response:
+    if request.method == "OPTIONS":
+        origin = request.headers.get("Origin", "")
+        if origin in ALLOWED_ORIGINS:
+            return Response(
+                status_code=204,
+                headers={
+                    "Access-Control-Allow-Origin": origin,
+                    "Access-Control-Allow-Credentials": "true",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-CSRF-Token",
+                    "Access-Control-Max-Age": "600",
+                },
+            )
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
@@ -180,9 +209,14 @@ async def security_headers_middleware(request: Request, call_next: Any) -> Respo
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    origin = request.headers.get("Origin", "")
+    if origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
 
 
+@app.middleware("http")
 async def auth_middleware(request: Request, call_next: Any) -> Response:
     path = request.url.path
     if request.method == "OPTIONS" or path.startswith("/ws") or path in SKIP_AUTH_PATHS:

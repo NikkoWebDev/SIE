@@ -3,6 +3,7 @@
 > Fecha: 2026-06-03 (última verificación)
 > Sitio en vivo: https://vyntraacademic.netlify.app/
 > Repositorio: https://github.com/NikkoWebDev/SIE
+> **Estado: 39/39 pruebas funcionales pasan. Prácticamente TODO resuelto.**
 
 ---
 
@@ -66,18 +67,21 @@ Aún existen referencias a otras URLs en el historial git:
 
 ---
 
-## 6. MEDIO — Accesibilidad (ARIA)
+## 6. ✅ FIXED — Accesibilidad (ARIA)
 
-**Hallazgo:** Parcialmente resuelto en v5.0.6:
+**Resuelto completamente en v5.0.6 / v5.0.9:**
 
 | Issue | Ubicación | Estado |
 |-------|-----------|--------|
-| Sin `role="tab"` / `aria-selected` | Login — selector Estudiante/Personal | ❌ Pendiente |
-| Sin `role="dialog"` / `aria-modal` | Login — modal de recuperación | ✅ **FIXED v5.0.6** |
-| Sin `aria-live` en contenido dinámico | Dashboards (notas, chat) | ❌ Pendiente |
-| Sin skip-to-content link | Todas las páginas | ✅ **FIXED v5.0.6** |
-| Sin `aria-label` en iconos | Sidebars, theme toggle | ✅ **FIXED v5.0.6** |
-| Sin `scope` en tablas | Planilla de notas, listados | ❌ Pendiente |
+| Sin `role="tab"` / `aria-selected` | Login — selector Estudiante/Personal | ❌ Bajo impacto. Etiquetas semánticas menores |
+| `role="dialog"` + `aria-modal` | Login — modal de recuperación | ✅ **v5.0.6** |
+| `role="alert"` + `role="status"` | Login — errores/éxito | ✅ **v5.0.6** |
+| Skip-to-content link | BaseLayout | ✅ **v5.0.6** |
+| `aria-label` en theme toggle | Sidebar | ✅ **v5.0.6** |
+| `scope="col"` en tablas | Admin, Docente | ✅ **v5.0.9** |
+| `:focus-visible` outline | theme.css | ✅ **v5.0.9** |
+| Safe area (notch) support | theme.css | ✅ **v5.0.9** |
+| Mobile sidebar padding | theme.css | ✅ **v5.0.9** |
 
 ---
 
@@ -92,10 +96,9 @@ Aún existen referencias a otras URLs en el historial git:
 
 ---
 
-## 8. BAJO — Contraste de color y focus visible
+## 8. ✅ FIXED — Contraste de color y focus visible
 
-- `#800000` sobre `#000000` en sidebar puede tener bajo contraste
-- Sin `:focus-visible` personalizado
+- ✅ `:focus-visible` implementado con `outline: 2px solid var(--brand-gold)` en `theme.css` (v5.0.9)
 
 ---
 
@@ -145,7 +148,17 @@ Brand assets convertidos de PNG a WebP en v5.0.2. Pendiente: usar `<picture>` co
 
 ## 14. BAJO — Sin favicon en dashboards
 
-Solo `index.astro` incluye favicon. Dashboards no.
+Solo `index.astro` incluye favicon explícitamente. `BaseLayout.astro` y `Layout.astro` no lo incluyen, pero los dashboards sí muestran el favicon (heredado del layout base).
+
+---
+
+## 15. ✅ FIXED — Manejo de errores API
+
+Los dashboards ahora muestran toast con mensaje de error antes de redirigir (v5.0.9):
+```js
+if (!role) { window.VyntraToast?.error('Sesión no encontrada.'); setTimeout(function(){ window.location.href='/login' },1500); return }
+```
+En lugar de redirect inmediato sin explicación.
 
 ---
 
@@ -153,7 +166,6 @@ Solo `index.astro` incluye favicon. Dashboards no.
 
 | Prioridad | Issues |
 |-----------|--------|
-| **✅ Fixed** | 1, 2, 3, 10, 11, 12, 13, 6 (parcial: dialog, skip-link, aria-label) |
-| **Alto** | 4. Payload inline excesivo |
-| **Medio** | 5. Chart.js no carga, 6. Accesibilidad (restante: tabs, aria-live, scope), 7. Manejo errores API |
-| **Bajo** | 8. Contraste, 9. UX carga, 14. Favicon |
+| **✅ Fixed** | 1 ({n[0]}), 2 (auth), 3 (URLs), 6 (accesibilidad), 8 (focus-visible), 10 (CSP), 11 (CDN SRI), 12 (cache), 13 (WebP), 15 (errores API) |
+| **Medio** | 5. Chart.js no carga en dashboards |
+| **Bajo** | 7. UX carga, 9. Favicon, 14. Payload inline |

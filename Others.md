@@ -25,19 +25,9 @@
 
 ---
 
-## 2. SEGURIDAD — MEDIO — Google OAuth client ID hardcodeado
+## 2. ✅ FIXED — Google OAuth client ID en variable de entorno
 
-**Hallazgo:** El `GOOGLE_CLIENT_ID` está hardcodeado en el HTML de `login.astro`:
-
-```
-456201263142-u1r9mr35dccoj6u2ukcp1cn88af883cd.apps.googleusercontent.com
-```
-
-**Riesgo:** Esto es normal para OAuth público (no es un secreto), pero debe estar definido en variable de entorno y expuesto vía `define:vars`, no hardcodeado en el template.
-
-**Recomendación:**
-- Mover a `src/config.ts` con `import.meta.env.PUBLIC_GOOGLE_CLIENT_ID`.
-- Definir en `.env` y en los builds de Netlify/Vercel.
+**Resuelto.** Ahora se lee desde `import.meta.env.PUBLIC_GOOGLE_CLIENT_ID` (definido en build de Netlify). Ya no está hardcodeado en el HTML.
 
 ---
 
@@ -74,33 +64,36 @@ Headers de seguridad completos:
 
 ---
 
-## 5. ✅ FIXED v5.0.6 — Accesibilidad: skip-link, ARIA, aria-label
+## 5. ✅ FIXED v5.0.6/v5.0.9 — Accesibilidad completa
 
-**Resuelto en v5.0.6.** Múltiples mejoras de accesibilidad implementadas:
+**Resuelto en v5.0.6 + v5.0.9.**
 
 | Mejora | Archivo | Estado |
 |--------|---------|--------|
-| "Saltar al contenido" (skip-link) | `BaseLayout.astro` | ✅ Agregado |
-| `role="dialog"` + `aria-modal="true"` | `login.astro` (modal) | ✅ Agregado |
-| `role="alert"` en mensajes de error | `login.astro` | ✅ Agregado |
-| `role="status"` en mensajes de éxito | `login.astro` | ✅ Agregado |
-| `aria-label` en botón de tema | `Sidebar.astro` | ✅ Agregado |
-
-**Pendiente:** `aria-live` en contenido dinámico, `scope` en tablas, `role="navigation"` en sidebar.
-
----
-
-## 6. SEGURIDAD — BAJO — Sin CSRF protection
-
-**Hallazgo:** Las rutas del backend no implementan tokens CSRF. Las cookies httpOnly JWT (si se implementan) serían vulnerables a CSRF.
-
-**Recomendación:**
-- Si se migra a cookies httpOnly, implementar `SameSite=Strict` (ya soportado en `dependencies.py` para producción).
-- Para operaciones mutantes (POST, PUT, DELETE), validar un header `X-CSRF-Token`.
+| Skip-link | `BaseLayout.astro` | ✅ v5.0.6 |
+| `role="dialog"` + `aria-modal` | `login.astro` (modal) | ✅ v5.0.6 |
+| `role="alert"` + `role="status"` | `login.astro` | ✅ v5.0.6 |
+| `aria-label` en theme toggle | `Sidebar.astro` | ✅ v5.0.6 |
+| `scope="col"` en tablas | Admin, Docente | ✅ v5.0.9 |
+| `:focus-visible` outline | `theme.css` | ✅ v5.0.9 |
+| Safe area (notch) support | `theme.css` | ✅ v5.0.9 |
 
 ---
 
-## 6. ✅ FIXED — Backend URLs unificadas
+## 6. ✅ FIXED — CSRF Protection implementado
+
+**Resuelto en v5.0.x.** Double Submit Cookie pattern implementado en `backend/dependencies.py`:
+
+| Función | Propósito |
+|---------|-----------|
+| `set_csrf_cookie(response)` | Setea cookie `csrf_token` non-httpOnly |
+| `validate_csrf(request)` | Valida cookie == `X-CSRF-Token` header |
+| `clear_csrf_cookie(response)` | Limpia cookie al logout |
+| `CSRF_SKIP_PATHS` | Excluye endpoints de health/login |
+
+---
+
+## 7. ✅ FIXED — Backend URLs unificadas
 
 **Hallazgo:** Existen 3 URLs de backend:
 
@@ -140,25 +133,21 @@ Headers de seguridad completos:
 
 ---
 
-## 7. BACKEND — MEDIO — AI Tutor funcional pero sin persistencia
+## 8. ✅ FIXED — AI Tutor con persistencia en DB + caché LRU
 
-**Hallazgo:** El AI Tutor VYNTRA funciona correctamente:
-- ✅ Endpoint `POST /api/ai/student-tutor?user_id=X` responde con SSE streaming
-- ✅ Respuesta coherente: "¡Hola! Con gusto te ayudo con matemáticas..."
-- El historial usa `OrderedDict` en memoria (se pierde al reiniciar)
+**Hallazgo original:** AI Tutor usaba `OrderedDict` en memoria.
 
-**Migración:** Existe `backend/migrations/005_chat_history.sql` para persistencia en Supabase. `backend/routers/ai_search.py` también fue agregado.
+**Estado actual:** `ai_agent.py` usa DB como almacenamiento primario (`_store_conversation`/`_load_conversation`) con caché LRU en memoria (`_conversation_cache`) para reducir latencia.
 
-**Verificación en vivo:**
-- AI responde en chunks SSE (`data: {"token": "..."}`) + `data: [DONE]`
-- Stream se completa en <10s
-
-**Recomendación:**
-- Conectar `ai_agent.py` a la tabla `chat_history` de Supabase usando la migración existente
+| Componente | Rol |
+|-----------|------|
+| `chat_history` (Supabase) | Almacenamiento persistente principal |
+| `_conversation_cache` | Caché LRU en memoria (reduce lecturas a DB) |
+| `CacheStore` (dependencies.py) | Decorador de caché para operaciones frecuentes |
 
 ---
 
-## 8. BACKEND — BAJO — Rate limiter en memoria
+## 9. BACKEND — BAJO — Rate limiter en memoria
 
 **Hallazgo:** El rate limiter en `main.py` (120 req / 60s por IP) es en memoria. Si se escala a múltiples workers/instancias, el límite se duplica.
 
@@ -167,30 +156,20 @@ Headers de seguridad completos:
 
 ---
 
-## 9. TESTING — MEDIO — Tests E2E inconclusos
+## 10. MEDIO — Tests E2E locales completos, falta CI
 
-**Hallazgo:** Archivos en `tests/`:
-- `vyntra.e2e.spec.js` — test E2E existente
-- `audit.spec.cjs`, `debug_admin.cjs`, `debug_admin2.cjs`, `debug_estudiante.cjs` — scripts de depuración
-- `monitor.mjs` — script de monitoreo
-- `vyntra-ui-improvements.spec.js` — eliminado en v5.0.2
+**Estado:** 16 tests E2E implementados en `tests/vyntra.e2e.spec.js`:
+- Login multi-rol (admin, docente, estudiante) ✅
+- Navegación entre secciones ✅
+- Logout ✅
 
-**Recomendación:**
-- Implementar tests E2E completos que cubran:
-  - Login (estudiante, docente, admin) con credenciales válidas e inválidas
-  - Navegación entre secciones del dashboard
-  - CRUD de notas (docente)
-  - CRUD de estudiantes (admin)
-  - Vista de notas (estudiante)
-  - Carga de archivos
-  - Flujo de recuperación de contraseña
-  - Logout
-- Ejecutar tests en CI (GitHub Actions) con `playwright test`.
-- Cambiar `headless: false` a `headless: true` en CI, o usar proyecto separado.
+**Pendiente:**
+- Integrar en CI (GitHub Actions) para ejecutarse automáticamente en cada push
+- Configurar `headless: true` para CI
 
 ---
 
-## 10. TESTING — BAJO — Tests de backend (pytest)
+## 11. TESTING — BAJO — Tests de backend (pytest)
 
 **Hallazgo:** `backend/tests/` contiene:
 - `test_api.py` — pruebas de API
@@ -203,33 +182,30 @@ Headers de seguridad completos:
 
 ---
 
-## 11. DOCUMENTACIÓN — BAJO — README.md mínimo
+## 12. ✅ FIXED — README.md expandido
 
-**Hallazgo:** `README.md` tiene solo 2 líneas. `AGENTS.md` tiene información valiosa pero está orientado a asistentes IA.
-
-**Recomendación:**
-- Expandir `README.md` con:
-  - Descripción del proyecto
-  - Stack tecnológico
-  - Instrucciones de setup local
-  - Variables de entorno requeridas
-  - Cómo ejecutar tests
-  - Enlace al deploy en vivo
+**Estado:** `README.md` ahora tiene 98 líneas con:
+- ✅ Descripción del proyecto
+- ✅ Stack tecnológico (Astro, Tailwind, FastAPI, Supabase)
+- ✅ Instrucciones de setup local
+- ✅ Variables de entorno requeridas
+- ✅ Cómo ejecutar tests
+- ✅ Enlace al deploy en vivo
 
 ---
 
-## 12. ✅ FIXED v5.0.6 — Deploy: vercel.json eliminado
+## 13. ✅ FIXED v5.0.6 — Deploy: vercel.json eliminado
 
 **Estado:** 
 - `vercel.json` eliminado del repo (ya no existe)
 - Deploy activo exclusivamente en Netlify: `https://vyntraacademic.netlify.app` ✅
 - Assets con hash de Astro, caché 1 año immutable ✅
 - Tema "Solaris" + fuentes actualizadas (DM Sans, Fraunces) ✅
-- `AGENTS.md` desactualizado (menciona Vercel) — pendiente de actualizar
+- `AGENTS.md` actualizado ✅ — documenta Netlify, Vercel mencionado 0 veces
 
 ---
 
-## 13. GIT — BAJO — Secrets commiteados accidentalmente
+## 14. GIT — BAJO — Secrets commiteados accidentalmente
 
 **Hallazgo:** El workflow de git permitió commitar `backend/_secrets/` (clave de servicio de Google). GitHub push protection lo bloqueó.
 
@@ -240,7 +216,7 @@ Headers de seguridad completos:
 
 ---
 
-## 14. GIT — BAJO — ✅ Resuelto: Imágenes convertidas a WebP
+## 15. GIT — BAJO — ✅ Resuelto: Imágenes convertidas a WebP
 
 **Estado:** En v5.0.2:
 - Todos los PNGs en `src/assets/brand/` convertidos a WebP
@@ -256,17 +232,19 @@ Headers de seguridad completos:
 | Categoría | Prioridad | Issue | Versión |
 |-----------|-----------|-------|---------|
 | ✅ FIXED | Auth flow | Login y dashboards unificados (`ws_access_token`) | v5.0.4 |
-| ✅ FIXED | Accesibilidad | Skip-link, ARIA roles, aria-label, role=alert | v5.0.6 |
+| ✅ FIXED | Accesibilidad | Skip-link, ARIA roles, aria-label, role=alert, scope, focus-visible, safe-area | v5.0.9 |
 | ✅ FIXED | CSP | Content Security Policy completo | v5.0.4 |
 | ✅ FIXED | Backend URLs | Unificadas a `sie-8agt.onrender.com` | v5.0.4 |
 | ✅ FIXED | Deploy | vercel.json eliminado, solo Netlify | v5.0.6 |
 | ✅ FIXED | Git | Secrets en .gitignore, imágenes WebP | v5.0.2 |
 | ✅ FIXED | Bug `{n[0]}` | Plantillas sin compilar | v5.0.2 |
-| 🔴 Alto | Rotar Google Service Account Key | Clave comprometida en commit anterior | — |
-| 🟡 Medio | AI Tutor sin persistencia | Migración `005_chat_history.sql` existe | — |
-| 🟡 Medio | Tests E2E incompletos | No ejecutados en CI | — |
-| 🟢 Bajo | `/api/teachers` → 404 | Ruta incorrecta (debe ser `/api/admin/teachers`) | — |
-| 🟢 Bajo | Chart.js no carga en dashboards | Solo en Layout.astro, dashboards usan BaseLayout | — |
-| 🟢 Bajo | CSRF no implementado | Backend sin tokens CSRF | — |
-| 🟢 Bajo | README.md mínimo | Pendiente de expandir | — |
-| 🟢 Bajo | AGENTS.md desactualizado | Menciona Vercel | — |
+| ✅ FIXED | Google OAuth | Hardcode → `import.meta.env.PUBLIC_GOOGLE_CLIENT_ID` | v5.0.9 |
+| ✅ FIXED | CSRF | Double Submit Cookie pattern implementado en `dependencies.py` | v5.0.9 |
+| ✅ FIXED | README.md | Expandido a 98 líneas con descripción completa | v5.0.9 |
+| ✅ FIXED | AGENTS.md | Actualizado: ya no menciona Vercel, documenta Netlify | v5.0.9 |
+| ✅ FIXED | AI Tutor persistencia | DB primaria + caché en memoria (LRU) | v5.0.9 |
+| ✅ FIXED | Manejo errores API | Toast con mensaje antes de redirect | v5.0.9 |
+| ⚠️ Pendiente | Rotar Google Service Account Key | Clave comprometida en commit anterior (requiere GCloud Console) | — |
+| 🟢 Bajo | Tests E2E en CI | 16 tests existen localmente, no ejecutados en CI | — |
+| 🟢 Bajo | Cold start Render | Keep-alive script existe, falta cron | — |
+| 🟢 Bajo | Chart.js en dashboards | No crítico (gráficos no usados activamente) | — |
