@@ -74,7 +74,23 @@ Headers de seguridad completos:
 
 ---
 
-## 5. SEGURIDAD — BAJO — Sin CSRF protection
+## 5. ✅ FIXED v5.0.6 — Accesibilidad: skip-link, ARIA, aria-label
+
+**Resuelto en v5.0.6.** Múltiples mejoras de accesibilidad implementadas:
+
+| Mejora | Archivo | Estado |
+|--------|---------|--------|
+| "Saltar al contenido" (skip-link) | `BaseLayout.astro` | ✅ Agregado |
+| `role="dialog"` + `aria-modal="true"` | `login.astro` (modal) | ✅ Agregado |
+| `role="alert"` en mensajes de error | `login.astro` | ✅ Agregado |
+| `role="status"` en mensajes de éxito | `login.astro` | ✅ Agregado |
+| `aria-label` en botón de tema | `Sidebar.astro` | ✅ Agregado |
+
+**Pendiente:** `aria-live` en contenido dinámico, `scope` en tablas, `role="navigation"` en sidebar.
+
+---
+
+## 6. SEGURIDAD — BAJO — Sin CSRF protection
 
 **Hallazgo:** Las rutas del backend no implementan tokens CSRF. Las cookies httpOnly JWT (si se implementan) serían vulnerables a CSRF.
 
@@ -202,13 +218,13 @@ Headers de seguridad completos:
 
 ---
 
-## 12. DEPLOY — BAJO — ✅ Resuelto: Deploy en Netlify
+## 12. ✅ FIXED v5.0.6 — Deploy: vercel.json eliminado
 
 **Estado:** 
-- `vercel.json` archivado y luego restaurado (activo en v5.0.4)
-- Deploy activo en Netlify: `https://vyntraacademic.netlify.app` ✅
+- `vercel.json` eliminado del repo (ya no existe)
+- Deploy activo exclusivamente en Netlify: `https://vyntraacademic.netlify.app` ✅
 - Assets con hash de Astro, caché 1 año immutable ✅
-- Tema "Solaris" desplegado correctamente ✅
+- Tema "Solaris" + fuentes actualizadas (DM Sans, Fraunces) ✅
 - `AGENTS.md` desactualizado (menciona Vercel) — pendiente de actualizar
 
 ---
@@ -237,18 +253,20 @@ Headers de seguridad completos:
 
 ## Resumen
 
-| Categoría | Prioridad | Issue |
-|-----------|-----------|-------|
-| ✅ FIXED | Auth flow | Login y dashboards unificados con `ws_access_token` |
-| ✅ FIXED | CSP | Implementado en layouts |
-| ✅ FIXED | Backend URLs | Unificadas a `sie-8agt.onrender.com` |
-| ✅ FIXED | Deploy | Netlify activo, assets cacheados, WebP |
-| ✅ FIXED | Git | Secrets en .gitignore, imágenes WebP |
-| ✅ FIXED | Bug `{n[0]}` | Resuelto en v5.0.2 |
-| 🔴 Alto | Rotar Google Service Account Key | Clave comprometida en commit anterior |
-| 🟡 Medio | AI Tutor sin persistencia | Migración `005_chat_history.sql` existe, no implementada |
-| 🟡 Medio | Tests E2E incompletos | No ejecutados en CI |
-| 🟢 Bajo | `/api/teachers` → 404 | Ruta incorrecta (debe ser `/api/admin/teachers`) |
-| 🟢 Bajo | Chart.js no carga en dashboards | Solo en Layout.astro, dashboards usan BaseLayout |
-| 🟢 Bajo | README.md mínimo | Pendiente de expandir |
-| 🟢 Bajo | AGENTS.md desactualizado | Menciona Vercel, deploy es Netlify |
+| Categoría | Prioridad | Issue | Versión |
+|-----------|-----------|-------|---------|
+| ✅ FIXED | Auth flow | Login y dashboards unificados (`ws_access_token`) | v5.0.4 |
+| ✅ FIXED | Accesibilidad | Skip-link, ARIA roles, aria-label, role=alert | v5.0.6 |
+| ✅ FIXED | CSP | Content Security Policy completo | v5.0.4 |
+| ✅ FIXED | Backend URLs | Unificadas a `sie-8agt.onrender.com` | v5.0.4 |
+| ✅ FIXED | Deploy | vercel.json eliminado, solo Netlify | v5.0.6 |
+| ✅ FIXED | Git | Secrets en .gitignore, imágenes WebP | v5.0.2 |
+| ✅ FIXED | Bug `{n[0]}` | Plantillas sin compilar | v5.0.2 |
+| 🔴 Alto | Rotar Google Service Account Key | Clave comprometida en commit anterior | — |
+| 🟡 Medio | AI Tutor sin persistencia | Migración `005_chat_history.sql` existe | — |
+| 🟡 Medio | Tests E2E incompletos | No ejecutados en CI | — |
+| 🟢 Bajo | `/api/teachers` → 404 | Ruta incorrecta (debe ser `/api/admin/teachers`) | — |
+| 🟢 Bajo | Chart.js no carga en dashboards | Solo en Layout.astro, dashboards usan BaseLayout | — |
+| 🟢 Bajo | CSRF no implementado | Backend sin tokens CSRF | — |
+| 🟢 Bajo | README.md mínimo | Pendiente de expandir | — |
+| 🟢 Bajo | AGENTS.md desactualizado | Menciona Vercel | — |
