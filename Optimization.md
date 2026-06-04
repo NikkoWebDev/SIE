@@ -35,7 +35,7 @@
 
 **Estado actual:** El script `session.js` ya hace un ping a `/api/health` en cada carga de página. La URL del backend ahora se pasa via `window.__API_URL__` desde el build (ya no hardcodeada). Sin embargo, el keep-alive sigue sin ser suficiente para mantener el backend activo durante la noche.
 
-**Verificación en vivo:** APIs respondieron en <2s durante la prueba (13 endpoints, 3 roles). Sin cold start apreciable.
+**Verificación en vivo:** APIs respondieron en <2s durante la prueba (34 tests, 3 roles). Sin cold start apreciable.
 
 **Recomendación adicional:** Existe `scripts/keep-alive.sh` en el repo — implementar como cron job externo (cron-job.org) para mantener el backend activo 24/7.
 

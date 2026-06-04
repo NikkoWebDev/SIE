@@ -68,16 +68,16 @@ Aún existen referencias a otras URLs en el historial git:
 
 ## 6. MEDIO — Accesibilidad (ARIA)
 
-**Hallazgo:** Pendiente de resolver:
+**Hallazgo:** Parcialmente resuelto en v5.0.6:
 
-| Issue | Ubicación |
-|-------|-----------|
-| Sin `role="tab"` / `aria-selected` | Login — selector Estudiante/Personal |
-| Sin `role="dialog"` / `aria-modal` | Login — modal de recuperación |
-| Sin `aria-live` en contenido dinámico | Dashboards (notas, chat) |
-| Sin skip-to-content link | Todas las páginas |
-| Sin `aria-label` en iconos | Sidebars, theme toggle |
-| Sin `scope` en tablas | Planilla de notas, listados |
+| Issue | Ubicación | Estado |
+|-------|-----------|--------|
+| Sin `role="tab"` / `aria-selected` | Login — selector Estudiante/Personal | ❌ Pendiente |
+| Sin `role="dialog"` / `aria-modal` | Login — modal de recuperación | ✅ **FIXED v5.0.6** |
+| Sin `aria-live` en contenido dinámico | Dashboards (notas, chat) | ❌ Pendiente |
+| Sin skip-to-content link | Todas las páginas | ✅ **FIXED v5.0.6** |
+| Sin `aria-label` en iconos | Sidebars, theme toggle | ✅ **FIXED v5.0.6** |
+| Sin `scope` en tablas | Planilla de notas, listados | ❌ Pendiente |
 
 ---
 
@@ -153,7 +153,7 @@ Solo `index.astro` incluye favicon. Dashboards no.
 
 | Prioridad | Issues |
 |-----------|--------|
-| **✅ Fixed** | 1, 2, 3, 10, 11, 12, 13 |
+| **✅ Fixed** | 1, 2, 3, 10, 11, 12, 13, 6 (parcial: dialog, skip-link, aria-label) |
 | **Alto** | 4. Payload inline excesivo |
-| **Medio** | 5. Chart.js no carga, 6. Accesibilidad ARIA, 7. Manejo errores API |
+| **Medio** | 5. Chart.js no carga, 6. Accesibilidad (restante: tabs, aria-live, scope), 7. Manejo errores API |
 | **Bajo** | 8. Contraste, 9. UX carga, 14. Favicon |
