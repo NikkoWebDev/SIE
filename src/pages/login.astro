@@ -247,8 +247,8 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
         }
       })
 
-      // Wake-up ping (Image to bypass CORS)
-      new Image().src = baseUrl + '/api/health?' + Date.now()
+      // Wake-up ping (silent fetch, CORS-safe)
+      fetch(baseUrl + '/api/health', { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(5000) }).catch(function(){})
 
       // Icon glow on input focus
       ;[docInput, passwordInput].forEach(function(inp) {

@@ -152,11 +152,18 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
 
     document.getElementById('theme-toggle-admin')?.addEventListener('click', function() { window.setVyntraTheme(!document.documentElement.classList.contains('dark')) })
 
-    window.showSection = window.createShowSection({
-      titles: { inicio:'Panel de Administración', estudiantes:'Gestión de Alumnado', docentes:'Cuerpo Docente', materias:'Materias e IA', avisos:'Comunicados', elecciones:'Elecciones Escolares', administradores:'Administradores' },
-      subs: { inicio:'Vista general del sistema', estudiantes:'Matricular, filtrar y exportar', docentes:'Registrar y asignar', materias:'Configurar materias y enlaces IA', avisos:'Publicar y gestionar avisos', elecciones:'Candidatos y resultados', administradores:'Crear y gestionar' },
-      onNavigate: function(id) { if (id === 'elecciones') loadElectionData() }
-    })
+    var sectionTitles = { inicio:'Panel de Administración', estudiantes:'Gestión de Alumnado', docentes:'Cuerpo Docente', materias:'Materias e IA', avisos:'Comunicados', elecciones:'Elecciones Escolares', administradores:'Administradores' }
+    var sectionSubs = { inicio:'Vista general del sistema', estudiantes:'Matricular, filtrar y exportar', docentes:'Registrar y asignar', materias:'Configurar materias y enlaces IA', avisos:'Publicar y gestionar avisos', elecciones:'Candidatos y resultados', administradores:'Crear y gestionar' }
+    window.showSection = function(id) {
+      document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none'; s.classList.remove('section-enter') })
+      var sec = document.getElementById('sec-' + id)
+      if (sec) { sec.style.display = ''; sec.classList.add('section-enter') }
+      var t = document.querySelector('.topbar h1'), p = document.querySelector('.topbar p')
+      if (t) t.textContent = sectionTitles[id] || id
+      if (p) p.textContent = sectionSubs[id] || ''
+      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id } }))
+      if (id === 'elecciones') loadElectionData()
+    }
 
     // Data cache
     var cache = { stats:null, students:null, teachers:null, notices:null, subjects:null }

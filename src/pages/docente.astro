@@ -165,11 +165,20 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 
     document.getElementById('theme-toggle-teacher')?.addEventListener('click', function() { window.setVyntraTheme(!document.documentElement.classList.contains('dark')) })
 
-    window.showSection = window.createShowSection({
-      titles: { inicio:'Panel Docente', notas:'Control de Notas', contenidos:'Guías y Tareas', examenes:'Exámenes', horario:'Horario Semanal', incidentes:'Incidentes de Seguridad', alertas:'Alertas de Riesgo' },
-      subs: { inicio:'Vista general', notas:'Registrar calificaciones', contenidos:'Subir guías y revisar entregas', examenes:'Crear y publicar evaluaciones', horario:'Clases programadas', incidentes:'Monitoreo de seguridad', alertas:'Estudiantes con rendimiento crítico' },
-      onNavigate: function(id) { if (id === 'contenidos') { loadGuides(); loadTasks() }; if (id === 'examenes') loadMyExams(); if (id === 'incidentes') loadIncidents() }
-    })
+    var sectionTitles = { inicio:'Panel Docente', notas:'Control de Notas', contenidos:'Guías y Tareas', examenes:'Exámenes', horario:'Horario Semanal', incidentes:'Incidentes de Seguridad', alertas:'Alertas de Riesgo' }
+    var sectionSubs = { inicio:'Vista general', notas:'Registrar calificaciones', contenidos:'Subir guías y revisar entregas', examenes:'Crear y publicar evaluaciones', horario:'Clases programadas', incidentes:'Monitoreo de seguridad', alertas:'Estudiantes con rendimiento crítico' }
+    window.showSection = function(id) {
+      document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none'; s.classList.remove('section-enter') })
+      var sec = document.getElementById('sec-' + id)
+      if (sec) { sec.style.display = ''; sec.classList.add('section-enter') }
+      var t = document.querySelector('.topbar h1'), p = document.querySelector('.topbar p')
+      if (t) t.textContent = sectionTitles[id] || id
+      if (p) p.textContent = sectionSubs[id] || ''
+      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id } }))
+      if (id === 'contenidos') { loadGuides(); loadTasks() }
+      if (id === 'examenes') loadMyExams()
+      if (id === 'incidentes') loadIncidents()
+    }
 
     async function loadData() {
       try {

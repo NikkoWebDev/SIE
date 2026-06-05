@@ -21,9 +21,8 @@ const title = `VYNTRA · ${titulo}`
 const scriptSrc = "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
 const apiUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
 const apiHost = new URL(apiUrl).host
-const wsHost = apiUrl.startsWith('https') ? apiHost : apiHost
 const wsScheme = apiUrl.startsWith('https') ? 'wss' : 'ws'
-const connectSrc = `'self' ${apiUrl} ${wsScheme}://${wsHost}`
+const connectSrc = `'self' ${apiUrl} ${wsScheme}://${apiHost}`
 const CSP = `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src ${connectSrc}; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'`
 
 Astro.response.headers.set('Content-Security-Policy', CSP)
@@ -103,10 +102,10 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
 
   {withThemeScript && (
     <script is:inline>
-      (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
+      (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark')document.documentElement.classList.add('dark')}catch(e){}})();
     </script>
   )}
-  <script src="/js/session.js" defer></script>
+  <script src="/js/session.js?v=2" defer></script>
 
   <slot name="head" />
 </head>

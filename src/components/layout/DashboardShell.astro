@@ -53,7 +53,7 @@ const {
   }
   try {
     var stored = localStorage.getItem('vyntra-theme')
-    window.setVyntraTheme(stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme:dark)').matches))
+    window.setVyntraTheme(stored === 'dark')
   } catch (_) {}
 
   document.querySelectorAll('[id^="sec-"]').forEach(function (s) { s.setAttribute('aria-live', 'polite') })

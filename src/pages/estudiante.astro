@@ -261,7 +261,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
     })
   }
 
-  window.setVyntraTheme && window.setVyntraTheme(localStorage.getItem('vyntra-theme') === 'dark' || (!localStorage.getItem('vyntra-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches))
+  window.setVyntraTheme && window.setVyntraTheme(localStorage.getItem('vyntra-theme') === 'dark')
   document.getElementById('theme-toggle-student')?.addEventListener('click', function() {
     window.setVyntraTheme(!document.documentElement.classList.contains('dark'))
   })
