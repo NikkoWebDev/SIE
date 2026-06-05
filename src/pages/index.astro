@@ -426,11 +426,20 @@ import BaseLayout from '@layouts/BaseLayout.astro'
         })
       }
 
-      // ── LOAD DATA ──
+      // ── LOAD DATA (with retry for Render cold start) ──
       var API = API_BASE
+      function fetchWithRetry(url, opts, retries) {
+        retries = retries || 3
+        return fetch(url, opts).catch(function(err) {
+          if (retries <= 1) throw err
+          return new Promise(function(resolve) { setTimeout(resolve, 3000) }).then(function() {
+            return fetchWithRetry(url, opts, retries - 1)
+          })
+        })
+      }
       async function loadData() {
         try {
-          var res = await fetch(API + '/api/admin/stats', { signal: AbortSignal.timeout(8000) })
+          var res = await fetchWithRetry(API + '/api/admin/stats', { signal: AbortSignal.timeout(10000) })
           if (!res.ok) return
           var d = await res.json()
           var map = {
@@ -449,7 +458,7 @@ import BaseLayout from '@layouts/BaseLayout.astro'
         } catch(e) {}
 
         try {
-          var res2 = await fetch(API + '/api/notices', { signal: AbortSignal.timeout(8000) })
+          var res2 = await fetchWithRetry(API + '/api/notices', { signal: AbortSignal.timeout(10000) })
           if (!res2.ok) throw new Error()
           var notices = await res2.json()
           var skeleton = document.getElementById('notice-skeleton')
@@ -470,7 +479,7 @@ import BaseLayout from '@layouts/BaseLayout.astro'
               '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-brand-maroon/10 dark:bg-brand-gold/10 text-brand-maroon dark:text-brand-gold-light mb-3.5">' + c + '</span>' +
               '<h3 class="font-bold text-sm mb-2 leading-snug">' + (n.titulo || n.title) + '</h3>' +
               '<p class="text-xs text-text-secondary leading-relaxed mb-4">' + content + '</p>' +
-              '<time class="text-[10px] text-text-tertiary flex items-center gap-1.5">' +
+              '<time class="text-xs text-text-tertiary flex items-center gap-1.5">' +
               '<svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>' +
               d + '</time>' +
               '</div>'

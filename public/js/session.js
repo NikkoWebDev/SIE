@@ -17,11 +17,12 @@
     } catch(e) { return false }
   }
 
-  // ── Wake-up: ping server on every page load (no custom headers — avoids CORS preflight) ──
+  // ── Wake-up: ping server on every page load ──
   function wakeUp() {
     var xhr = new XMLHttpRequest()
     xhr.open('GET', API_URL + '/api/health', true)
     xhr.timeout = 10000
+    xhr.onerror = function() {}  // swallow CORS/network errors (cold start)
     xhr.send()
   }
 
