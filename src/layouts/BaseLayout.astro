@@ -88,8 +88,9 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
       "inLanguage": "es-CO",
     }])} />
   )}
+  <meta name="vyntra-api-url" content={apiUrl}>
   <script is:inline>
-    window.__API_URL__ = '${import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'}'.replace(/\/+$/, '')
+    window.__API_URL__ = document.querySelector('meta[name="vyntra-api-url"]').getAttribute('content')
   </script>
   <script is:inline>
     // ── Service Worker cleanup ──
