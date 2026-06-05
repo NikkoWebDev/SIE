@@ -17,6 +17,5 @@ import BaseLayout from '@layouts/BaseLayout.astro'
       var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }
       window.location.href = map[role] || '/estudiante'
     })()
-    setTimeout(function() { window.location.href = '/login' }, 5000)
   </script>
 </BaseLayout>
