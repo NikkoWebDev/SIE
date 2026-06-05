@@ -198,7 +198,7 @@ async def security_headers_middleware(request: Request, call_next: Any) -> Respo
                     "Access-Control-Allow-Origin": origin,
                     "Access-Control-Allow-Credentials": "true",
                     "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-CSRF-Token",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-CSRF-Token, Cache-Control",
                     "Access-Control-Max-Age": "600",
                 },
             )
