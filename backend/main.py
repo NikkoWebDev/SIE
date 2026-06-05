@@ -108,6 +108,9 @@ def _get_cors_origin(request: Request) -> str:
     origin = request.headers.get("Origin", "")
     if origin in ALLOWED_ORIGINS:
         return origin
+    import re
+    if re.match(r"^https?://localhost(:\d+)?$", origin):
+        return origin
     return "https://colegiociudaddelsol.edu.co"
 
 
