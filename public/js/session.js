@@ -30,14 +30,14 @@
   function checkAuth() {
     try {
       var userId = localStorage.getItem('userId')
-      var publicPages = ['/', '/login', '/api/health']
+      var publicPages = ['/', '/login', '/login/', '/api/health']
 
       if (!userId) {
         var path = window.location.pathname
         var isPublic = publicPages.some(function (p) { return path === p || path.startsWith('/api/') })
         if (!isPublic) {
           localStorage.clear()
-          window.location.href = '/login'
+          window.location.href = '/login/'
         }
         return false
       }
@@ -52,7 +52,9 @@
       this.addEventListener('load', function () {
         if (this.status === 401) {
           localStorage.clear()
-          window.location.href = '/login'
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/login/') {
+            window.location.href = '/login/'
+          }
         }
       })
       return origOpen.apply(this, arguments)
@@ -63,7 +65,9 @@
       return origFetch(url, opts).then(function (r) {
         if (r.status === 401) {
           localStorage.clear()
-          window.location.href = '/login'
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/login/') {
+            window.location.href = '/login/'
+          }
         }
         return r
       })

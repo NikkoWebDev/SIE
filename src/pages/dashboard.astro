@@ -13,7 +13,7 @@ import BaseLayout from '@layouts/BaseLayout.astro'
   <script>
     (function() {
       var role = (localStorage.getItem('userRole') || '').toUpperCase()
-      if (!role) { window.location.href = '/login'; return }
+      if (!role) { window.location.href = '/login/'; return }
       var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }
       window.location.href = map[role] || '/estudiante'
     })()
