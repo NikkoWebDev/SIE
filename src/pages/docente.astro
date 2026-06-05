@@ -241,7 +241,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
             ['P1','P2','P3','P4'].map(function(){return '<td class="p-1 text-center border-b border-border"><input type="number" class="w-full text-center bg-[var(--input-bg)] border border-[var(--input-border)] rounded px-2 py-1 text-xs min-w-[50px]" min="0" max="5" step="0.1" placeholder="0.0" oninput="calcAvg(this)"></td>'}).join('')+
             '<td class="text-center font-bold text-xs p-2 border-b border-border avg-cell text-brand-gold">0.00</td>'+
             '<td class="p-1 border-b border-border"><input class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded px-2 py-1 text-xs" placeholder="Obs."></td>'+
-            '<td class="text-center p-1 border-b border-border"><button class="px-2 py-1 rounded text-xs bg-brand-maroon text-white" onclick="saveGradeRow(\''+(s.document_id||s._id)+'\',\''+subject.replace(/'/g,"\\'")+'\',this)">Guardar</button></td></tr>'
+            '<td class="text-center p-1 border-b border-border"><button class="px-2 py-1 rounded text-xs bg-brand-maroon text-white" onclick="saveGradeRow(\''+window.escapeHtml(s.document_id||s._id)+'\',\''+subject.replace(/'/g,"\\'")+'\',this)">Guardar</button></td></tr>'
         }).join('') || '<tr><td colspan="8" class="text-center py-8 text-text-tertiary">Sin estudiantes en este grado</td></tr>'
       })
     }
@@ -371,7 +371,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     if (guideDrop) {
       guideDrop.addEventListener('click', function(){ guideFile.click() })
       guideFile.addEventListener('change', function() {
-        if (guideFile.files.length) document.getElementById('guide-preview').innerHTML = '<div class="text-xs bg-brand-maroon/5 rounded-lg px-3 py-2">'+guideFile.files[0].name+'</div>'
+        if (guideFile.files.length) document.getElementById('guide-preview').innerHTML = '<div class="text-xs bg-brand-maroon/5 rounded-lg px-3 py-2">'+window.escapeHtml(guideFile.files[0].name)+'</div>'
       })
     }
     document.getElementById('filter-grade-notas')?.addEventListener('change', function() { loadGradesSheet() })

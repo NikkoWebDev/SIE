@@ -73,7 +73,11 @@ const {
   }
 
   window.vfetch = function (apiUrl, path, opts) {
-    var headers = Object.assign({ 'Content-Type': 'application/json' }, opts && opts.headers)
+    opts = opts || {}
+    var body = opts.body
+    var isFormData = body instanceof FormData
+    var headers = Object.assign({}, opts.headers || {})
+    if (!isFormData) headers['Content-Type'] = 'application/json'
     var ctrl = new AbortController()
     var timer = setTimeout(function () { ctrl.abort() }, 15000)
     var merged = Object.assign({ credentials: 'include', signal: ctrl.signal }, opts, { headers: headers })

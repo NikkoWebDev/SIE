@@ -341,10 +341,10 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       el.innerHTML = items.slice(0,4).map(function(n) {
         var hasImg = n.archivo_url && n.archivo_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
         return '<div class="pb-3 mb-3 border-b border-border last:border-0">' +
-          '<strong class="text-xs">' + (n.titulo || '') + '</strong>' +
-          '<span class="block text-[10px] text-text-tertiary">' + (n.fecha || '') + '</span>' +
-          (hasImg ? '<img src="' + n.archivo_url + '" class="mt-2 max-h-32 rounded-lg object-cover cursor-pointer" onclick="window.open(this.src)">' : '') +
-          (n.archivo_url && !hasImg ? '<a href="' + n.archivo_url + '" target="_blank" class="inline-block mt-1 text-xs text-brand-maroon">Ver adjunto</a>' : '') +
+          '<strong class="text-xs">' + window.escapeHtml(n.titulo || '') + '</strong>' +
+          '<span class="block text-[10px] text-text-tertiary">' + window.escapeHtml(n.fecha || '') + '</span>' +
+          (hasImg ? '<img src="' + window.escapeHtml(n.archivo_url) + '" class="mt-2 max-h-32 rounded-lg object-cover cursor-pointer" onclick="window.open(this.src)" alt="Imagen adjunta">' : '') +
+          (n.archivo_url && !hasImg ? '<a href="' + window.escapeHtml(n.archivo_url) + '" target="_blank" class="inline-block mt-1 text-xs text-brand-maroon">Ver adjunto</a>' : '') +
           '</div>'
       }).join('')
     })
@@ -581,11 +581,13 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
     var firstDay = new Date(year, month, 1).getDay()
     firstDay = firstDay === 0 ? 6 : firstDay - 1
     var daysInMonth = new Date(year, month+1, 0).getDate()
-    for (var i = 0; i < firstDay; i++) grid.innerHTML += '<div class="text-xs py-1 text-text-tertiary/30"></div>'
+    var cells = []
+    for (var i = 0; i < firstDay; i++) cells.push('<div class="text-xs py-1 text-text-tertiary/30"></div>')
     for (var d = 1; d <= daysInMonth; d++) {
       var isToday = d === now.getDate() && month === now.getMonth()
-      grid.innerHTML += '<div class="text-xs py-2 rounded-lg cursor-pointer font-medium ' + (isToday?'bg-brand-maroon text-white':'hover:bg-brand-gold/10') + '">' + d + '</div>'
+      cells.push('<div class="text-xs py-2 rounded-lg cursor-pointer font-medium ' + (isToday?'bg-brand-maroon text-white':'hover:bg-brand-gold/10') + '">' + d + '</div>')
     }
+    grid.innerHTML = cells.join('')
   }
 
   document.querySelectorAll('[data-section-id]').forEach(function(btn) {

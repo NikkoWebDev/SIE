@@ -164,17 +164,22 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     var abortCtrl = null
 
     async function loadAllData() {
+      if (abortCtrl) abortCtrl.abort()
       abortCtrl = new AbortController()
       try {
-        var [stats, students, teachers, notices, subjects] = await Promise.all([
-          vfetch(API, '/api/admin/stats',{signal:abortCtrl.signal}).then(function(r){return r.json()}),
-          vfetch(API, '/api/admin/students',{signal:abortCtrl.signal}).then(function(r){return r.json()}),
-          vfetch(API, '/api/admin/teachers',{signal:abortCtrl.signal}).then(function(r){return r.json()}),
-          vfetch(API, '/api/notices',{signal:abortCtrl.signal}).then(function(r){return r.json()}),
-          vfetch(API, '/api/subjects',{signal:abortCtrl.signal}).then(function(r){return r.json()})
+        var results = await Promise.allSettled([
+          vfetch(API, '/api/admin/stats',{signal:abortCtrl.signal}).then(function(r){return r.ok ? r.json() : null}),
+          vfetch(API, '/api/admin/students',{signal:abortCtrl.signal}).then(function(r){return r.ok ? r.json() : null}),
+          vfetch(API, '/api/admin/teachers',{signal:abortCtrl.signal}).then(function(r){return r.ok ? r.json() : null}),
+          vfetch(API, '/api/notices',{signal:abortCtrl.signal}).then(function(r){return r.ok ? r.json() : null}),
+          vfetch(API, '/api/subjects',{signal:abortCtrl.signal}).then(function(r){return r.ok ? r.json() : null})
         ])
-        cache = { stats, students, teachers, notices, subjects }
-        _fullStudents = (students || []).slice()
+        cache.stats = results[0].status === 'fulfilled' ? results[0].value : null
+        cache.students = results[1].status === 'fulfilled' ? results[1].value : []
+        cache.teachers = results[2].status === 'fulfilled' ? results[2].value : []
+        cache.notices = results[3].status === 'fulfilled' ? results[3].value : []
+        cache.subjects = results[4].status === 'fulfilled' ? results[4].value : []
+        _fullStudents = (cache.students || []).slice()
         renderAll()
       } catch(e) { window.VyntraToast?.error('Error cargando datos del panel: ' + (e?.message || 'Reintente')) }
     }
@@ -204,8 +209,8 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       var tbody = document.getElementById('students-list'); if (!tbody) return
       var data = applyFilters()
       tbody.innerHTML = data.sort(function(a,b){return(a.is_paid===b.is_paid)?0:a.is_paid?1:-1}).map(function(s){
-        return '<tr class="border-b border-border"><td class="p-2 text-[11px]">'+(s.document_id||'')+'</td><td class="p-2 text-xs font-medium">'+(s.fullname||'')+'</td><td class="p-2 text-xs">'+(s.grade||s.grado||'-')+'</td><td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold '+(s.is_paid!==false?'bg-success/10 text-success':'bg-brand-danger/10 text-brand-danger')+'">'+(s.is_paid!==false?'AL DÍA':'EN MORA')+'</span></td>'+
-          '<td class="p-2"><button class="text-xs text-brand-maroon hover:underline mr-2" onclick="togglePayment(\''+s._id+'\','+(s.is_paid!==false)+')">Cambiar</button><button class="text-xs text-brand-danger hover:underline" onclick="deleteStudent(\''+s._id+'\')">Eliminar</button></td></tr>'
+        return '<tr class="border-b border-border"><td class="p-2 text-[11px]">'+window.escapeHtml(s.document_id||'')+'</td><td class="p-2 text-xs font-medium">'+window.escapeHtml(s.fullname||'')+'</td><td class="p-2 text-xs">'+window.escapeHtml(s.grade||s.grado||'-')+'</td><td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold '+(s.is_paid!==false?'bg-success/10 text-success':'bg-brand-danger/10 text-brand-danger')+'">'+(s.is_paid!==false?'AL DÍA':'EN MORA')+'</span></td>'+
+          '<td class="p-2"><button class="text-xs text-brand-maroon hover:underline mr-2" onclick="togglePayment(\''+window.escapeHtml(s._id)+'\','+(s.is_paid!==false)+')">Cambiar</button><button class="text-xs text-brand-danger hover:underline" onclick="deleteStudent(\''+window.escapeHtml(s._id)+'\')">Eliminar</button></td></tr>'
       }).join('') || '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">No hay estudiantes registrados</td></tr>'
     }
 
@@ -213,9 +218,9 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       var tbody = document.getElementById('teachers-list'); if (!tbody) return
       var data = cache.teachers || []
       tbody.innerHTML = data.length ? data.map(function(t){
-        return '<tr class="border-b border-border"><td class="p-2"><div class="font-medium text-xs">'+t.fullname+'</div></td><td class="p-2 text-[11px]">'+t.document_id+'</td>'+
-          '<td class="p-2"><div class="flex flex-wrap gap-1">'+(t.subjects||[]).map(function(s){return'<span class="px-1.5 py-0.5 rounded-full text-[10px] bg-brand-maroon/10 text-brand-maroon font-semibold">'+s.name+'</span>'}).join('')+'</div></td>'+
-          '<td class="p-2"><button class="text-xs text-brand-danger hover:underline" onclick="deleteTeacher(\''+t.document_id+'\')">Eliminar</button></td></tr>'
+        return '<tr class="border-b border-border"><td class="p-2"><div class="font-medium text-xs">'+window.escapeHtml(t.fullname)+'</div></td><td class="p-2 text-[11px]">'+window.escapeHtml(t.document_id)+'</td>'+
+          '<td class="p-2"><div class="flex flex-wrap gap-1">'+(t.subjects||[]).map(function(s){return'<span class="px-1.5 py-0.5 rounded-full text-[10px] bg-brand-maroon/10 text-brand-maroon font-semibold">'+window.escapeHtml(s.name)+'</span>'}).join('')+'</div></td>'+
+          '<td class="p-2"><button class="text-xs text-brand-danger hover:underline" onclick="deleteTeacher(\''+window.escapeHtml(t.document_id)+'\')">Eliminar</button></td></tr>'
       }).join('') : '<tr><td colspan="4" class="text-center py-8 text-text-tertiary">No hay docentes registrados</td></tr>'
     }
 
@@ -224,9 +229,9 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       var data = cache.subjects || []
       grid.innerHTML = data.length ? data.map(function(s){
         return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 border-l-3 border-l-brand-gold">'+
-          '<div class="flex justify-between"><h4 class="font-bold text-xs">'+s.name+'</h4><button class="text-brand-danger text-[10px]" onclick="deleteSubject(\''+s.id+'\')">Eliminar</button></div>'+
-          '<div class="text-[10px] text-text-tertiary">'+s.grade+'</div>'+
-          (s.tutor_ai?'<a href="'+s.tutor_ai+'" target="_blank" class="inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-gold/10 text-brand-gold">Tutor IA</a>':'')+'</div>'
+          '<div class="flex justify-between"><h4 class="font-bold text-xs">'+window.escapeHtml(s.name)+'</h4><button class="text-brand-danger text-[10px]" onclick="deleteSubject(\''+window.escapeHtml(s.id)+'\')">Eliminar</button></div>'+
+          '<div class="text-[10px] text-text-tertiary">'+window.escapeHtml(s.grade)+'</div>'+
+          (s.tutor_ai?'<a href="'+window.escapeHtml(s.tutor_ai)+'" target="_blank" class="inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-gold/10 text-brand-gold">Tutor IA</a>':'')+'</div>'
       }).join('') : '<p class="col-span-full text-center py-8 text-text-tertiary">No hay materias registradas</p>'
     }
 
@@ -235,8 +240,8 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       var data = cache.notices || []
       list.innerHTML = data.length ? data.map(function(n){
         return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 border-l-4 border-l-brand-gold">'+
-          '<div class="flex justify-between mb-2"><strong class="text-xs">'+(n.titulo||'')+'</strong><span class="text-[10px] text-text-tertiary">'+(n.fecha||'')+'</span></div>'+
-          '<p class="text-xs text-text-secondary">'+(n.contenido||'')+'</p></div>'
+          '<div class="flex justify-between mb-2"><strong class="text-xs">'+window.escapeHtml(n.titulo||'')+'</strong><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(n.fecha||'')+'</span></div>'+
+          '<p class="text-xs text-text-secondary">'+window.escapeHtml(n.contenido||'')+'</p></div>'
       }).join('') : '<p class="text-center py-8 text-text-tertiary">No hay avisos publicados</p>'
     }
 
@@ -246,7 +251,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
         var data = await res.json()
         var admins = (data||[]).filter(function(p){return p.role==='admin'})
         var list = document.getElementById('admins-list')
-        if (list) list.innerHTML = admins.length ? admins.map(function(a){return'<div class="flex items-center gap-3 p-3 mb-2 border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon text-brand-gold flex items-center justify-center font-bold text-xs">'+(a.fullname||'A').charAt(0)+'</div><div><strong class="text-xs">'+a.fullname+'</strong><br><span class="text-[10px] text-text-tertiary">'+a.login_credential+'</span></div></div>'}).join('') : '<p>No hay administradores.</p>'
+        if (list) list.innerHTML = admins.length ? admins.map(function(a){return'<div class="flex items-center gap-3 p-3 mb-2 border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon text-brand-gold flex items-center justify-center font-bold text-xs">'+window.escapeHtml((a.fullname||'A').charAt(0))+'</div><div><strong class="text-xs">'+window.escapeHtml(a.fullname)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(a.login_credential)+'</span></div></div>'}).join('') : '<p>No hay administradores.</p>'
       } catch(e) { var l = document.getElementById('admins-list'); if(l) l.innerHTML = '<p class="text-center py-4 text-text-tertiary">Error al cargar administradores.</p>' }
     }
 
@@ -256,7 +261,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
         var res = await vfetch(API, '/api/admin/candidates')
         var data = await res.json()
         document.getElementById('candidates-management-list').innerHTML = (data||[]).map(function(c){
-          return'<div class="flex items-center gap-3 p-3 bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon/10 flex items-center justify-center font-bold text-xs">'+(c.name||'?').charAt(0)+'</div><div class="flex-1"><strong class="text-xs">'+c.name+'</strong> · <span class="text-xs text-text-tertiary">'+c.votes+' votos</span></div><button class="text-brand-danger text-xs" onclick="deleteCandidate(\''+c.id+'\')">Eliminar</button></div>'
+          return'<div class="flex items-center gap-3 p-3 bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon/10 flex items-center justify-center font-bold text-xs">'+window.escapeHtml((c.name||'?').charAt(0))+'</div><div class="flex-1"><strong class="text-xs">'+window.escapeHtml(c.name)+'</strong> · <span class="text-xs text-text-tertiary">'+c.votes+' votos</span></div><button class="text-brand-danger text-xs" onclick="deleteCandidate(\''+window.escapeHtml(c.id)+'\')">Eliminar</button></div>'
         }).join('') || '<p class="text-center py-4 text-text-tertiary">No hay candidatos</p>'
         renderElectionChart(data||[])
       } catch(e) { var cl = document.getElementById('candidates-management-list'); if(cl) cl.innerHTML = '<p class="text-center py-4 text-text-tertiary">Error cargando candidatos.</p>' }

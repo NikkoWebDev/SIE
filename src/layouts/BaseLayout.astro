@@ -18,11 +18,12 @@ const {
 } = Astro.props
 
 const title = `VYNTRA · ${titulo}`
-const isProd = import.meta.env.PROD
-const scriptSrc = "'self' 'unsafe-inline'"
-const connectSrc = isProd
-  ? "'self' https://sie-8agt.onrender.com wss://sie-8agt.onrender.com"
-  : "'self' http://localhost:8000 ws://localhost:8000"
+const scriptSrc = "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
+const apiUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+const apiHost = new URL(apiUrl).host
+const wsHost = apiUrl.startsWith('https') ? apiHost : apiHost
+const wsScheme = apiUrl.startsWith('https') ? 'wss' : 'ws'
+const connectSrc = `'self' ${apiUrl} ${wsScheme}://${wsHost}`
 const CSP = `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src ${connectSrc}; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'`
 
 Astro.response.headers.set('Content-Security-Policy', CSP)

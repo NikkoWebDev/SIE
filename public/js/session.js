@@ -6,6 +6,9 @@
     console.warn('[VYNTRA] window.__API_URL__ no definido. Usando fallback local. Setear PUBLIC_API_URL en el build.')
   }
 
+  var origFetch
+  var origOpen
+
   // ── Token is httpOnly — browser sends it automatically with credentials: 'include' ──
   function getToken() {
     return null // httpOnly cookie — not readable from JS
@@ -17,10 +20,9 @@
     } catch(e) { return false }
   }
 
-  // ── Wake-up: ping server on every page load (Image to bypass CORS) ──
+  // ── Wake-up: ping server on every page load ──
   function wakeUp() {
-    var img = new Image()
-    img.src = API_URL + '/api/health?' + Date.now()
+    fetch(API_URL + '/api/health', { method: 'GET', priority: 'low', signal: AbortSignal.timeout(5000) }).catch(function(){})
   }
 
   // ── Auth check ──
@@ -44,7 +46,7 @@
 
   // ── Auto-logout on 401 responses ──
   function setupAuthInterceptor() {
-    var origOpen = XMLHttpRequest.prototype.open
+    origOpen = XMLHttpRequest.prototype.open
     XMLHttpRequest.prototype.open = function () {
       this.addEventListener('load', function () {
         if (this.status === 401) {
@@ -57,7 +59,7 @@
       return origOpen.apply(this, arguments)
     }
 
-    var origFetch = window.fetch
+    origFetch = window.fetch
     window.fetch = function (url, opts) {
       return origFetch(url, opts).then(function (r) {
         if (r.status === 401) {
