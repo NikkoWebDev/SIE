@@ -430,7 +430,8 @@ import BaseLayout from '@layouts/BaseLayout.astro'
       var API = API_BASE
       function fetchWithRetry(url, opts, retries) {
         retries = retries || 3
-        return fetch(url, opts).catch(function(err) {
+        var fetcher = (window.VYNTRA && window.VYNTRA.origFetch) || fetch
+        return fetcher(url, opts).catch(function(err) {
           if (retries <= 1) throw err
           return new Promise(function(resolve) { setTimeout(resolve, 3000) }).then(function() {
             return fetchWithRetry(url, opts, retries - 1)

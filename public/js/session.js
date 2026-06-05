@@ -17,13 +17,10 @@
     } catch(e) { return false }
   }
 
-  // ── Wake-up: ping server on every page load ──
+  // ── Wake-up: ping server on every page load (Image to bypass CORS) ──
   function wakeUp() {
-    var xhr = new XMLHttpRequest()
-    xhr.open('GET', API_URL + '/api/health', true)
-    xhr.timeout = 10000
-    xhr.onerror = function() {}  // swallow CORS/network errors (cold start)
-    xhr.send()
+    var img = new Image()
+    img.src = API_URL + '/api/health?' + Date.now()
   }
 
   // ── Auth check ──
@@ -92,4 +89,5 @@
   window.VYNTRA.isAuthenticated = isAuthenticated
   window.VYNTRA.getApiUrl = function () { return API_URL }
   window.VYNTRA.getToken = getToken
+  window.VYNTRA.origFetch = origFetch
 })()
