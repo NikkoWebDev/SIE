@@ -2,7 +2,6 @@
 import BaseLayout from '@layouts/BaseLayout.astro'
 
 const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
-const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
 ---
 
 <BaseLayout titulo="Acceso" descripcion="Inicia sesión en VYNTRA Academic — Solaris" noIndex={true} withNoise={true}>
@@ -67,7 +66,7 @@ const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
             <button id="tab-personal" class="flex-1 relative z-10 flex items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 text-text-tertiary" data-tab="personal" role="tab" aria-selected="false" aria-controls="panel-personal">Personal</button>
           </div>
 
-          <form id="login-form" class="space-y-4" novalidate>
+          <form id="panel-login" class="space-y-4" role="tabpanel" aria-labelledby="tab-estudiante">
             <div>
               <label for="doc-id" class="block ml-1 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-1.5">Identificación Institucional</label>
               <div class="relative">
@@ -134,16 +133,12 @@ const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ''
     </div>
   </div>
 
-  <style>
-    .modal-overlay { display: flex; }
-  </style>
-
-  <script define:vars={{ baseUrl, googleClientId }}>
+  <script define:vars={{ baseUrl }}>
     (function() {
       var tabEst = document.getElementById('tab-estudiante')
       var tabPer = document.getElementById('tab-personal')
       var slider = document.getElementById('tab-slider')
-      var form = document.getElementById('login-form')
+      var form = document.getElementById('panel-login')
       var docInput = document.getElementById('doc-id')
       var passwordInput = document.getElementById('password')
       var currentTab = 'estudiante'

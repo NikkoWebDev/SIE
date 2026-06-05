@@ -160,6 +160,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
 
     // Data cache
     var cache = { stats:null, students:null, teachers:null, notices:null, subjects:null }
+    var _fullStudents = null
     var abortCtrl = null
 
     async function loadAllData() {
@@ -173,6 +174,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
           vfetch(API, '/api/subjects',{signal:abortCtrl.signal}).then(function(r){return r.json()})
         ])
         cache = { stats, students, teachers, notices, subjects }
+        _fullStudents = (students || []).slice()
         renderAll()
       } catch(e) { window.VyntraToast?.error('Error cargando datos del panel: ' + (e?.message || 'Reintente')) }
     }
@@ -180,6 +182,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     function renderAll() {
       var d = cache.stats
       if (d) { document.getElementById('stat-mora').textContent = d.mora||0; document.getElementById('stat-grados').textContent = d.total_grades||6; document.getElementById('stat-estudiantes').textContent = d.total_students||0; document.getElementById('stat-docentes').textContent = d.total_teachers||0; document.getElementById('stat-avisos').textContent = d.total_notices||0 }
+      _fullStudents = (cache.students || []).slice()
       renderStudents()
       renderTeachers()
       renderNotices()
@@ -187,9 +190,19 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       loadAdmins()
     }
 
+    var _filterGrade = '', _filterPayment = ''
+    function applyFilters() {
+      var data = (_fullStudents || cache.students || []).slice()
+      if (_filterGrade) data = data.filter(function(s){ return (s.grade||s.grado||'') === _filterGrade })
+      if (_filterPayment === 'paid') data = data.filter(function(s){ return s.is_paid !== false })
+      if (_filterPayment === 'debt') data = data.filter(function(s){ return s.is_paid === false })
+      var term = (document.getElementById('search-student').value||'').toLowerCase()
+      if (term) data = data.filter(function(s){ return (s.fullname||'').toLowerCase().includes(term) || (s.document_id||'').toLowerCase().includes(term) })
+      return data
+    }
     function renderStudents() {
       var tbody = document.getElementById('students-list'); if (!tbody) return
-      var data = cache.students || []
+      var data = applyFilters()
       tbody.innerHTML = data.sort(function(a,b){return(a.is_paid===b.is_paid)?0:a.is_paid?1:-1}).map(function(s){
         return '<tr class="border-b border-border"><td class="p-2 text-[11px]">'+(s.document_id||'')+'</td><td class="p-2 text-xs font-medium">'+(s.fullname||'')+'</td><td class="p-2 text-xs">'+(s.grade||s.grado||'-')+'</td><td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold '+(s.is_paid!==false?'bg-success/10 text-success':'bg-brand-danger/10 text-brand-danger')+'">'+(s.is_paid!==false?'AL DÍA':'EN MORA')+'</span></td>'+
           '<td class="p-2"><button class="text-xs text-brand-maroon hover:underline mr-2" onclick="togglePayment(\''+s._id+'\','+(s.is_paid!==false)+')">Cambiar</button><button class="text-xs text-brand-danger hover:underline" onclick="deleteStudent(\''+s._id+'\')">Eliminar</button></td></tr>'
@@ -306,11 +319,8 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     document.querySelectorAll('[data-section-id]').forEach(function(btn) {
       btn.addEventListener('click', function() { window.showSection(this.getAttribute('data-section-id')) })
     })
-    document.getElementById('filter-grade')?.addEventListener('change', renderStudents)
-    document.getElementById('search-student')?.addEventListener('input', function() {
-      var term = this.value.toLowerCase()
-      var filtered = (cache.students||[]).filter(function(s){ return (s.fullname||'').toLowerCase().includes(term) || (s.document_id||'').toLowerCase().includes(term) })
-      cache.students = filtered; renderStudents()
-    })
+    document.getElementById('filter-grade')?.addEventListener('change', function() { _filterGrade = this.value; renderStudents() })
+    document.getElementById('filter-payment')?.addEventListener('change', function() { _filterPayment = this.value; renderStudents() })
+    document.getElementById('search-student')?.addEventListener('input', renderStudents)
   })()
 </script>

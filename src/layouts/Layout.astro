@@ -8,10 +8,7 @@ export interface Props {
 const { titulo, sinMenu } = Astro.props
 const title = titulo ? `VYNTRA · ${titulo}` : 'VYNTRA Academic'
 
-const SCRIPT_SRC = "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
-const CSP = process.env.NODE_ENV === 'production'
-  ? `default-src 'self'; script-src ${SCRIPT_SRC}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss:; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'`
-  : `default-src 'self'; script-src ${SCRIPT_SRC}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:8000 ws://localhost:8000 https: wss:; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'`
+const CSP = `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https: wss:; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'`
 Astro.response.headers.set('Content-Security-Policy', CSP)
 ---
 
@@ -39,7 +36,6 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
       } catch(e) {}
     })()
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer crossorigin="anonymous" integrity="sha512-Ml0dpc6HKA1y1cXn3oGNIJmpC+6rVG5zrIlCQBeFRLVM3gnmBQa9q1XaQjcR01MUT5d6Hm3S1KprFGgYDJgKog=="></script>
   <script src="/js/session.js" defer></script>
 </head>
 <body>

@@ -1,0 +1,20 @@
+{
+  "name": "VYNTRA Academic",
+  "short_name": "VYNTRA",
+  "description": "Plataforma académica — Colegio Técnico Ciudad del Sol",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0A08",
+  "theme_color": "#6B1A1A",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education"],
+  "lang": "es-CO"
+}

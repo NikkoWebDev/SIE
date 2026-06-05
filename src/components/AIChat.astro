@@ -183,7 +183,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       typing.classList.remove('hidden'); scrollToBottom()
 
       // Context is built server-side from userId — no client fetches needed
-      var bubble = document.createElement('div'); bubble.className = 'flex-1'; bubble.id = 'streaming-bubble'; bubble.setAttribute('data-msg-role','assistant')
+      var bubble = document.createElement('div'); bubble.className = 'flex-1'; bubble.id = 'streaming-bubble'
       var div = document.createElement('div'); div.className = 'flex items-start gap-2.5'
       var av = document.createElement('div'); av.textContent = avatar; av.style.cssText = 'width:28px;height:28px;border-radius:50%;background:var(--bg-tertiary);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0'
       div.appendChild(av); div.appendChild(bubble); messages.appendChild(div)

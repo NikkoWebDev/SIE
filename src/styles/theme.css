@@ -140,8 +140,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 input,select,textarea{font-family:inherit;font-size:16px}
 
 /* ── Minimum tap targets (44×44px) for touch accessibility ── */
-button,a[role="button"],[onclick]:not(input):not(select):not(textarea){min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
-@media(min-width:640px){button,a[role="button"],[onclick]:not(input):not(select):not(textarea){min-width:auto;min-height:auto}}
+button,a[role="button"],[onclick]:not(input):not(select):not(textarea):not(svg):not(path):not(circle):not(line){min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+@media(min-width:640px){button,a[role="button"],[onclick]:not(input):not(select):not(textarea):not(svg):not(path):not(circle):not(line){min-width:auto;min-height:auto}}
 @media(max-width:639px){.sidebar-link{padding-top:.625rem!important;padding-bottom:.625rem!important}}
 input[type="number"],input[type="text"],input[type="password"],input[type="email"],input[type="search"]{min-height:44px}
 
@@ -177,6 +177,12 @@ img,canvas,video,iframe{max-width:100%!important;height:auto}
   animation:shimmer 1.8s ease-in-out infinite;
 }
 
+/* ── Shimmer animation (skeletons) ── */
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Fade-up animation (scroll reveals) ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
 /* ── Toast animations ── */
 @keyframes toastSlideIn{from{transform:translateY(120%);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes toastSlideOut{from{transform:translateY(0);opacity:1}to{transform:translateY(120%);opacity:0}}
@@ -192,12 +198,14 @@ img,canvas,video,iframe{max-width:100%!important;height:auto}
 /* ── Focus ring for accessibility ── */
 :focus-visible{outline:2px solid var(--brand-gold);outline-offset:2px;border-radius:4px}
 
-/* ── Safe area (notch/home indicator) support ── */
-@supports(padding:max(0px)){
-  body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
-  body::after{content:'';display:block;height:env(safe-area-inset-bottom)}
-  [class*="sidebar-"]{padding-top:env(safe-area-inset-top)!important;padding-bottom:max(env(safe-area-inset-bottom),.75rem)!important}
-  .nav-blur,.topbar{padding-left:max(1rem,env(safe-area-inset-left))!important;padding-right:max(1rem,env(safe-area-inset-right))!important}
+/* ── Safe area (notch/home indicator) support — mobile only ── */
+@media(max-width:768px){
+  @supports(padding:max(0px)){
+    body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+    body::after{content:'';display:block;height:env(safe-area-inset-bottom)}
+    [class*="sidebar-"]{padding-top:env(safe-area-inset-top)!important;padding-bottom:max(env(safe-area-inset-bottom),.75rem)!important}
+    .nav-blur,.topbar{padding-left:max(1rem,env(safe-area-inset-left))!important;padding-right:max(1rem,env(safe-area-inset-right))!important}
+  }
 }
 
 /* ── Reduced motion ── */
@@ -224,12 +232,12 @@ img,canvas,video,iframe{max-width:100%!important;height:auto}
 
 /* ── Sidebar: active section glow ── */
 [id^="vyntra-sidebar-"] [data-section-id].active {
-  box-shadow: 4px 0 0 0 var(--brand-maroon), inset 0 0 20px rgba(107,26,26,0.04);
+  box-shadow: inset 0 0 20px rgba(107,26,26,0.04);
   color: var(--brand-maroon);
   border-left-color: var(--brand-maroon);
 }
 .dark [id^="vyntra-sidebar-"] [data-section-id].active {
-  box-shadow: 4px 0 0 0 var(--brand-gold), inset 0 0 20px rgba(245,166,35,0.06);
+  box-shadow: inset 0 0 20px rgba(245,166,35,0.06);
   color: var(--brand-gold-light);
   border-left-color: var(--brand-gold);
 }

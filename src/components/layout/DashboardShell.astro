@@ -42,75 +42,76 @@ const {
   <div class="noise-overlay" aria-hidden="true"></div>
 </div>
 
-<script is:inline>
-  // VYNTRA Solaris — Shared Dashboard Library v1.0
-  ;(function () {
-    window.setVyntraTheme = function (dark) {
-      document.documentElement.classList.toggle('dark', dark)
-      try { localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light') } catch (_) {}
+<script>
+  import { Chart, registerables } from 'chart.js'
+  Chart.register(...registerables)
+  window.Chart = Chart
+
+  window.setVyntraTheme = function (dark) {
+    document.documentElement.classList.toggle('dark', dark)
+    try { localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light') } catch (_) {}
+  }
+  try {
+    var stored = localStorage.getItem('vyntra-theme')
+    window.setVyntraTheme(stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme:dark)').matches))
+  } catch (_) {}
+
+  document.querySelectorAll('[id^="sec-"]').forEach(function (s) { s.setAttribute('aria-live', 'polite') })
+
+  window.createShowSection = function (configs) {
+    var titles = configs.titles || {}, subs = configs.subs || {}, onN = configs.onNavigate || function () {}
+    return function showSection(id) {
+      document.querySelectorAll('[id^="sec-"]').forEach(function (s) { s.style.display = 'none'; s.classList.remove('section-enter') })
+      var sec = document.getElementById('sec-' + id)
+      if (sec) { sec.style.display = ''; sec.classList.add('section-enter') }
+      var t = document.querySelector('.topbar h1'), p = document.querySelector('.topbar p')
+      if (t) t.textContent = titles[id] || id
+      if (p) p.textContent = subs[id] || ''
+      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id } }))
+      onN(id)
     }
-    try {
-      var stored = localStorage.getItem('vyntra-theme')
-      window.setVyntraTheme(stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme:dark)').matches))
-    } catch (_) {}
+  }
 
-    document.querySelectorAll('[id^="sec-"]').forEach(function (s) { s.setAttribute('aria-live', 'polite') })
-
-    window.createShowSection = function (configs) {
-      var titles = configs.titles || {}, subs = configs.subs || {}, onN = configs.onNavigate || function () {}
-      return function showSection(id) {
-        document.querySelectorAll('[id^="sec-"]').forEach(function (s) { s.style.display = 'none'; s.classList.remove('section-enter') })
-        var sec = document.getElementById('sec-' + id)
-        if (sec) { sec.style.display = ''; sec.classList.add('section-enter') }
-        var t = document.querySelector('.topbar h1'), p = document.querySelector('.topbar p')
-        if (t) t.textContent = titles[id] || id
-        if (p) p.textContent = subs[id] || ''
-        window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id } }))
-        onN(id)
+  window.vfetch = function (apiUrl, path, opts) {
+    var headers = Object.assign({ 'Content-Type': 'application/json' }, opts && opts.headers)
+    var ctrl = new AbortController()
+    var timer = setTimeout(function () { ctrl.abort() }, 15000)
+    var merged = Object.assign({ credentials: 'include', signal: ctrl.signal }, opts, { headers: headers })
+    return fetch(apiUrl + path, merged).then(function (r) {
+      clearTimeout(timer)
+      if (r.status === 401) {
+        try { localStorage.clear() } catch (_) {}
+        window.VyntraToast?.error('Sesión expirada. Redirigiendo al inicio...')
+        setTimeout(function () { window.location.href = '/login' }, 1500)
+        throw new Error('Sesión expirada')
       }
-    }
+      return r
+    }).catch(function (e) {
+      clearTimeout(timer)
+      throw e
+    })
+  }
 
-    window.vfetch = function (apiUrl, path, opts) {
-      var headers = Object.assign({ 'Content-Type': 'application/json' }, opts && opts.headers)
-      var ctrl = new AbortController()
-      var timer = setTimeout(function () { ctrl.abort() }, 15000)
-      var merged = Object.assign({ credentials: 'include', signal: ctrl.signal }, opts, { headers: headers })
-      return fetch(apiUrl + path, merged).then(function (r) {
-        clearTimeout(timer)
-        if (r.status === 401) {
-          try { localStorage.clear() } catch (_) {}
-          window.VyntraToast?.error('Sesión expirada. Redirigiendo al inicio...')
-          setTimeout(function () { window.location.href = '/login' }, 1500)
-          throw new Error('Sesión expirada')
-        }
-        return r
-      }).catch(function (e) {
-        clearTimeout(timer)
-        throw e
-      })
-    }
+  window.startVyntraClock = function (elId) {
+    var el = document.getElementById(elId)
+    if (!el) return
+    function tick() { if (el) el.textContent = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }
+    tick(); setInterval(tick, 1000)
+  }
 
-    window.startVyntraClock = function (elId) {
-      var el = document.getElementById(elId)
-      if (!el) return
-      function tick() { if (el) el.textContent = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }
-      tick(); setInterval(tick, 1000)
-    }
+  window.getCurrentBimester = function () {
+    var m = new Date().getMonth() + 1
+    return m <= 3 ? 1 : m <= 6 ? 2 : m <= 9 ? 3 : 4
+  }
 
-    window.getCurrentBimester = function () {
-      var m = new Date().getMonth() + 1
-      return m <= 3 ? 1 : m <= 6 ? 2 : m <= 9 ? 3 : 4
-    }
+  window.escapeHtml = function (text) {
+    var div = document.createElement('div')
+    div.appendChild(document.createTextNode(String(text || '')))
+    return div.innerHTML
+  }
 
-    window.escapeHtml = function (text) {
-      var div = document.createElement('div')
-      div.appendChild(document.createTextNode(String(text || '')))
-      return div.innerHTML
-    }
-
-    window.formatNum = function (n, d) {
-      var num = parseFloat(n)
-      return isNaN(num) ? '--' : num.toFixed(d || 1)
-    }
-  })()
+  window.formatNum = function (n, d) {
+    var num = parseFloat(n)
+    return isNaN(num) ? '--' : num.toFixed(d || 1)
+  }
 </script>

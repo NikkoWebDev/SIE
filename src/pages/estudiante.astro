@@ -83,7 +83,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
             {['P1','P2','P3','P4'].map(p => (
               <div class="flex-1 flex flex-col items-center gap-1">
                 <span class="text-[11px] font-bold text-brand-maroon dark:text-brand-gold" id={`bar-${p}-val`}>--</span>
-                <div class="w-full rounded-t-lg bg-gradient-to-t from-brand-maroon to-brand-maroon-light transition-all duration-700 ease-out" id={`bar-${p}`} style="height:4px"></div>
+                <div class="w-full rounded-t-lg bg-gradient-to-t from-brand-maroon to-brand-maroon-light transition-all duration-700 ease-out" id={`bar-${p}`} style="height:4%;min-height:2px"></div>
                 <span class="text-[10px] text-text-tertiary">{p}</span>
               </div>
             ))}
@@ -120,7 +120,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
             <input id="hw-title" placeholder="Ej: Taller 3 — Ecuaciones" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon" />
             <textarea id="hw-comment" rows="2" placeholder="Notas adicionales..." class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon resize-y"></textarea>
             <div id="dropzoneArea" class="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-brand-maroon hover:bg-brand-maroon/3 transition-colors">
-              <div class="text-2xl mb-2">&#x1F4CE;</div>
+              <svg class="h-8 w-8 mx-auto mb-2 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
               <div class="text-sm font-medium text-text-secondary">Arrastra tu archivo aquí</div>
               <p class="text-xs text-text-tertiary mt-1">PDF, DOCX, ZIP, PNG · Máx 20 MB</p>
               <input type="file" id="hw-file" accept=".pdf,.doc,.docx,.zip,.png,.jpg" class="hidden" />
@@ -231,7 +231,8 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
 
 <script define:vars={{ apiUrl, wsUrl }}>
 (function(){
-  var studentId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
+  var rawId = localStorage.getItem('profile_id') || localStorage.getItem('userId')
+  var studentId = rawId && rawId.length < 20 ? 'profile_' + rawId : rawId
   if (!studentId) { window.VyntraToast?.error('Sesión no encontrada.'); setTimeout(function(){ window.location.href='/login' },1500); return }
   var userGrade = localStorage.getItem('userGrade') || ''
   var userName = localStorage.getItem('userName') || 'Estudiante'
@@ -260,13 +261,9 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
     })
   }
 
-  function setTheme(dark) {
-    document.documentElement.classList.toggle('dark', dark)
-    localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light')
-  }
-  setTheme(localStorage.getItem('vyntra-theme') === 'dark' || (!localStorage.getItem('vyntra-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches))
+  window.setVyntraTheme && window.setVyntraTheme(localStorage.getItem('vyntra-theme') === 'dark' || (!localStorage.getItem('vyntra-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches))
   document.getElementById('theme-toggle-student')?.addEventListener('click', function() {
-    setTheme(!document.documentElement.classList.contains('dark'))
+    window.setVyntraTheme(!document.documentElement.classList.contains('dark'))
   })
 
   var pageTitles = { inicio:'Inicio', notas:'Registro de Notas', examenes:'Exámenes', horarios:'Horarios', tareas:'Tareas', saber:'Pruebas Saber', biblioteca:'Biblioteca', votaciones:'Votaciones', perfil:'Perfil' }
@@ -457,7 +454,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
   })
 
   function loadSchedule() {
-    apiFetch('/api/teacher/schedule').then(function(data) {
+    apiFetch('/api/schedule?student_id=' + encodeURIComponent(studentId)).then(function(data) {
       var el = document.getElementById('schedule-container')
       if (!data || !data.days) { el.innerHTML = 'No hay horario disponible.'; return }
       var weekdays = ['lunes','martes','miercoles','jueves','viernes']

@@ -18,10 +18,9 @@ const {
 } = Astro.props
 
 const title = `VYNTRA · ${titulo}`
-const scriptSrc = import.meta.env.PROD
-  ? "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
-  : "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
-const connectSrc = import.meta.env.PROD
+const isProd = import.meta.env.PROD
+const scriptSrc = "'self' 'unsafe-inline'"
+const connectSrc = isProd
   ? "'self' https://sie-8agt.onrender.com wss://sie-8agt.onrender.com"
   : "'self' http://localhost:8000 ws://localhost:8000"
 const CSP = `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src ${connectSrc}; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'`
@@ -42,18 +41,63 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
   <meta property="og:description" content={descripcion} />
   <meta property="og:url" content={`https://colegiociudaddelsol.edu.co${Astro.url.pathname}`} />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://colegiociudaddelsol.edu.co/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:site_name" content="Vyntra Academic" />
+  <meta property="og:locale" content="es_CO" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={descripcion} />
+  <meta name="twitter:image" content="https://colegiociudaddelsol.edu.co/og-image.png" />
+  <meta name="theme-color" content="#6B1A1A" />
 
+  <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="16x16 32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+  <link rel="icon" type="image/png" href="/icon-192.png" sizes="192x192" />
+  <link rel="icon" type="image/png" href="/icon-512.png" sizes="512x512" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Syne:wght@500;700&family=Azeret+Mono:wght@400;600&display=swap" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Syne:wght@500;700&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Syne:wght@500;700&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Syne:wght@500;700&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet" /></noscript>
 
+  {!noIndex && (
+    <script type="application/ld+json" set:html={JSON.stringify([{
+      "@context": "https://schema.org",
+      "@type": "School",
+      "name": "Colegio Técnico Ciudad del Sol",
+      "alternateName": "Vyntra Academic",
+      "url": "https://colegiociudaddelsol.edu.co",
+      "description": "Institución educativa técnica en Sogamoso, Boyacá, Colombia con plataforma académica VYNTRA Solaris",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Sogamoso",
+        "addressRegion": "Boyacá",
+        "addressCountry": "CO"
+      },
+    }, {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Vyntra Academic",
+      "url": "https://colegiociudaddelsol.edu.co",
+      "description": "Plataforma integral de gestión académica con metodología ABP para el Colegio Técnico Ciudad del Sol",
+      "inLanguage": "es-CO",
+    }])} />
+  )}
   <script>
     window.__API_URL__ = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'}`
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {})
+      })
+    }
   </script>
 
   {withThemeScript && (
@@ -61,6 +105,7 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
       (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();
     </script>
   )}
+  <script src="/js/session.js" defer></script>
 
   <slot name="head" />
 </head>
