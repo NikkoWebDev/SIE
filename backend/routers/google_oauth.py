@@ -1,7 +1,7 @@
 import logging
 import os
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from supabase import Client
@@ -19,7 +19,7 @@ class GoogleAuthRequest(BaseModel):
 
 
 @router.post("/google")
-async def google_auth(data: GoogleAuthRequest) -> JSONResponse:
+async def google_auth(data: GoogleAuthRequest, request: Request) -> JSONResponse:
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
     if not GOOGLE_CLIENT_ID:
         logger.error("GOOGLE_CLIENT_ID not configured on server")
@@ -79,6 +79,6 @@ async def google_auth(data: GoogleAuthRequest) -> JSONResponse:
             "nombre": prof["fullname"],
         },
     })
-    set_jwt_cookie(response, token)
-    set_csrf_cookie(response)
+    set_jwt_cookie(response, token, request=request)
+    set_csrf_cookie(response, request=request)
     return response

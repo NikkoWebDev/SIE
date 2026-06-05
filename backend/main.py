@@ -230,13 +230,13 @@ async def auth_middleware(request: Request, call_next: Any) -> Response:
     else:
         token = request.cookies.get("access_token", "")
     if not token:
-        return JSONResponse(status_code=401, content={"detail": "Authorization required"}, headers={"Access-Control-Allow-Origin": origin})
+        return JSONResponse(status_code=401, content={"detail": "Authorization required"}, headers={"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Credentials": "true"})
     try:
         claims = decode_jwt(token)
     except jwt.ExpiredSignatureError:
-        return JSONResponse(status_code=401, content={"detail": "Token expired"}, headers={"Access-Control-Allow-Origin": origin})
+        return JSONResponse(status_code=401, content={"detail": "Token expired"}, headers={"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Credentials": "true"})
     except jwt.PyJWTError:
-        return JSONResponse(status_code=401, content={"detail": "Invalid token"}, headers={"Access-Control-Allow-Origin": origin})
+        return JSONResponse(status_code=401, content={"detail": "Invalid token"}, headers={"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Credentials": "true"})
     request.state.user_id = claims["sub"]
     request.state.user_role = claims.get("role", "student")
     return await call_next(request)

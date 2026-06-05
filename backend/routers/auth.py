@@ -134,8 +134,8 @@ async def login(data: UserLogin, request: Request) -> JSONResponse:
             "nombre": profile["fullname"],
         },
     })
-    set_jwt_cookie(response, token)
-    set_csrf_cookie(response)
+    set_jwt_cookie(response, token, request=request)
+    set_csrf_cookie(response, request=request)
     return response
 
 
@@ -177,16 +177,16 @@ async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
                 "documento": data.document_id,
             },
         })
-        set_jwt_cookie(response, token)
-        set_csrf_cookie(response)
+        set_jwt_cookie(response, token, request=request)
+        set_csrf_cookie(response, request=request)
         return response
 
     raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
 
 @router.post("/logout")
-async def logout() -> JSONResponse:
+async def logout(request: Request) -> JSONResponse:
     response = JSONResponse(content={"message": "Sesión cerrada"})
-    clear_jwt_cookie(response)
-    clear_csrf_cookie(response)
+    clear_jwt_cookie(response, request=request)
+    clear_csrf_cookie(response, request=request)
     return response
