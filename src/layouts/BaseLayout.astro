@@ -88,24 +88,85 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
       "inLanguage": "es-CO",
     }])} />
   )}
-  <script>
-    window.__API_URL__ = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'}`
+  <script is:inline>
+    window.__API_URL__ = '${import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'}'.replace(/\/+$/, '')
   </script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function (regs) {
-        regs.forEach(function (r) { r.unregister() })
-      })
-    }
+  <script is:inline>
+    // ── Service Worker cleanup ──
+    try { if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(function (a) { a.forEach(function (b) { b.unregister() }) }) } } catch(e){}
   </script>
+  {withThemeScript && <script is:inline>(function(){try{if(localStorage.getItem('vyntra-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}})();</script>}
+  <script is:inline>
+    // VYNTRA Academic — Session Manager v3.2 (inline)
+    (function () {
+      var API_URL = window.__API_URL__ || 'http://localhost:8000'
+      var origFetch, origOpen
 
-  {withThemeScript && (
-    <script is:inline>
-      (function(){try{var t=localStorage.getItem('vyntra-theme');if(t==='dark')document.documentElement.classList.add('dark')}catch(e){}})();
-    </script>
-  )}
-  <script src="/js/session.js?v=2" defer></script>
+      function getToken() { return null }
+      function isAuthenticated() { try { return !!localStorage.getItem('userId') } catch(e) { return false } }
+
+      function wakeUp() {
+        fetch(API_URL + '/api/health', { method: 'GET', priority: 'low', signal: AbortSignal.timeout(5000) }).catch(function(){})
+      }
+
+      function checkAuth() {
+        try {
+          var uid = localStorage.getItem('userId')
+          if (!uid) {
+            var p = window.location.pathname
+            if (p !== '/' && p !== '/login' && p !== '/login/' && p !== '/api/health' && !p.startsWith('/api/')) {
+              localStorage.clear()
+              window.location.href = '/login/'
+            }
+            return false
+          }
+          return true
+        } catch(e) { return false }
+      }
+
+      function setupAuthInterceptor() {
+        origOpen = XMLHttpRequest.prototype.open
+        XMLHttpRequest.prototype.open = function () {
+          this.addEventListener('load', function () {
+            if (this.status === 401) {
+              var hadSession = false
+              try { hadSession = !!localStorage.getItem('userId') } catch(_) {}
+              if (hadSession) {
+                localStorage.clear()
+                if (window.location.pathname !== '/login' && window.location.pathname !== '/login/') window.location.href = '/login/'
+              }
+            }
+          })
+          return origOpen.apply(this, arguments)
+        }
+
+        origFetch = window.fetch
+        window.fetch = function (url, opts) {
+          return origFetch(url, opts).then(function (r) {
+            if (r.status === 401) {
+              var hadSession = false
+              try { hadSession = !!localStorage.getItem('userId') } catch(_) {}
+              if (hadSession) {
+                localStorage.clear()
+                if (window.location.pathname !== '/login' && window.location.pathname !== '/login/') window.location.href = '/login/'
+              }
+            }
+            return r
+          })
+        }
+      }
+
+      checkAuth()
+      wakeUp()
+      setupAuthInterceptor()
+
+      window.VYNTRA = window.VYNTRA || {}
+      window.VYNTRA.isAuthenticated = isAuthenticated
+      window.VYNTRA.getApiUrl = function () { return API_URL }
+      window.VYNTRA.getToken = getToken
+      window.VYNTRA.origFetch = origFetch
+    })()
+  </script>
 
   <slot name="head" />
 </head>
