@@ -9,30 +9,8 @@
 @tailwind utilities;
 
 :root {
-  /* ── Solar Theme Tokens ── */
-  --solar-cream: #FFFBF0;
-  --solar-gold: #F5A623;
-  --solar-amber: #FF8C00;
-  --solar-ember: #E8650A;
+  --text-tertiary: #7A6050;
 
-  /* ── Brand ── */
-  --brand-maroon: #6B1A1A;
-  --brand-maroon-light: #8B2A2A;
-  --brand-maroon-dark: #4A0E0E;
-  --brand-gold: #F5A623;
-  --brand-gold-light: #FFD166;
-  --brand-gold-dark: #C47F0A;
-
-  /* ── Light Theme ── */
-  --bg: #FFFBF0;
-  --bg-secondary: #FFF8E7;
-  --bg-tertiary: #FEF0D0;
-  --bg-elevated: rgba(255,255,255,0.85);
-  --bg-card: rgba(255,255,255,0.5);
-
-  --text: #2D1B0A;
-  --text-secondary: #7A6254;
-  --text-tertiary: #A89080;
   --text-inverse: #FFFBF0;
 
   --border: rgba(107,26,26,0.06);
@@ -86,15 +64,8 @@
 }
 
 .dark {
-  --bg: #0D0A08;
-  --bg-secondary: #14100C;
-  --bg-tertiary: #1C1812;
-  --bg-elevated: rgba(20,16,12,0.85);
-  --bg-card: rgba(20,16,12,0.5);
+  --text-tertiary: #A89080;
 
-  --text: #F5EDE0;
-  --text-secondary: #B0A090;
-  --text-tertiary: #7A6E60;
   --text-inverse: #0D0A08;
 
   --border: rgba(245,166,35,0.06);
@@ -252,5 +223,43 @@ img,canvas,video,iframe{max-width:100%!important;height:auto}
 .skeleton-table-row > div:nth-child(3) { width: 20%; }
 .skeleton-table-row > div:nth-child(4) { width: 15%; }
 
+/* ── Solar Dark Theme Keyframes ── */
+@keyframes float-up {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  15% { opacity: 0.3; }
+  85% { opacity: 0.08; }
+  100% { transform: translateY(-100vh) scale(0.4); opacity: 0; }
+}
 
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.18); opacity: 0.85; }
+}
+
+@keyframes logo-breathe {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(245,166,35,0.2)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 35px rgba(245,166,35,0.4)); }
+}
+
+@keyframes star {
+  0%, 100% { opacity: 0.1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.8); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float-up { animation: float-up linear infinite; }
+.animate-breathing { animation: breathe 8s ease-in-out infinite; }
+.animate-logo-breathe { animation: logo-breathe 4s ease-in-out infinite; }
+.animate-star { animation: star ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-up,
+  .animate-breathing,
+  .animate-logo-breathe,
+  .animate-star { animation: none; }
+}
 
