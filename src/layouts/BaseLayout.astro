@@ -6,7 +6,6 @@ export interface Props {
   descripcion?: string
   noIndex?: boolean
   withNoise?: boolean
-  withThemeScript?: boolean
 }
 
 const {
@@ -14,7 +13,6 @@ const {
   descripcion = 'Plataforma académica VYNTRA — Sogamoso, Boyacá, Colombia',
   noIndex = false,
   withNoise = false,
-  withThemeScript = true,
 } = Astro.props
 
 const title = `VYNTRA · ${titulo}`
