@@ -11,416 +11,222 @@ const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
   withNoise={false}
   withThemeScript={false}
 >
-  <!-- Scroll Progress Bar -->
-  <div id="scroll-progress" class="fixed top-0 left-0 h-[3px] bg-gradient-to-r from-brand-gold via-brand-gold-light to-brand-amber z-[9999]" style="width:0%"></div>
+  <div class="bg-[#0A0505] text-white/90">
 
-  <!-- ═════ ACT 1: HERO — SOLAR DAWN ═════ -->
-  <section id="act-hero" class="relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#0A0404] via-[#120808] to-[#0D0A08]">
-    <!-- Stars/particles canvas -->
-    <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
-      {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19].map(i => (
-        <div class="absolute w-[2px] h-[2px] rounded-full bg-brand-gold animate-star" style={{
-          left: `${5 + (i * 5.3) % 95}%`,
-          top: `${3 + (i * 7.1) % 94}%`,
-          animationDelay: `${i * 0.4}s`,
-          animationDuration: `${2.5 + (i % 3) * 1.5}s`,
-          opacity: 0.15 + (i % 5) * 0.12,
-        }}></div>
-      ))}
-    </div>
+    <!-- ═══ HERO — full screen ═══ -->
+    <section id="hero" class="relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden">
+      <!-- Fondo gradiente sutil -->
+      <div class="absolute inset-0 bg-gradient-to-b from-[#0A0404] via-[#110808] to-[#0D0A08]"></div>
 
-    <!-- Solar burst glow -->
-    <div id="hero-glow" class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(80vw,700px)] aspect-square rounded-full bg-gradient-to-br from-brand-gold/20 via-brand-amber/8 to-transparent blur-[140px] scale-50 opacity-0"></div>
+      <!-- Grid dots decorativo -->
+      <div class="absolute inset-0 opacity-[0.03]" style="background-image:radial-gradient(rgba(245,166,35,0.5) 1px,transparent 1px);background-size:44px 44px"></div>
 
-    <!-- Central logo container -->
-    <div id="hero-logo" class="relative z-10 flex flex-col items-center">
-      <div class="relative">
-        <!-- Orbit rings around logo -->
-        <svg class="absolute inset-0 w-[280px] h-[280px] -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 opacity-20 animate-spin-slow pointer-events-none" viewBox="0 0 300 300" style="animation-duration:90s">
-          <circle cx="150" cy="150" r="140" fill="none" stroke="currentColor" stroke-width="0.3" class="text-brand-gold" stroke-dasharray="2 10"/>
-          <circle cx="150" cy="150" r="125" fill="none" stroke="currentColor" stroke-width="0.2" class="text-brand-gold-light" stroke-dasharray="3 7"/>
-        </svg>
-        <Logo size={180} class="relative drop-shadow-[0_0_60px_rgba(245,166,35,0.25)]" />
-      </div>
+      <!-- Glow detrás del logo -->
+      <div class="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(70vw,500px)] aspect-square rounded-full bg-brand-gold/10 blur-[120px]"></div>
 
-      <div id="hero-text" class="text-center mt-10 opacity-0">
-        <h1 class="font-black leading-[0.82] tracking-[-0.04em]" style="font-size:clamp(3rem,11vw,7rem);font-family:'Fraunces',serif">
-          <span class="bg-gradient-to-r from-brand-gold via-brand-gold-light to-brand-amber bg-clip-text text-transparent">VYNTRA</span>
-          <br/>
-          <span class="text-white/85">Solaris</span>
-        </h1>
-        <p class="text-sm text-brand-gold/35 tracking-[0.22em] uppercase mt-4 font-medium">Ciencia &middot; Tecnología &middot; Futuro</p>
-        <p class="text-xs text-white/15 mt-6 max-w-md mx-auto leading-relaxed">
-          La plataforma académica inteligente que impulsa la educación técnica en Boyacá. Diseñada para el Colegio Técnico Ciudad del Sol.
-        </p>
-      </div>
-    </div>
-
-    <!-- Scroll hint -->
-    <div id="scroll-hint" class="absolute bottom-8 flex flex-col items-center gap-3 text-white/20 opacity-0">
-      <span class="text-[9px] font-semibold tracking-[0.4em] uppercase">Descubrir</span>
-      <svg class="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-    </div>
-
-    <!-- Nav (minimal, overlaid) -->
-    <nav id="landing-nav" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500">
-      <div class="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 h-16">
-        <a href="/" class="flex items-center gap-2">
-          <Logo size={32} />
-          <span class="text-sm font-bold text-white/80">VYNTRA</span>
-        </a>
-        <div class="flex items-center gap-2">
-          <a href="/login" class="px-4 py-2 rounded-xl bg-brand-gold/10 border border-brand-gold/15 text-brand-gold-light text-xs font-semibold hover:bg-brand-gold/20 hover:border-brand-gold/30 transition-all duration-300">
-            Acceder
-          </a>
+      <!-- Contenido del hero -->
+      <div id="hero-content" class="relative z-10 flex flex-col items-center text-center px-4">
+        <!-- Logo container — este es el que se vuelve sticky y crece -->
+        <div id="logo-container" class="relative flex items-center justify-center">
+          <Logo size={180} class="relative z-10 drop-shadow-[0_0_50px_rgba(245,166,35,0.3)]" />
+          <!-- Anillos orbitales -->
+          <svg class="absolute w-[260px] h-[260px] opacity-15 pointer-events-none animate-spin-slow" viewBox="0 0 260 260" style="animation-duration:80s">
+            <circle cx="130" cy="130" r="120" fill="none" stroke="#F5A623" stroke-width="0.3" stroke-dasharray="2 10"/>
+            <circle cx="130" cy="130" r="105" fill="none" stroke="#FFD166" stroke-width="0.2" stroke-dasharray="3 8"/>
+          </svg>
         </div>
-      </div>
-    </nav>
-  </section>
 
-  <!-- ═════ ACT 2: CONTEXT — NUESTRA FUNDACIÓN ═════ -->
-  <section id="act-context" class="relative bg-[#0A0505] overflow-hidden">
-    <!-- Ambient orb -->
-    <div class="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-brand-gold/[0.03] blur-[140px] pointer-events-none"></div>
-    <div class="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-brand-maroon/[0.04] blur-[120px] pointer-events-none"></div>
-
-    <div class="max-w-7xl mx-auto grid lg:grid-cols-[380px_1fr] min-h-[350svh]">
-      <!-- Sticky logo panel (desktop) -->
-      <div class="relative hidden lg:block">
-        <div id="act2-pin" class="sticky top-0 h-[100svh] flex flex-col items-center justify-center px-8">
-          <div class="relative">
-            <div class="absolute inset-0 w-48 h-48 rounded-full bg-brand-gold/[0.06] blur-[60px] -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2"></div>
-            <Logo size={120} class="relative" />
-          </div>
-          <div class="text-center mt-8">
-            <div class="text-brand-gold/50 text-[10px] tracking-[0.3em] uppercase font-semibold">Colegio Técnico</div>
-            <div class="text-white/75 text-lg font-bold mt-2" style="font-family:'Fraunces',serif">Ciudad del Sol</div>
-            <div class="flex items-center justify-center gap-1.5 mt-3">
-              <span class="h-1.5 w-1.5 rounded-full bg-success animate-pulse"></span>
-              <span class="text-[9px] text-white/15 tracking-[0.2em] uppercase">Sistema Activo</span>
-            </div>
+        <!-- Título y textos — animan con film-roll -->
+        <div class="hero-text mt-8 space-y-3">
+          <h1 class="font-black leading-[0.82] tracking-[-0.04em]" style="font-size:clamp(2.8rem,10vw,6.5rem);font-family:'Fraunces',serif">
+            <span class="bg-gradient-to-r from-brand-gold via-brand-gold-light to-brand-amber bg-clip-text text-transparent">VYNTRA</span>
+            <br/>
+            <span>Solaris</span>
+          </h1>
+          <p class="text-sm text-brand-gold/40 tracking-[0.2em] uppercase font-medium">Ciencia &middot; Tecnología &middot; Futuro</p>
+          <p class="text-xs text-white/20 max-w-md mx-auto leading-relaxed pt-2">
+            Plataforma académica inteligente para el Colegio Técnico Ciudad del Sol. Sogamoso, Boyacá, Colombia.
+          </p>
+          <div class="pt-4">
+            <a href="/login" class="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-[#0A0505] text-sm font-bold rounded-xl hover:shadow-[0_0_40px_rgba(245,166,35,0.3)] hover:scale-105 transition-all duration-300">
+              Acceder al Portal
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            </a>
           </div>
         </div>
       </div>
 
-      <!-- Scrolling narrative -->
-      <div class="px-6 lg:px-14 py-[40svh] lg:py-0 space-y-[40svh] lg:space-y-[80svh]">
-        <!-- Step 1 -->
-        <div id="act2-step1" class="flex items-center min-h-[40svh] lg:min-h-[100svh] opacity-0">
-          <div class="max-w-xl">
-            <span class="text-brand-gold/40 text-[10px] tracking-[0.3em] uppercase font-semibold">Nuestra Filosofía</span>
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white/85 mt-5 mb-7 leading-[1.1]" style="font-family:'Fraunces',serif">
-              Formación integral con <span class="text-brand-gold">énfasis técnico</span>
-            </h2>
-            <p class="text-white/35 text-sm sm:text-base leading-relaxed">
-              En el Colegio Técnico Ciudad del Sol creemos en una educación que combina el rigor académico con la innovación tecnológica. Nuestra plataforma VYNTRA Solaris es la manifestación digital de este compromiso, diseñada para potenciar cada aspecto del aprendizaje.
-            </p>
-            <p class="text-white/25 text-sm leading-relaxed mt-4">
-              Desde Sogamoso, Boyacá, construimos el futuro de la educación técnica en Colombia. Cada estudiante es un sol en formación, y nuestra misión es darles las herramientas para brillar.
-            </p>
-          </div>
-        </div>
+      <!-- Scroll hint -->
+      <div class="absolute bottom-6 flex flex-col items-center gap-2 text-white/15">
+        <span class="text-[9px] tracking-[0.4em] uppercase font-semibold">Descubrir</span>
+        <svg class="h-4 w-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+    </section>
 
-        <!-- Step 2 -->
-        <div id="act2-step2" class="flex items-center min-h-[40svh] lg:min-h-[100svh] opacity-0">
-          <div class="max-w-xl">
-            <span class="text-brand-gold/40 text-[10px] tracking-[0.3em] uppercase font-semibold">Metodología Activa</span>
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white/85 mt-5 mb-7 leading-[1.1]" style="font-family:'Fraunces',serif">
-              Aprendizaje Basado en <span class="text-brand-gold">Proyectos</span>
-            </h2>
-            <p class="text-white/35 text-sm sm:text-base leading-relaxed">
-              9 materias integradas en un ecosistema de aprendizaje continuo. Cada proyecto conecta disciplinas, desarrolla competencias transversales y prepara a nuestros estudiantes para los desafíos del mundo real.
-            </p>
-            <div class="grid grid-cols-3 gap-4 mt-8">
-              {['Investigación', 'Creación', 'Evaluación'].map(s => (
-                <div class="text-center p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                  <div class="text-brand-gold text-lg font-bold" style="font-family:'Fraunces',serif">{s[0]}</div>
-                  <div class="text-[10px] text-white/20 uppercase mt-1">{s}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 3 -->
-        <div id="act2-step3" class="flex items-center min-h-[40svh] lg:min-h-[100svh] opacity-0">
-          <div class="max-w-xl">
-            <span class="text-brand-gold/40 text-[10px] tracking-[0.3em] uppercase font-semibold">Tecnología al Servicio</span>
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white/85 mt-5 mb-7 leading-[1.1]" style="font-family:'Fraunces',serif">
-              Una plataforma <span class="text-brand-gold">inteligente</span>
-            </h2>
-            <p class="text-white/35 text-sm sm:text-base leading-relaxed">
-              Analítica en tiempo real, asistentes de inteligencia artificial multi-rol, seguimiento personalizado de rendimiento y alertas tempranas. Tecnología de vanguardia al servicio de cada estudiante, docente y directivo.
-            </p>
-            <div class="flex flex-wrap gap-3 mt-6">
-              {['IA Generativa', 'Analítica Predictiva', 'Alertas Tempranas', 'Chat Multi-Rol'].map(t => (
-                <span class="px-3 py-1.5 rounded-full bg-brand-gold/[0.06] border border-brand-gold/[0.08] text-[10px] text-brand-gold/60 font-medium">{t}</span>
-              ))}
-            </div>
-          </div>
+    <!-- ═══ SCROLL CONTAINER — logo crece, contenido orbita ═══ -->
+    <div id="scroll-container" class="relative">
+      <!-- Sticky wrapper -->
+      <div class="sticky top-0 w-full h-[100svh] flex items-center justify-center overflow-hidden pointer-events-none">
+        <!-- Logo que crece con el scroll -->
+        <div id="sticky-logo" class="relative flex items-center justify-center transition-all duration-700 ease-out">
+          <Logo size={180} class="relative z-10 drop-shadow-[0_0_60px_rgba(245,166,35,0.25)]" />
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- ═════ ACT 3: VALORES — HORIZONTAL SCROLL ═════ -->
-  <section id="act-journey" class="relative bg-[#080303] overflow-hidden">
-    <div class="absolute top-8 left-8 z-10 flex items-center gap-2">
-      <Logo size={28} />
-      <span class="text-brand-gold/30 text-[10px] tracking-[0.3em] uppercase">Valores VYNTRA</span>
-    </div>
+      <!-- Contenido que orbita (se mueve con JS) -->
+      <div class="relative max-w-6xl mx-auto px-4 sm:px-8" style="margin-top:-100svh">
 
-    <div id="journey-wrapper" class="flex">
-      {[
-        { title:'Excelencia', sub:'Académica', desc:'Resultados medibles con metodología ABP y estándares nacionales de calidad educativa. Cada logro es un paso hacia el futuro.', icon:'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253' },
-        { title:'Innovación', sub:'Tecnológica', desc:'IA generativa contextual, analítica predictiva y plataforma digital de vanguardia que anticipa las necesidades de cada estudiante.', icon:'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547' },
-        { title:'Comunidad', sub:'Inclusiva', desc:'480+ estudiantes, docentes apasionados y familias comprometidas. Juntos construimos el ecosistema educativo del mañana.', icon:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656-.126-1.283-.356-1.857M12 4a3 3 0 100-6 3 3 0 000 6z' },
-        { title:'Sostenibilidad', sub:'Educativa', desc:'Formación integral con proyección regional. Cada generación deja una huella más brillante para Boyacá y Colombia.', icon:'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-      ].map((v, i) => (
-        <div class="journey-panel min-w-[100vw] h-[100svh] flex flex-col items-center justify-center px-8 sm:px-16 text-center relative flex-shrink-0">
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-brand-gold/[0.03] blur-[120px]"></div>
-
-          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-gold/15 to-brand-gold/[0.02] flex items-center justify-center mb-8 border border-brand-gold/[0.08] relative">
-            <svg class="h-7 w-7 text-brand-gold/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={v.icon}/></svg>
-          </div>
-
-          <span class="text-brand-gold/50 text-[10px] tracking-[0.3em] uppercase font-semibold mb-3">{v.sub}</span>
-          <h3 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white/85 mb-6" style="font-family:'Fraunces',serif">{v.title}</h3>
-          <p class="text-white/30 text-sm sm:text-base max-w-lg leading-relaxed">{v.desc}</p>
-
-          <div class="absolute bottom-12 text-brand-gold/15 text-xs tracking-[0.3em] font-mono">{String(i + 1).padStart(2, '0')} / 04</div>
-        </div>
-      ))}
-    </div>
-  </section>
-
-  <!-- ═════ ACT 4: EVIDENCIA — STATS EN VIVO ═════ -->
-  <section id="act-evidence" class="relative min-h-[100svh] bg-[#0A0505] flex items-center overflow-hidden">
-    <div class="absolute inset-0">
-      <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-brand-gold/[0.03] blur-[160px]"></div>
-    </div>
-
-    <div class="max-w-6xl mx-auto px-6 w-full relative z-10">
-      <div class="text-center mb-14 sm:mb-18">
-        <div class="flex items-center justify-center gap-3 mb-5 opacity-0 stat-reveal">
-          <Logo size={42} />
-          <span class="text-brand-gold/35 text-[10px] tracking-[0.3em] uppercase font-semibold">Ecosistema</span>
-        </div>
-        <h2 class="text-3xl sm:text-5xl font-bold text-white/85 opacity-0 stat-reveal" style="font-family:'Fraunces',serif">
-          Comunidad <span class="text-brand-gold">VYNTRA</span>
-        </h2>
-        <p class="text-white/25 text-sm mt-4 opacity-0 stat-reveal">Datos en tiempo real del ecosistema académico</p>
-      </div>
-
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        {[
-          { id:'stat-estudiantes', label:'Estudiantes Activos', value:'--' },
-          { id:'stat-docentes', label:'Docentes', value:'--' },
-          { id:'stat-mora', label:'Al Día', value:'0', prefix:'', suffix:'%' },
-          { id:'stat-avisos', label:'Comunicados', value:'--' },
-        ].map(s => (
-          <div class="stat-card group relative bg-white/[0.015] border border-white/[0.04] rounded-2xl p-6 sm:p-8 text-center transition-all duration-500 hover:border-brand-gold/15 hover:bg-brand-gold/[0.015] opacity-0">
-            <div class="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-brand-gold mb-2" style="font-family:'Fraunces',serif">
-              <span id={s.id}>{s.value}</span>
-            </div>
-            <div class="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-white/20 font-semibold">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <!-- Skeleton for notices section (loaded async) -->
-      <div class="mt-16 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-        <div id="notice-skeleton" class="contents">
-          {[1,2,3].map(i => (
-            <div class="bg-white/[0.015] border border-white/[0.04] rounded-2xl p-6">
-              <div class="skeleton-shimmer h-3 w-16 rounded mb-4" style="--skeleton-from:rgba(245,166,35,0.04);--skeleton-to:rgba(245,166,35,0.01)"></div>
-              <div class="skeleton-shimmer h-5 w-3/4 rounded mb-3" style="--skeleton-from:rgba(245,166,35,0.04);--skeleton-to:rgba(245,166,35,0.01)"></div>
-              <div class="skeleton-shimmer h-4 w-full rounded mb-3" style="--skeleton-from:rgba(245,166,35,0.04);--skeleton-to:rgba(245,166,35,0.01)"></div>
-              <div class="skeleton-shimmer h-3 w-20 rounded" style="--skeleton-from:rgba(245,166,35,0.04);--skeleton-to:rgba(245,166,35,0.01)"></div>
+        <!-- ── Stats Block ── -->
+        <div id="stats-block" class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-[20svh] pb-[40svh] opacity-0">
+          {[
+            { id:'stat-estudiantes', label:'Estudiantes', value:'--' },
+            { id:'stat-docentes', label:'Docentes', value:'--' },
+            { id:'stat-mora', label:'Al Día', value:'0', suffix:'%' },
+            { id:'stat-avisos', label:'Comunicados', value:'--' },
+          ].map(s => (
+            <div class="group bg-white/[0.02] border border-white/[0.05] rounded-xl p-5 text-center hover:border-brand-gold/15 hover:bg-white/[0.03] transition-all duration-300">
+              <div class="text-3xl sm:text-4xl font-extrabold text-brand-gold mb-1" style="font-family:'Fraunces',serif">
+                <span id={s.id}>{s.value}</span>
+              </div>
+              <div class="text-[10px] uppercase tracking-[0.15em] text-white/20 font-semibold">{s.label}</div>
             </div>
           ))}
         </div>
-        <div id="notice-grid" class="hidden contents"></div>
-        <div id="notice-empty" class="hidden col-span-full text-center py-16">
-          <div class="text-white/15 text-sm">No hay comunicados publicados actualmente.</div>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ═════ ACT 5: INNOVACIÓN — FEATURES ═════ -->
-  <section id="act-features" class="relative bg-[#080303] overflow-hidden">
-    <div class="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[#0A0505] to-transparent pointer-events-none"></div>
-    <div class="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#080303] to-transparent pointer-events-none"></div>
-
-    <div class="max-w-6xl mx-auto px-6 py-[25svh]">
-      <div class="text-center mb-24">
-        <Logo size={52} class="mx-auto mb-6" />
-        <span class="text-brand-gold/40 text-[10px] tracking-[0.3em] uppercase font-semibold">Innovación</span>
-        <h2 class="text-3xl sm:text-5xl font-bold text-white/85 mt-3" style="font-family:'Fraunces',serif">
-          Tecnología que <span class="text-brand-gold">transforma</span>
-        </h2>
-        <p class="text-white/25 text-sm mt-4 max-w-lg mx-auto">Cada herramienta diseñada para potenciar el aprendizaje y la gestión educativa.</p>
-      </div>
-
-      <div class="space-y-[40svh]">
-        {[
-          { title:'Rendimiento ABP', desc:'Seguimiento transversal de proyectos integradores con metodología activa. 9 materias vinculadas en un ecosistema de aprendizaje continuo.', gradient:'from-brand-gold to-brand-amber' },
-          { title:'Analítica en Vivo', desc:'Monitoreo en tiempo real de métricas académicas, financieras y alertas tempranas automatizadas con visualización de datos inteligente.', gradient:'from-brand-maroon-light to-brand-maroon' },
-          { title:'Asistente IA Multi-Rol', desc:'Chat inteligente que analiza datos académicos, genera reportes personalizados y sugiere estrategias pedagógicas basadas en patrones de aprendizaje.', gradient:'from-brand-gold to-brand-amber' },
-          { title:'Gestión Financiera', desc:'Control de pagos, estado de cuenta y morosidad con alertas automáticas y reportes exportables para una administración transparente.', gradient:'from-emerald-500 to-green-600' },
-          { title:'Biblioteca Digital', desc:'Recursos académicos por materia, guías de estudio descargables y acceso directo a tutores IA especializados por área de conocimiento.', gradient:'from-violet-500 to-purple-600' },
-          { title:'Comunicación Centralizada', desc:'Sistema de avisos y comunicados oficiales con alcance segmentado por grados, notificaciones y registro histórico.', gradient:'from-brand-info to-blue-500' },
-        ].map((f, i) => (
-          <div class={`feature-card max-w-2xl mx-auto relative bg-white/[0.015] border border-white/[0.04] rounded-2xl p-8 sm:p-10 transition-all duration-700 hover:border-brand-gold/10 hover:bg-white/[0.025] opacity-0 ${i % 2 === 1 ? 'lg:ml-auto' : ''}`}>
-            <div class={`absolute top-0 left-6 right-6 h-px bg-gradient-to-r ${f.gradient} opacity-50`}></div>
-            <div class={`w-10 h-10 rounded-xl bg-gradient-to-br ${f.gradient} flex items-center justify-center mb-6`}>
-              <span class="text-sm font-bold text-white">{String(i + 1).padStart(2, '0')}</span>
+        <!-- ── Features Grid ── -->
+        <div id="features-block" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-[40svh] opacity-0">
+          {[
+            { title:'Rendimiento ABP', desc:'Seguimiento de proyectos integradores con 9 materias vinculadas en metodología activa.' },
+            { title:'Analítica en Vivo', desc:'Métricas académicas y financieras en tiempo real con alertas automatizadas.' },
+            { title:'Asistente IA', desc:'Chat multi-rol que analiza datos, genera reportes y sugiere estrategias pedagógicas.' },
+            { title:'Gestión Financiera', desc:'Control de pagos, estado de cuenta y morosidad con reportes exportables.' },
+            { title:'Biblioteca Digital', desc:'Recursos por materia, guías descargables y tutores IA por área.' },
+            { title:'Comunicación', desc:'Avisos oficiales segmentados por grados con notificaciones.' },
+          ].map(f => (
+            <div class="group bg-white/[0.02] border border-white/[0.05] rounded-xl p-5 hover:border-brand-gold/10 transition-all duration-300">
+              <h3 class="font-bold text-sm text-white/80 mb-2" style="font-family:'Fraunces',serif">{f.title}</h3>
+              <p class="text-xs text-white/30 leading-relaxed">{f.desc}</p>
             </div>
-            <h3 class="text-xl sm:text-2xl font-bold text-white/85 mb-4" style="font-family:'Fraunces',serif">{f.title}</h3>
-            <p class="text-white/30 text-sm sm:text-base leading-relaxed">{f.desc}</p>
+          ))}
+        </div>
+
+        <!-- ── Notices / Comunicados ── -->
+        <div id="notices-block" class="pb-[30svh] opacity-0">
+          <div class="flex items-center gap-3 mb-6">
+            <Logo size={28} />
+            <h2 class="text-xl font-bold text-white/80" style="font-family:'Fraunces',serif">Comunicados <span class="text-brand-gold">Oficiales</span></h2>
           </div>
-        ))}
-      </div>
-    </div>
-  </section>
+          <div id="notice-skeleton" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {[1,2,3].map(i => (
+              <div class="bg-white/[0.02] border border-white/[0.05] rounded-xl p-5">
+                <div class="skeleton-shimmer h-3 w-16 rounded mb-3" style="--skeleton-from:rgba(245,166,35,0.05);--skeleton-to:rgba(245,166,35,0.01)"></div>
+                <div class="skeleton-shimmer h-4 w-3/4 rounded mb-2" style="--skeleton-from:rgba(245,166,35,0.05);--skeleton-to:rgba(245,166,35,0.01)"></div>
+                <div class="skeleton-shimmer h-3 w-full rounded" style="--skeleton-from:rgba(245,166,35,0.05);--skeleton-to:rgba(245,166,35,0.01)"></div>
+              </div>
+            ))}
+          </div>
+          <div id="notice-grid" class="hidden grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
+          <div id="notice-empty" class="hidden text-center py-12 text-white/15 text-sm">No hay comunicados publicados.</div>
+        </div>
 
-  <!-- ═════ ACT 6: EL FUTURO — CTA ═════ -->
-  <section id="act-invitation" class="relative min-h-[100svh] flex flex-col items-center justify-center bg-[#0A0505] overflow-hidden">
-    <!-- Background solar burst that scales up -->
-    <div id="cta-burst" class="absolute inset-0 flex items-center justify-center">
-      <div class="w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] rounded-full bg-gradient-to-br from-brand-gold/[0.1] via-brand-maroon/[0.05] to-transparent blur-[120px] scale-0"></div>
-    </div>
-
-    <!-- Floating particles -->
-    <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      {[0,1,2,3,4,5,6,7].map(i => (
-        <div class="absolute w-[3px] h-[3px] rounded-full bg-brand-gold animate-star" style={{
-          left: `${20 + i * 11}%`,
-          top: `${30 + (i % 3) * 20}%`,
-          animationDelay: `${i * 0.5}s`,
-          animationDuration: `${3 + (i % 4)}s`,
-          opacity: 0.2,
-        }}></div>
-      ))}
-    </div>
-
-    <div class="relative z-10 text-center px-6 max-w-2xl">
-      <div id="cta-logo-wrap" class="mb-10 opacity-0">
-        <div class="relative inline-block">
-          <div class="absolute inset-0 w-full h-full rounded-full bg-brand-gold/20 blur-[50px] scale-150"></div>
-          <Logo size={150} class="relative drop-shadow-[0_0_80px_rgba(245,166,35,0.3)]" />
+        <!-- ── Final CTA ── -->
+        <div id="final-cta" class="text-center pb-[20svh] opacity-0">
+          <div class="flex justify-center mb-6">
+            <Logo size={80} class="drop-shadow-[0_0_30px_rgba(245,166,35,0.3)]" />
+          </div>
+          <h2 class="text-2xl sm:text-4xl font-bold text-white/85 mb-4" style="font-family:'Fraunces',serif">
+            El <span class="text-brand-gold">futuro</span> comienza aquí
+          </h2>
+          <p class="text-white/25 text-sm mb-8 max-w-md mx-auto">
+            Accede a la plataforma de gestión académica más avanzada de Boyacá.
+          </p>
+          <a href="/login" class="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-brand-gold to-brand-amber text-[#0A0505] text-sm font-bold rounded-xl hover:shadow-[0_0_50px_rgba(245,166,35,0.35)] hover:scale-105 transition-all duration-300">
+            Ingresar al Portal
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </a>
         </div>
       </div>
-
-      <h2 id="cta-title" class="text-3xl sm:text-5xl lg:text-6xl font-bold text-white/85 mb-6 leading-[1.08] opacity-0" style="font-family:'Fraunces',serif">
-        El <span class="text-brand-gold">futuro</span> comienza aquí
-      </h2>
-      <p id="cta-sub" class="text-white/25 text-sm sm:text-base max-w-lg mx-auto mb-10 leading-relaxed opacity-0">
-        Accede a la plataforma de gestión académica más avanzada de Boyacá. Tecnología, innovación y pasión al servicio del aprendizaje.
-      </p>
-
-      <a id="cta-btn" href="/login" class="group relative inline-flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-brand-gold to-brand-amber text-[#0A0505] text-sm font-bold rounded-2xl hover:shadow-[0_0_70px_rgba(245,166,35,0.35)] hover:scale-105 active:scale-[0.98] transition-all duration-500 overflow-hidden opacity-0">
-        <span class="relative z-10">Ingresar al Portal</span>
-        <svg class="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-        <div class="absolute inset-0 bg-gradient-to-r from-brand-gold-light to-brand-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-      </a>
     </div>
 
-    <!-- Footer micro -->
-    <div class="absolute bottom-6 flex items-center gap-2.5 text-white/10">
-      <Logo size={18} />
-      <span class="text-[9px] tracking-[0.3em] uppercase">VYNTRA Solaris · v5.0 · Sogamoso, Boyacá</span>
-    </div>
-  </section>
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="border-t border-white/[0.04] py-8 px-4 sm:px-8">
+      <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-white/10">
+        <div class="flex items-center gap-2">
+          <Logo size={16} />
+          <span class="tracking-[0.2em] uppercase">VYNTRA Solaris v5.0</span>
+        </div>
+        <span>Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá, Colombia</span>
+      </div>
+    </footer>
+  </div>
 
-  <!-- GSAP ScrollTrigger Animation Script -->
+  <!-- ScrollTrigger Animation Script -->
   <script>
     import { gsap } from 'gsap'
     import { ScrollTrigger } from 'gsap/ScrollTrigger'
     gsap.registerPlugin(ScrollTrigger)
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReducedMotion) {
-      document.querySelectorAll('.opacity-0').forEach(el => el.classList.remove('opacity-0'))
-      document.querySelectorAll('.scale-0').forEach(el => el.classList.remove('scale-0'))
-    } else {
-      initScrollytelling()
-    }
 
-    function initScrollytelling() {
-      // ── Progress Bar ──
-      gsap.to('#scroll-progress', {
-        scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.3 },
-        width: '100%', ease: 'none',
-      })
-
-      // ── ACT 1: Hero ──
+    if (!prefersReducedMotion) {
+      // ── Hero film-roll: texto rota y desaparece ──
       const heroTl = gsap.timeline({
-        scrollTrigger: { trigger: '#act-hero', start: 'top top', end: 'bottom top', scrub: 1.2 }
-      })
-      heroTl
-        .to('#hero-glow', { scale: 1.8, opacity: 1, duration: 0.8 })
-        .to('#hero-text', { opacity: 1, y: -20, duration: 0.5 }, 0.1)
-        .to('#scroll-hint', { opacity: 1, duration: 0.3 }, 0.3)
-        .to('#hero-logo', { scale: 0.5, opacity: 0.15, y: -80, duration: 1 }, 0.7)
-
-      // ── ACT 2: Sticky narrative ──
-      ;['#act2-step1','#act2-step2','#act2-step3'].forEach((sel, i) => {
-        gsap.to(sel, {
-          scrollTrigger: { trigger: sel, start: 'top 72%', end: 'top 35%', scrub: 0.6 },
-          opacity: 1, y: -20, duration: 0.5,
-        })
-      })
-
-      // ── ACT 3: Horizontal scroll ──
-      mm.add('(min-width: 768px)', () => {
-        const panels = gsap.utils.toArray('.journey-panel')
-        if (panels.length > 1) {
-          gsap.to('#journey-wrapper', {
-            x: () => -(panels.length - 1) * window.innerWidth,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '#act-journey', pin: true, scrub: 1.2,
-              snap: 1 / (panels.length - 1),
-              end: () => '+=' + (panels.length - 1) * window.innerWidth,
-            }
-          })
+        scrollTrigger: {
+          trigger: '#hero',
+          start: 'top top',
+          end: 'top+=300 top',
+          scrub: 1,
         }
       })
 
-      // ── ACT 4: Stats reveal ──
-      gsap.to('.stat-card', {
-        scrollTrigger: { trigger: '#act-evidence', start: 'top 65%', toggleActions: 'play none none none' },
-        opacity: 1, y: -15, stagger: 0.12, duration: 0.7, ease: 'power3.out',
-      })
-      gsap.to('.stat-reveal', {
-        scrollTrigger: { trigger: '#act-evidence', start: 'top 75%', toggleActions: 'play none none none' },
-        opacity: 1, y: -10, stagger: 0.1, duration: 0.5,
-      })
-
-      // ── ACT 5: Feature cascade ──
-      const features = gsap.utils.toArray('.feature-card')
-      gsap.to(features, {
-        scrollTrigger: { trigger: '#act-features', start: 'top 85%', end: 'bottom bottom', scrub: 1 },
-        opacity: 1, y: -20, stagger: 0.2,
+      gsap.utils.toArray('.hero-text > *').forEach((el, i) => {
+        heroTl.to(el, {
+          rotationX: 90,
+          y: -25,
+          scale: 0.5,
+          opacity: 0,
+          filter: 'blur(4px)',
+          ease: 'power3.inOut',
+          transformOrigin: 'center top',
+        }, i * 0.06)
       })
 
-      // ── ACT 6: CTA finale ──
-      const ctaTl = gsap.timeline({
-        scrollTrigger: { trigger: '#act-invitation', start: 'top 65%', toggleActions: 'play none none none' }
+      // ── Logo crece con el scroll ──
+      gsap.to('#sticky-logo', {
+        scrollTrigger: {
+          trigger: '#scroll-container',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 1.2,
+        },
+        scale: 2.5,
+        opacity: 0.12,
+        ease: 'none',
       })
-      ctaTl
-        .to('#cta-burst > div', { scale: 1, opacity: 1, duration: 1.5, ease: 'power3.out' })
-        .to('#cta-logo-wrap', { opacity: 1, scale: [0.7, 1], duration: 0.7, ease: 'back.out(1.7)' }, 0.3)
-        .to('#cta-title', { opacity: 1, y: -10, duration: 0.5 }, 0.6)
-        .to('#cta-sub', { opacity: 1, y: -5, duration: 0.5 }, 0.8)
-        .to('#cta-btn', { opacity: 1, y: -5, duration: 0.5, ease: 'back.out(2.5)' }, 1.0)
+
+      // ── Content blocks fade in as logo grows ──
+      const reveals = [
+        { el: '#stats-block', start: 'top 80%', end: 'top 40%' },
+        { el: '#features-block', start: 'top 75%', end: 'top 35%' },
+        { el: '#notices-block', start: 'top 80%', end: 'top 45%' },
+        { el: '#final-cta', start: 'top 85%', end: 'top 50%' },
+      ]
+
+      reveals.forEach(({ el, start, end }) => {
+        gsap.to(el, {
+          scrollTrigger: { trigger: el, start, end, scrub: 0.8 },
+          opacity: 1,
+          y: -15,
+          ease: 'power2.out',
+        })
+      })
+    } else {
+      // Show everything immediately for reduced motion
+      document.querySelectorAll('.opacity-0').forEach(el => el.classList.remove('opacity-0'))
     }
   </script>
 
-  <!-- Data loading script (preserved from original) -->
+  <!-- Data loading (preserved from original) -->
   <script define:vars={{ API_BASE }}>
     (function() {
       var API = API_BASE
@@ -443,14 +249,14 @@ const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           if (!res.ok) return
           var d = await res.json()
           var map = {
-            'stat-estudiantes': d.total_students,
-            'stat-docentes': d.total_teachers,
+            'stat-estudiantes': d.total_students || '--',
+            'stat-docentes': d.total_teachers || '--',
             'stat-mora': d.mora || 0,
-            'stat-avisos': d.total_notices
+            'stat-avisos': d.total_notices || '--'
           }
           Object.keys(map).forEach(function(id) {
             var el = document.getElementById(id)
-            if (el) el.textContent = map[id] ?? '--'
+            if (el) el.textContent = map[id]
           })
         } catch(e) {}
 
@@ -461,27 +267,23 @@ const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           var skeleton = document.getElementById('notice-skeleton')
           var grid = document.getElementById('notice-grid')
           var empty = document.getElementById('notice-empty')
-          if (!notices || notices.length === 0) {
+          if (!notices || !notices.length) {
             if (skeleton) skeleton.style.display = 'none'
             if (empty) empty.classList.remove('hidden')
             return
           }
           if (skeleton) skeleton.style.display = 'none'
-          if (grid) {
-            grid.innerHTML = notices.map(function(n, i) {
-              var d = new Date(n.fecha || n.date).toLocaleDateString('es-CO', { day:'numeric', month:'long', year:'numeric' })
-              var c = n.categoria || n.category || 'General'
-              var content = (n.resumen || n.excerpt || n.contenido || n.content || '').substring(0, 120)
-              return '<div class="group bg-white/[0.015] border border-white/[0.04] rounded-2xl p-5 sm:p-6 transition-all duration-500 hover:-translate-y-1 hover:border-brand-gold/15 hover:bg-white/[0.025]" style="animation:fadeUp .6s cubic-bezier(.19,1,.22,1) ' + (i * 0.08) + 's both">' +
-                '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-brand-gold/[0.08] text-brand-gold/70 mb-3.5">' + c + '</span>' +
-                '<h3 class="font-bold text-sm text-white/70 mb-2 leading-snug">' + (n.titulo || n.title) + '</h3>' +
-                '<p class="text-xs text-white/30 leading-relaxed mb-4">' + content + '</p>' +
-                '<time class="text-xs text-white/15 flex items-center gap-1.5">' + d + '</time>' +
-                '</div>'
-            }).join('')
-            grid.classList.remove('hidden')
-            grid.style.display = 'contents'
-          }
+          grid.innerHTML = notices.map(function(n) {
+            var d = new Date(n.fecha || n.date).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'numeric' })
+            var cat = n.categoria || n.category || 'General'
+            var txt = (n.resumen || n.excerpt || n.contenido || n.content || '').substring(0, 100)
+            return '<div class="bg-white/[0.02] border border-white/[0.05] rounded-xl p-5 hover:border-brand-gold/10 transition-all duration-300">' +
+              '<span class="inline-block px-2 py-0.5 rounded-full text-[10px] bg-brand-gold/[0.08] text-brand-gold/60 font-semibold mb-3">' + cat + '</span>' +
+              '<h3 class="font-bold text-sm text-white/75 mb-2">' + (n.titulo || n.title || '') + '</h3>' +
+              '<p class="text-xs text-white/30 mb-3">' + txt + '</p>' +
+              '<time class="text-[10px] text-white/12">' + d + '</time></div>'
+          }).join('')
+          grid.classList.remove('hidden')
         } catch(e) {
           var skel = document.getElementById('notice-skeleton')
           if (skel) skel.style.display = 'none'
@@ -493,15 +295,3 @@ const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     })()
   </script>
 </BaseLayout>
-
-<style>
-  @keyframes star {
-    0%, 100% { opacity: 0.1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.8); }
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-star { animation: star ease-in-out infinite; }
-</style>
