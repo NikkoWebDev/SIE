@@ -1,228 +1,253 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro'
+import Logo from '@components/Logo.astro'
 
 const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
 ---
 
-<BaseLayout titulo="Acceso" descripcion="Inicia sesión en VYNTRA Academic — Solaris" noIndex={true} withNoise={true}>
-  <main class="flex min-h-screen bg-gradient-to-br from-solar-base via-solar-cream to-solar-50 dark:from-surface-dark dark:via-[#0F0C08] dark:to-[#0A0705]">
-    <!-- LEFT: Brand Panel (hidden on mobile) -->
-    <section class="hidden w-0 lg:flex lg:w-[45%] relative overflow-hidden items-center justify-center">
-      <!-- Solar glow -->
-      <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-brand-gold/10 via-brand-amber/5 to-transparent blur-[120px] animate-orb"></div>
-      <div class="absolute inset-0" style="background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse 60% 50% at 50% 50%,black 25%,transparent 70%)"></div>
+<BaseLayout titulo="Acceso" descripcion="Portal VYNTRA Solaris — Iniciar Sesión" noIndex={true} withNoise={false}>
+  <main class="relative min-h-[100svh] flex items-center justify-center bg-gradient-to-b from-[#0A0404] via-[#110808] to-[#0D0A08] overflow-hidden">
 
-      <!-- Construction diagram -->
-      <svg class="absolute top-10 right-10 w-72 h-72 opacity-[0.04] dark:opacity-[0.06]" viewBox="0 0 256 256">
-        <circle cx="128" cy="128" r="110" fill="none" stroke="currentColor" stroke-width="0.5" class="text-brand-maroon dark:text-brand-gold"/>
-        <circle cx="128" cy="128" r="75" fill="none" stroke="currentColor" stroke-width="0.5" class="text-brand-gold"/>
-        <line x1="18" y1="128" x2="238" y2="128" stroke="currentColor" stroke-width="0.3" class="text-brand-maroon"/>
-        <line x1="128" y1="18" x2="128" y2="238" stroke="currentColor" stroke-width="0.3" class="text-brand-maroon"/>
-        <line x1="50" y1="50" x2="206" y2="206" stroke="currentColor" stroke-width="0.2" class="text-brand-gold"/>
-        <line x1="206" y1="50" x2="50" y2="206" stroke="currentColor" stroke-width="0.2" class="text-brand-gold"/>
-      </svg>
+    <!-- Ambient floating particles -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+      {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(i => (
+        <div class="absolute w-[2px] h-[2px] rounded-full bg-brand-gold animate-float-up" style={{
+          left: `${8 + (i * 6.2) % 92}%`,
+          top: `${110 - (i * 8) % 95}%`,
+          animationDelay: `${i * 0.9}s`,
+          animationDuration: `${7 + (i % 5) * 2.5}s`,
+        }}></div>
+      ))}
+    </div>
 
-      <div class="relative z-10 max-w-md mx-auto px-10">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-maroon to-brand-maroon-dark text-white flex items-center justify-center text-lg font-extrabold mb-10">V</div>
-        <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-brand-maroon/10 dark:bg-brand-gold/10 text-brand-maroon dark:text-brand-gold-light border border-brand-maroon/10 dark:border-brand-gold/10 mb-4">Portal v5.0 Solaris</span>
-        <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-extrabold leading-[0.85] tracking-tight mb-3" style="font-family:'Fraunces',serif">
-          <span class="bg-gradient-to-r from-brand-maroon to-brand-gold bg-clip-text text-transparent">VYNTRA</span><br/>
-          <span>Solaris</span>
+    <!-- Central solar aurora -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(80vw,650px)] h-[min(80vw,650px)] rounded-full bg-gradient-to-br from-brand-gold/[0.05] via-brand-maroon/[0.03] to-transparent blur-[130px] animate-breathing"></div>
+
+    <!-- Subtle grid -->
+    <div class="absolute inset-0" style="background-image:radial-gradient(rgba(245,166,35,0.05) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(ellipse 55% 40% at 50% 50%,black 25%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse 55% 40% at 50% 50%,black 25%,transparent 70%)"></div>
+
+    <!-- Login Panel -->
+    <div class="relative z-10 w-full max-w-[400px] mx-4">
+      <!-- Logo -->
+      <div class="flex justify-center mb-6">
+        <div class="relative">
+          <div class="absolute inset-0 rounded-full bg-brand-gold/15 blur-[40px] scale-125 animate-breathing"></div>
+          <Logo size={110} class="relative drop-shadow-[0_0_40px_rgba(245,166,35,0.25)] animate-logo-breathe" />
+        </div>
+      </div>
+
+      <!-- Brand -->
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-white/85 tracking-tight" style="font-family:'Fraunces',serif">
+          VYNTRA <span class="text-brand-gold">Solaris</span>
         </h1>
-        <p class="text-sm tracking-[0.2em] uppercase text-text-secondary font-medium mb-6">Ciencia · Tecnología · Futuro</p>
-        <p class="text-xs text-text-tertiary leading-relaxed mb-10">Plataforma educativa inteligente — Tecnología al servicio de la educación en Sogamoso, Boyacá.</p>
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-0.5 bg-gradient-to-r from-brand-maroon to-brand-gold rounded"></div>
-          <span class="text-[10px] uppercase tracking-[0.2em] text-text-tertiary font-semibold">Solar Engine</span>
-        </div>
+        <p class="text-[11px] text-white/18 tracking-[0.25em] uppercase mt-2 font-medium">Portal Académico &middot; v5.0</p>
+        <p class="text-[10px] text-white/10 mt-2">Colegio Técnico Ciudad del Sol</p>
       </div>
-      <div class="absolute bottom-6 left-10 text-[9px] uppercase tracking-[0.25em] text-text-tertiary opacity-40">v5.0 · vyntra_solaris · portal</div>
-    </section>
 
-    <!-- RIGHT: Login Panel -->
-    <section class="w-full lg:w-[55%] flex items-center justify-center px-4 sm:px-8 py-8 relative overflow-hidden">
-      <!-- Floating glow orbs -->
-      <div class="absolute top-10 right-10 w-72 h-72 rounded-full bg-brand-gold/6 blur-[100px] animate-orb pointer-events-none"></div>
-      <div class="absolute bottom-10 left-10 w-64 h-64 rounded-full bg-brand-maroon/5 blur-[80px] animate-orb pointer-events-none" style="animation-delay:-4s"></div>
-
-      <div class="w-full max-w-[420px] relative z-10">
-        <!-- Mobile brand -->
-        <div class="lg:hidden text-center mb-8">
-          <div class="w-10 h-10 mx-auto rounded-xl bg-gradient-to-br from-brand-maroon to-brand-maroon-dark text-white flex items-center justify-center text-base font-extrabold mb-3">V</div>
-          <div class="font-bold text-lg tracking-tight" style="font-family:'Fraunces',serif">VYNTRA Solaris</div>
-          <div class="text-[10px] text-text-tertiary uppercase tracking-widest mt-1">Academic · v5.0</div>
-        </div>
-
-        <div class="bg-white/60 dark:bg-surface-dark-elevated backdrop-blur-2xl border border-border rounded-2xl p-6 sm:p-8 shadow-card dark:shadow-card-dark animate-fade-up">
-          <div class="text-center mb-6">
-            <h2 class="text-xl font-bold tracking-tight mb-1" style="font-family:'Fraunces',serif">Iniciar Sesión</h2>
-            <p class="text-xs text-text-tertiary">Bienvenido a VYNTRA</p>
+      <!-- Form -->
+      <div class="bg-white/[0.02] backdrop-blur-2xl border border-white/[0.05] rounded-2xl p-7 sm:p-8 shadow-[0_0_100px_rgba(245,166,35,0.02)]">
+        <form id="login-form" class="space-y-5">
+          <!-- Credential -->
+          <div>
+            <label for="credential" class="block ml-1 text-[10px] font-semibold uppercase tracking-wider text-white/25 mb-2">
+              Identificación Institucional
+            </label>
+            <div class="relative group/input">
+              <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-brand-gold/0 via-brand-gold/8 to-brand-gold/0 opacity-0 group-focus-within/input:opacity-100 transition-opacity duration-500 -m-[1px]"></div>
+              <input
+                id="credential"
+                type="text"
+                autocomplete="username"
+                placeholder="Ingresa tu ID institucional"
+                required
+                class="relative w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-sm text-white/80 placeholder:text-white/12 outline-none transition-all duration-300 focus:border-brand-gold/30 focus:bg-white/[0.05]"
+              />
+              <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/12 group-focus-within/input:text-brand-gold/50 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0"/>
+              </svg>
+            </div>
           </div>
 
-          <!-- Segmented control -->
-          <div class="relative flex h-10 rounded-full bg-[var(--input-bg)] p-1 mb-6" role="tablist" aria-label="Tipo de usuario">
-            <div id="tab-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-r from-brand-maroon to-brand-maroon-dark rounded-full transition-all duration-400 ease-spring z-0 left-1"></div>
-            <button id="tab-estudiante" class="flex-1 relative z-10 flex items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 text-text" data-tab="estudiante" role="tab" aria-selected="true" aria-controls="panel-estudiante">Estudiante</button>
-            <button id="tab-personal" class="flex-1 relative z-10 flex items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 text-text-tertiary" data-tab="personal" role="tab" aria-selected="false" aria-controls="panel-personal">Personal</button>
+          <!-- Password -->
+          <div>
+            <label for="password" class="block ml-1 text-[10px] font-semibold uppercase tracking-wider text-white/25 mb-2">
+              Contraseña
+            </label>
+            <div class="relative group/input">
+              <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-brand-gold/0 via-brand-gold/8 to-brand-gold/0 opacity-0 group-focus-within/input:opacity-100 transition-opacity duration-500 -m-[1px]"></div>
+              <input
+                id="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                required
+                class="relative w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-sm text-white/80 placeholder:text-white/12 outline-none transition-all duration-300 focus:border-brand-gold/30 focus:bg-white/[0.05]"
+              />
+              <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/12 group-focus-within/input:text-brand-gold/50 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+            </div>
           </div>
 
-          <form id="panel-login" class="space-y-4" role="tabpanel" aria-labelledby="tab-estudiante">
-            <div>
-              <label for="doc-id" class="block ml-1 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-1.5">Identificación Institucional</label>
-              <div class="relative">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0"/></svg>
-                <input id="doc-id" type="text" inputmode="numeric" autocomplete="username" placeholder="ID-000000" required
-                  class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-text-tertiary/50 outline-none transition-all duration-200 focus:border-brand-maroon dark:focus:border-brand-gold focus:shadow-[0_0_0_3px_var(--input-focus-ring)]" />
-              </div>
-            </div>
+          <!-- Submit -->
+          <button
+            id="login-submit"
+            type="submit"
+            class="relative w-full h-12 flex items-center justify-center gap-2.5 bg-gradient-to-r from-brand-gold to-brand-amber text-[#0A0505] text-sm font-bold rounded-xl transition-all duration-500 hover:shadow-[0_0_50px_rgba(245,166,35,0.3)] hover:scale-[1.02] active:scale-[0.98] group overflow-hidden mt-3"
+          >
+            <span class="relative z-10 group-hover:tracking-wider transition-all duration-300" id="submit-text">Ingresar al Portal</span>
+            <svg id="submit-arrow" class="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            <svg id="submit-spinner" class="hidden absolute h-5 w-5 animate-spin-slow" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          </button>
 
-            <div id="password-group" class="transition-all duration-300 overflow-hidden" style="max-height:100px;opacity:1">
-              <label for="password" class="block ml-1 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-1.5">Contraseña</label>
-              <div class="relative">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                <input id="password" type="password" autocomplete="current-password" placeholder="••••••••"
-                  class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-text-tertiary/50 outline-none transition-all duration-200 focus:border-brand-maroon dark:focus:border-brand-gold focus:shadow-[0_0_0_3px_var(--input-focus-ring)]" />
-              </div>
-              <div class="flex justify-end mt-2">
-                <button type="button" id="forgot-link" class="text-[10px] font-semibold text-brand-maroon/60 dark:text-brand-gold/60 hover:text-brand-maroon dark:hover:text-brand-gold transition-colors">¿Problemas de acceso?</button>
-              </div>
-            </div>
+          <!-- Error -->
+          <div id="login-error" class="hidden rounded-xl border border-red-500/8 bg-red-500/[0.04] px-4 py-3 text-xs text-red-400/80 text-center" role="alert"></div>
+        </form>
 
-            <button id="login-submit" type="submit" class="w-full h-11 flex items-center justify-center gap-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-lg hover:shadow-glow-maroon hover:-translate-y-0.5 transition-all duration-300 ease-spring active:scale-[0.97]">
-              <span id="submit-text">Ingresar al Portal</span>
-              <svg id="submit-spinner" class="hidden h-4 w-4 animate-spin-slow" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-            </button>
-
-            <div id="login-error" class="hidden rounded-lg border border-brand-danger/20 bg-brand-danger/5 px-4 py-2.5 text-xs text-brand-danger text-center" role="alert"></div>
-          </form>
-
-          <div class="mt-6 pt-5 border-t border-border text-center space-y-1.5">
-            <p class="text-[10px] text-text-tertiary">VYNTRA Solaris · Sogamoso, Boyacá</p>
-            <div class="flex items-center justify-center gap-2 text-[10px] text-text-tertiary">
-              <span class="h-1.5 w-1.5 rounded-full bg-success animate-pulse"></span>
-              <span class="uppercase tracking-widest font-semibold">Sistema activo</span>
-            </div>
+        <!-- Footer -->
+        <div class="mt-6 pt-5 border-t border-white/[0.04] text-center space-y-2">
+          <button id="forgot-link" class="text-[10px] text-brand-gold/30 hover:text-brand-gold/60 transition-colors duration-300">
+            ¿Problemas de acceso? Recuperar cuenta
+          </button>
+          <div class="flex items-center justify-center gap-2 text-[9px] text-white/8">
+            <span class="h-1.5 w-1.5 rounded-full bg-success/60 animate-pulse"></span>
+            <span class="uppercase tracking-wider">Sistema Activo</span>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   </main>
 
   <!-- Forgot Password Modal -->
-  <div id="forgot-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Recuperar acceso">
-    <div class="bg-white dark:bg-surface-dark-elevated border border-border rounded-2xl shadow-modal p-6 max-w-sm w-11/12 mx-auto animate-scale-in">
+  <div id="forgot-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Recuperar acceso">
+    <div class="bg-[#140A08] border border-white/[0.06] rounded-2xl shadow-[0_0_100px_rgba(0,0,0,0.5)] p-6 max-w-sm w-11/12 mx-auto">
       <div id="forgot-step-1">
-        <h3 class="font-bold text-base mb-1" style="font-family:'Fraunces',serif">Recuperar Acceso</h3>
-        <p class="text-xs text-text-tertiary mb-4">Ingresa tu identificación para recibir un código de recuperación.</p>
-        <input type="text" id="forgot-credential" placeholder="Identificación institucional" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
-        <button id="forgot-send-btn" class="w-full h-10 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Enviar Código</button>
-      <div id="forgot-step-1-error" class="hidden mt-2 text-xs text-brand-danger text-center" role="alert"></div>
+        <h3 class="font-bold text-white/85 mb-1" style="font-family:'Fraunces',serif">Recuperar Acceso</h3>
+        <p class="text-xs text-white/25 mb-4">Ingresa tu identificación institucional para recibir un código.</p>
+        <input type="text" id="forgot-credential" placeholder="Identificación institucional" class="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-4 py-2.5 text-sm text-white/80 placeholder:text-white/12 outline-none focus:border-brand-gold/30 mb-3 transition-all duration-300" />
+        <button id="forgot-send-btn" class="w-full h-10 bg-gradient-to-r from-brand-gold to-brand-amber text-[#0A0505] text-xs font-semibold rounded-lg hover:shadow-[0_0_30px_rgba(245,166,35,0.2)] transition-all duration-300">Enviar Código</button>
+        <div id="forgot-step-1-error" class="hidden mt-2 text-xs text-red-400 text-center" role="alert"></div>
       </div>
       <div id="forgot-step-2" class="hidden">
-        <h3 class="font-bold text-base mb-1" style="font-family:'Fraunces',serif">Restablecer Contraseña</h3>
-        <p class="text-xs text-text-tertiary mb-4">Ingresa el código recibido y tu nueva contraseña.</p>
-        <input type="text" id="forgot-code" placeholder="Código de 6 dígitos" maxlength="6" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
-        <input type="password" id="forgot-new-pass" placeholder="Nueva contraseña" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
-        <input type="password" id="forgot-confirm-pass" placeholder="Confirmar contraseña" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon dark:focus:border-brand-gold mb-3" />
-        <button id="forgot-reset-btn" class="w-full h-10 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Restablecer</button>
-        <div id="forgot-step-2-error" class="hidden mt-2 text-xs text-brand-danger text-center" role="alert"></div>
-        <div id="forgot-step-2-success" class="hidden mt-2 text-xs text-success text-center" role="status"></div>
+        <h3 class="font-bold text-white/85 mb-1" style="font-family:'Fraunces',serif">Restablecer Contraseña</h3>
+        <p class="text-xs text-white/25 mb-4">Ingresa el código recibido y tu nueva contraseña.</p>
+        <input type="text" id="forgot-code" placeholder="Código de 6 dígitos" maxlength="6" class="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-4 py-2.5 text-sm text-white/80 placeholder:text-white/12 outline-none focus:border-brand-gold/30 mb-3 transition-all duration-300" />
+        <input type="password" id="forgot-new-pass" placeholder="Nueva contraseña" class="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-4 py-2.5 text-sm text-white/80 placeholder:text-white/12 outline-none focus:border-brand-gold/30 mb-3 transition-all duration-300" />
+        <input type="password" id="forgot-confirm-pass" placeholder="Confirmar contraseña" class="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-4 py-2.5 text-sm text-white/80 placeholder:text-white/12 outline-none focus:border-brand-gold/30 mb-3 transition-all duration-300" />
+        <button id="forgot-reset-btn" class="w-full h-10 bg-gradient-to-r from-brand-gold to-brand-amber text-[#0A0505] text-xs font-semibold rounded-lg hover:shadow-[0_0_30px_rgba(245,166,35,0.2)] transition-all duration-300">Restablecer Contraseña</button>
+        <div id="forgot-step-2-error" class="hidden mt-2 text-xs text-red-400 text-center" role="alert"></div>
+        <div id="forgot-step-2-success" class="hidden mt-2 text-xs text-green-400 text-center" role="status"></div>
       </div>
-      <button class="mt-4 text-xs text-text-tertiary hover:text-text" onclick="document.getElementById('forgot-modal').classList.add('hidden');document.getElementById('forgot-modal').classList.remove('flex')">Cerrar</button>
+      <button class="mt-4 w-full text-xs text-white/15 hover:text-white/40 transition-colors duration-300 py-1" onclick="document.getElementById('forgot-modal').classList.add('hidden');document.getElementById('forgot-modal').classList.remove('flex')">Cerrar</button>
     </div>
   </div>
 
   <script define:vars={{ baseUrl }}>
     (function() {
-      var tabEst = document.getElementById('tab-estudiante')
-      var tabPer = document.getElementById('tab-personal')
-      var slider = document.getElementById('tab-slider')
-      var form = document.getElementById('panel-login')
-      var docInput = document.getElementById('doc-id')
-      var passwordInput = document.getElementById('password')
-      var currentTab = 'estudiante'
+      var form = document.getElementById('login-form')
+      var credInput = document.getElementById('credential')
+      var passInput = document.getElementById('password')
       var endpoint = baseUrl + '/api/auth/login'
-
-      function setTab(tab) {
-        currentTab = tab
-        slider.style.left = tab === 'estudiante' ? '4px' : 'calc(50% + 2px)'
-        tabEst.style.color = tab === 'estudiante' ? 'var(--text)' : 'var(--text-tertiary)'
-        tabPer.style.color = tab === 'personal' ? 'var(--text)' : 'var(--text-tertiary)'
-        tabEst.setAttribute('aria-selected', tab === 'estudiante' ? 'true' : 'false')
-        tabPer.setAttribute('aria-selected', tab === 'personal' ? 'true' : 'false')
-      }
-      tabEst.addEventListener('click', function() { setTab('estudiante') })
-      tabPer.addEventListener('click', function() { setTab('personal') })
 
       form.addEventListener('submit', async function(e) {
         e.preventDefault()
         var errDiv = document.getElementById('login-error')
         var submitText = document.getElementById('submit-text')
         var spinner = document.getElementById('submit-spinner')
+        var arrow = document.getElementById('submit-arrow')
+
         errDiv.classList.add('hidden')
         submitText.textContent = 'Validando...'
+        arrow.classList.add('hidden')
         spinner.classList.remove('hidden')
 
-        var docId = docInput.value.trim()
-        var password = passwordInput.value
-        if (!docId) { showErr('Ingresa tu identificación institucional.'); return }
-        if (!password) { showErr('Ingresa tu contraseña.'); return }
+        var cred = credInput.value.trim()
+        var pass = passInput.value
+
+        if (!cred) { resetBtn(); showErr('Ingresa tu identificación institucional.'); return }
+        if (!pass) { resetBtn(); showErr('Ingresa tu contraseña.'); return }
 
         try {
-          var res = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ login_credential:docId, password:password }) })
+          var res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ login_credential: cred, password: pass })
+          })
+
           if (!res.ok) {
-            var ed = await res.json().catch(function(){return{}})
-            throw new Error(res.status === 401 ? 'Credenciales inválidas.' : (ed.mensaje || ed.detail || ed.error || 'Error.'))
+            var ed = await res.json().catch(function() { return {} })
+            throw new Error(res.status === 401 ? 'Credenciales inválidas. Verifica tu ID y contraseña.' : (ed.mensaje || ed.detail || 'Error de conexión.'))
           }
+
           var data = await res.json()
           var usuario = data.usuario || {}
-          var role = (usuario.rol || data.rol || currentTab).toUpperCase()
-          // Main auth via httpOnly cookie (backend sets Set-Cookie).
-          // Keep a copy in ws_access_token ONLY for WebSocket connections (need token in URL)
+          var role = (usuario.rol || data.rol || 'ESTUDIANTE').toUpperCase()
+
           if (data.access_token) localStorage.setItem('ws_access_token', data.access_token)
           localStorage.setItem('userRole', role)
           localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
-          localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || docId)
+          localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || cred)
           if (usuario.profile_id) localStorage.setItem('profile_id', usuario.profile_id)
           if (data.grado || data.grade) localStorage.setItem('userGrade', data.grado || data.grade)
 
           submitText.textContent = '¡Bienvenido!'
-          var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }
+          var map = { ADMIN: '/admin', RECTOR: '/admin', PROFESOR: '/docente', DOCENTE: '/docente', ESTUDIANTE: '/estudiante', STUDENT: '/estudiante', TEACHER: '/docente' }
           window.location.href = map[role] || '/dashboard'
-        } catch(err) {
+        } catch (err) {
+          resetBtn()
           showErr(err.message || 'Error de conexión.')
         }
 
+        function resetBtn() {
+          submitText.textContent = 'Ingresar al Portal'
+          arrow.classList.remove('hidden')
+          spinner.classList.add('hidden')
+        }
         function showErr(msg) {
           errDiv.textContent = msg
           errDiv.classList.remove('hidden')
-          submitText.textContent = 'Ingresar al Portal'
-          spinner.classList.add('hidden')
         }
       })
 
-      // Forgot password logic
+      // ── Forgot password ──
       var forgotModal = document.getElementById('forgot-modal')
       document.getElementById('forgot-link')?.addEventListener('click', function() {
-        forgotModal.classList.add('flex'); forgotModal.classList.remove('hidden')
+        forgotModal.classList.add('flex')
+        forgotModal.classList.remove('hidden')
         document.getElementById('forgot-step-1').style.display = 'block'
         document.getElementById('forgot-step-2').style.display = 'none'
+        document.getElementById('forgot-step-1-error')?.classList.add('hidden')
+        document.getElementById('forgot-step-2-error')?.classList.add('hidden')
+        document.getElementById('forgot-step-2-success')?.classList.add('hidden')
       })
-      forgotModal?.addEventListener('click', function(e) { if (e.target === this) { this.classList.add('hidden'); this.classList.remove('flex') } })
+      forgotModal?.addEventListener('click', function(e) {
+        if (e.target === this) { this.classList.add('hidden'); this.classList.remove('flex') }
+      })
 
       document.getElementById('forgot-send-btn')?.addEventListener('click', async function() {
-        var cred = document.getElementById('forgot-credential').value.trim()
-        if (!cred) { document.getElementById('forgot-step-1-error').textContent = 'Ingresa tu identificación.'; document.getElementById('forgot-step-1-error').classList.remove('hidden'); return }
+        var c = document.getElementById('forgot-credential').value.trim()
+        if (!c) {
+          var e1 = document.getElementById('forgot-step-1-error')
+          e1.textContent = 'Ingresa tu identificación.'
+          e1.classList.remove('hidden')
+          return
+        }
         try {
-          var res = await fetch(baseUrl + '/api/auth/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ login_credential:cred }) })
-          var data = await res.json()
-          if (!res.ok) throw new Error(data.detail || 'Error')
+          var r = await fetch(baseUrl + '/api/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login_credential: c })
+          })
+          var d = await r.json()
+          if (!r.ok) throw new Error(d.detail || 'Error al enviar el código.')
           document.getElementById('forgot-step-1').style.display = 'none'
           document.getElementById('forgot-step-2').style.display = 'block'
-        } catch(err) {
-          document.getElementById('forgot-step-1-error').textContent = err.message
-          document.getElementById('forgot-step-1-error').classList.remove('hidden')
+        } catch (er) {
+          var e1 = document.getElementById('forgot-step-1-error')
+          e1.textContent = er.message
+          e1.classList.remove('hidden')
         }
       })
 
@@ -230,35 +255,65 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
         var code = document.getElementById('forgot-code').value.trim()
         var p1 = document.getElementById('forgot-new-pass').value
         var p2 = document.getElementById('forgot-confirm-pass').value
-        if (!code || code.length !== 6) { showErr2('Código inválido'); return }
-        if (!p1 || p1.length < 4) { showErr2('Contraseña muy corta'); return }
-        if (p1 !== p2) { showErr2('No coinciden'); return }
+        if (!code || code.length !== 6) { showErr2('Código inválido (6 dígitos).'); return }
+        if (!p1 || p1.length < 4) { showErr2('Contraseña muy corta (mínimo 4 caracteres).'); return }
+        if (p1 !== p2) { showErr2('Las contraseñas no coinciden.'); return }
         try {
-          var res = await fetch(baseUrl + '/api/auth/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ login_credential:document.getElementById('forgot-credential').value, code:code, new_password:p1 }) })
-          var data = await res.json()
-          if (!res.ok) throw new Error(data.detail || 'Error')
-          document.getElementById('forgot-step-2-success').textContent = 'Contraseña actualizada. Ya puedes iniciar sesión.'
-          document.getElementById('forgot-step-2-success').classList.remove('hidden')
-          setTimeout(function() { forgotModal.classList.add('hidden'); forgotModal.classList.remove('flex') }, 2500)
-        } catch(err) { showErr2(err.message) }
+          var r = await fetch(baseUrl + '/api/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              login_credential: document.getElementById('forgot-credential').value,
+              code: code,
+              new_password: p1
+            })
+          })
+          var d = await r.json()
+          if (!r.ok) throw new Error(d.detail || 'Error al restablecer.')
+          var s = document.getElementById('forgot-step-2-success')
+          s.textContent = 'Contraseña actualizada. Ya puedes iniciar sesión.'
+          s.classList.remove('hidden')
+          setTimeout(function() {
+            forgotModal.classList.add('hidden')
+            forgotModal.classList.remove('flex')
+          }, 2500)
+        } catch (er) { showErr2(er.message) }
         function showErr2(m) {
-          document.getElementById('forgot-step-2-error').textContent = m
-          document.getElementById('forgot-step-2-error').classList.remove('hidden')
+          var e2 = document.getElementById('forgot-step-2-error')
+          e2.textContent = m
+          e2.classList.remove('hidden')
         }
       })
 
-      // Wake-up ping (silent fetch, CORS-safe)
-      fetch(baseUrl + '/api/health', { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(5000) }).catch(function(){})
-
-      // Icon glow on input focus
-      ;[docInput, passwordInput].forEach(function(inp) {
-        inp?.addEventListener('focus', function() {
-          this.parentElement.querySelector('svg').style.color = 'var(--brand-maroon)'
-        })
-        inp?.addEventListener('blur', function() {
-          this.parentElement.querySelector('svg').style.color = ''
-        })
-      })
+      // ── Wake-up ping ──
+      fetch(baseUrl + '/api/health', { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(5000) }).catch(function() {})
     })()
   </script>
 </BaseLayout>
+
+<style>
+  @keyframes float-up {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    15% { opacity: 0.25; }
+    85% { opacity: 0.08; }
+    100% { transform: translateY(-100vh) scale(0.4); opacity: 0; }
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.18); opacity: 0.85; }
+  }
+  @keyframes logo-breathe {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(245,166,35,0.2)); }
+    50% { transform: scale(1.06); filter: drop-shadow(0 0 35px rgba(245,166,35,0.4)); }
+  }
+
+  .animate-float-up { animation: float-up linear infinite; }
+  .animate-breathing { animation: breathe 8s ease-in-out infinite; }
+  .animate-logo-breathe { animation: logo-breathe 4s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float-up,
+    .animate-breathing,
+    .animate-logo-breathe { animation: none; }
+  }
+</style>
