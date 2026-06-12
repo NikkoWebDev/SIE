@@ -235,7 +235,7 @@ def grade_color(score: float) -> str:
 
 def grade_badge_class(score: float) -> str:
     if score >= 4.0:
-        return "brand-neon-green"
+        return "text-success"
     if score >= RISK_THRESHOLD:
-        return "brand-neon-gold"
-    return "brand-neon-red"
+        return "text-brand-gold"
+    return "text-brand-danger"

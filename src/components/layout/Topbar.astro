@@ -25,8 +25,8 @@ const { role, pageTitle = 'Panel', pageSubtitle = '', onMobileMenu = true, class
   )}
 
   <div class="min-w-0 flex-1">
-    <h1 class="text-sm font-bold truncate">{pageTitle}</h1>
-    {pageSubtitle && <p class="text-[11px] text-text-tertiary truncate">{pageSubtitle}</p>}
+    <h1 class="topbar-heading text-sm font-bold truncate">{pageTitle}</h1>
+    {pageSubtitle && <p class="topbar-subtitle text-[11px] text-text-tertiary truncate">{pageSubtitle}</p>}
   </div>
 
   <div class="flex items-center gap-2 sm:gap-3">
@@ -50,21 +50,36 @@ const { role, pageTitle = 'Panel', pageSubtitle = '', onMobileMenu = true, class
       const btn = document.getElementById('mobile-menu-btn')
       const sidebar = document.querySelector('[class*="sidebar-"]')
       const overlay = document.querySelector('[id^="sidebar-overlay-"]')
-      if (btn && sidebar && overlay) {
-        btn.addEventListener('click', () => {
-          const isOpen = sidebar.classList.contains('-translate-x-full') || !sidebar.classList.contains('translate-x-0')
-          sidebar.classList.toggle('translate-x-0', isOpen)
-          sidebar.classList.toggle('-translate-x-full', !isOpen)
-          overlay.classList.toggle('hidden', !isOpen)
-          btn.setAttribute('aria-expanded', String(isOpen))
-        })
-        overlay.addEventListener('click', () => {
-          sidebar.classList.add('-translate-x-full')
-          sidebar.classList.remove('translate-x-0')
-          overlay.classList.add('hidden')
-          btn.setAttribute('aria-expanded', 'false')
-        })
+      if (!btn || !sidebar || !overlay) return
+
+      function openSidebar() {
+        sidebar.classList.add('translate-x-0')
+        sidebar.classList.remove('-translate-x-full')
+        overlay.classList.remove('hidden')
+        btn.setAttribute('aria-expanded', 'true')
+        btn.focus()
       }
+
+      function closeSidebar() {
+        sidebar.classList.add('-translate-x-full')
+        sidebar.classList.remove('translate-x-0')
+        overlay.classList.add('hidden')
+        btn.setAttribute('aria-expanded', 'false')
+        btn.focus()
+      }
+
+      btn.addEventListener('click', function() {
+        var isOpen = sidebar.classList.contains('translate-x-0')
+        isOpen ? closeSidebar() : openSidebar()
+      })
+
+      overlay.addEventListener('click', closeSidebar)
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && sidebar.classList.contains('translate-x-0')) {
+          closeSidebar()
+        }
+      })
     })
   </script>
 )}

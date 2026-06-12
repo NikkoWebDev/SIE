@@ -234,7 +234,7 @@ async def create_admin(data: AdminCreateRequest, user_id: str = Depends(admin_de
 
 
 @router.get("/teachers")
-async def list_teachers_with_subjects(user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def list_teachers_with_subjects(user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     teachers_profiles = db.table("profiles").select("id, login_credential, fullname").eq("role", "teacher").execute()
     assignments = db.table("teacher_assignments").select("teacher_id, subject_id, grade, subjects!inner(name)").execute()
@@ -349,7 +349,7 @@ async def cast_vote(data: VoteRequest, user_id: str = Depends(auth_dependency)) 
 async def admin_list_students(
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=200),
-    user_id: str = Depends(auth_dependency),
+    user_id: str = Depends(admin_dependency),
 ) -> JSONResponse:
     db: Client = next(get_db())
     count_result = db.table("profiles").select("id", count="exact").eq("role", "student").execute()
@@ -358,18 +358,23 @@ async def admin_list_students(
     profiles = db.table("profiles").select("id, login_credential, fullname").eq("role", "student").range(offset, offset + per_page - 1).execute()
     profile_ids = [p["id"] for p in (profiles.data or [])]
     meta_map = {}
+    course_map = {}
     if profile_ids:
-        metas = db.table("student_metadata").select("profile_id, months_in_arrears, financial_override, current_status").in_("profile_id", profile_ids).execute()
+        metas = db.table("student_metadata").select("profile_id, months_in_arrears, financial_override, current_status, course_id").in_("profile_id", profile_ids).execute()
         for m in (metas.data or []):
             meta_map[m["profile_id"]] = m
+        course_ids = [m.get("course_id") for m in (metas.data or []) if m.get("course_id")]
+        if course_ids:
+            courses = db.table("courses").select("id, name").in_("id", course_ids).execute()
+            course_map = {c["id"]: c.get("name", "") for c in (courses.data or [])}
     return JSONResponse(content={
         "data": [{
             "_id": p["id"],
             "document_id": p.get("login_credential", ""),
             "fullname": p["fullname"],
             "nombre": p["fullname"],
-            "grado": meta_map.get(p["id"], {}).get("current_status", ""),
-            "grade": meta_map.get(p["id"], {}).get("current_status", ""),
+            "grado": course_map.get(meta_map.get(p["id"], {}).get("course_id", ""), ""),
+            "grade": course_map.get(meta_map.get(p["id"], {}).get("course_id", ""), ""),
             "is_paid": (meta_map.get(p["id"], {}).get("months_in_arrears", 0) < 2 or meta_map.get(p["id"], {}).get("financial_override", False)),
         } for p in (profiles.data or [])],
         "page": page,

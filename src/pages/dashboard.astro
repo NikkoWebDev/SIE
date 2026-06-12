@@ -12,10 +12,18 @@ import BaseLayout from '@layouts/BaseLayout.astro'
 
   <script>
     (function() {
-      var role = (localStorage.getItem('userRole') || '').toUpperCase()
-      if (!role) { window.location.href = '/login/'; return }
-      var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }
-      window.location.href = map[role] || '/estudiante'
+      // Use unified session manager if available (from BaseLayout module import)
+      if (window.VyntraSession && window.VyntraSession.getRole && window.VyntraSession.redirectToRole) {
+        var role = window.VyntraSession.getRole()
+        if (!role) { window.location.href = '/login/'; return }
+        window.VyntraSession.redirectToRole()
+      } else {
+        // Fallback
+        var roleRaw = (localStorage.getItem('userRole') || '').toUpperCase()
+        if (!roleRaw) { window.location.href = '/login/'; return }
+        var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }
+        window.location.href = map[roleRaw] || '/estudiante'
+      }
     })()
   </script>
 </BaseLayout>

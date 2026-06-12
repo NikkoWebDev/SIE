@@ -174,7 +174,7 @@ async def financial_guard(request: Request) -> None:
 CSRF_SKIP_PATHS: frozenset[str] = frozenset({
     "/api/auth/login", "/api/auth/register", "/api/auth/forgot-password",
     "/api/auth/reset-password", "/api/auth/google", "/api/auth/logout",
-    "/api/health",
+    "/api/health", "/api/ai",
 })
 
 

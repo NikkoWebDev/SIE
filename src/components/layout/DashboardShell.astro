@@ -43,9 +43,8 @@ const {
 </div>
 
 <script>
-  import { Chart, registerables } from 'chart.js'
-  Chart.register(...registerables)
-  window.Chart = Chart
-
+  // Chart.js is now loaded lazily via getChartJS() / getChartWhenReady().
+  // Individual pages call getChartJS() when a chart section is first opened.
+  // This keeps ~80KB of Chart.js out of the initial bundle.
   document.querySelectorAll('[id^="sec-"]').forEach(function (s) { s.setAttribute('aria-live', 'polite') })
 </script>

@@ -1,0 +1,468 @@
+/* ═══════════════════════════════════════════════════════════
+   VYNTRA Solaris — Landing v10
+   Minimal. Scroll-driven. Premium.
+═══════════════════════════════════════════════════════════ */
+
+:root {
+  --clr-void:    #070302;
+  --clr-cream:   #FFFBF0;
+  --clr-maroon:  #6B1A1A;
+  --clr-gold:    #F5A623;
+  --clr-ember:   #E8650A;
+  --clr-text:    #1A1106;
+  --clr-muted:   rgba(26,17,6,.55);
+  --clr-glass:   rgba(255,253,248,.78);
+  --clr-border:  rgba(107,26,26,.09);
+
+  --ease-cinema: cubic-bezier(.16,1,.3,1);
+  --ease-out:    cubic-bezier(.19,1,.22,1);
+  --t-fast:  140ms;
+  --t-base:  300ms;
+
+  --logo-size:  clamp(160px, 26vw, 360px);
+  --heading-xl: clamp(48px, 9vw, 140px);
+  --heading-lg: clamp(28px, 4.5vw, 68px);
+  --heading-md: clamp(18px, 2.5vw, 32px);
+  --body-lg:    clamp(14px, 1.5vw, 18px);
+}
+
+.vl * { box-sizing: border-box; margin: 0; padding: 0; }
+.vl a  { color: inherit; text-decoration: none; }
+
+/* ─── Root ───────────────────────────────────────────────── */
+.vl {
+  position: relative;
+  overflow: clip;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(245,166,35,.12) 0%, transparent 55%),
+    linear-gradient(180deg,
+      var(--clr-void) 0%,
+      var(--clr-void) 2%,
+      #100804 5%,
+      var(--clr-cream) 15%,
+      var(--clr-cream) 100%
+    );
+  color: var(--clr-text);
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+/* ─── Grain ──────────────────────────────────────────────── */
+.vl__grain {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: .028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.68' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 256px;
+}
+
+/* ─── Aura ───────────────────────────────────────────────── */
+.vl__aura {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  filter: blur(110px);
+  background:
+    radial-gradient(circle at 50% 38%, rgba(245,166,35,.18) 0%, transparent 48%),
+    radial-gradient(circle at 82% 88%, rgba(107,26,26,.09) 0%, transparent 42%);
+}
+
+/* ─── Sticky stage ───────────────────────────────────────── */
+.vl__stage {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ─── Logo shell ─────────────────────────────────────────── */
+.vl__logo-shell {
+  position: absolute;
+  z-index: 10;
+  width: var(--logo-size);
+  height: var(--logo-size);
+  transform-origin: center center;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* ─── Solar Logo ─────────────────────────────────────────── */
+.sl {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 24px 72px rgba(107,26,26,.16));
+}
+
+.sl__aura {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(245,166,35,.36) 0%,
+    rgba(245,166,35,.10) 40%,
+    transparent 68%
+  );
+  filter: blur(20px);
+  animation: sl-breathe 6s ease-in-out infinite alternate;
+}
+
+.sl__ring {
+  position: absolute;
+  border-radius: 50%;
+}
+.sl__ring--outer {
+  inset: 2%;
+  border: 1px solid rgba(107,26,26,.12);
+}
+.sl__ring--mid {
+  inset: 15%;
+  border: 1px solid rgba(245,166,35,.20);
+}
+
+.sl__rays {
+  position: absolute;
+  inset: 0;
+  animation: sl-spin 56s linear infinite;
+}
+
+.sl__ray {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.5px;
+  height: 20%;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, transparent 0%, rgba(245,166,35,.65) 50%, transparent 100%);
+  transform-origin: 50% 0%;
+  transform: rotate(calc(var(--ri) * 30deg)) translateY(-150%) translateX(-50%);
+}
+
+.sl__core {
+  position: relative;
+  width: 44%;
+  height: 44%;
+  border-radius: 30%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 30% 22%,
+    #fff8d8 0% 8%,
+    #ffd166 10% 24%,
+    var(--clr-gold) 42%,
+    var(--clr-ember) 70%,
+    var(--clr-maroon) 100%
+  );
+  box-shadow:
+    0 0 48px rgba(245,166,35,.60),
+    0 0 130px rgba(245,166,35,.18),
+    inset -14px -12px 26px rgba(107,26,26,.30);
+  transform: rotate(45deg);
+}
+
+.sl__shine {
+  position: absolute;
+  inset: 14% 44% 54% 16%;
+  border-radius: 50%;
+  background: rgba(255,255,215,.62);
+  filter: blur(7px);
+}
+
+.sl__glyph {
+  position: relative;
+  width: 60%;
+  height: 60%;
+  transform: rotate(-45deg);
+  fill: rgba(255,255,255,.88);
+  mix-blend-mode: screen;
+}
+
+/* ─── Scenes ─────────────────────────────────────────────── */
+.vl__scene {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 5vw, 64px);
+}
+
+.vl__scene-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 640px;
+}
+
+.vl__scene--features {
+  align-items: center;
+  justify-content: flex-end;
+  text-align: left;
+}
+.vl__scene--features .vl__scene-content {
+  align-items: flex-start;
+  text-align: left;
+}
+.vl__scene--features .vl__inner { width: min(560px, 46vw); }
+
+/* ─── Typography ──────────────────────────────────────────── */
+.vl__kicker {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--clr-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .44em;
+  text-transform: uppercase;
+}
+
+.vl__brand {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: var(--heading-xl);
+  font-weight: 900;
+  line-height: .82;
+  letter-spacing: -.06em;
+  color: #1A1106;
+}
+.vl__brand-accent { color: var(--clr-maroon); }
+
+.vl__heading {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: var(--heading-lg);
+  font-weight: 900;
+  line-height: .88;
+  letter-spacing: -.05em;
+  color: var(--clr-maroon);
+  margin-bottom: 18px;
+}
+
+.vl__heading-sm {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: var(--heading-md);
+  font-weight: 800;
+  letter-spacing: -.04em;
+  color: var(--clr-maroon);
+  margin-bottom: 6px;
+}
+
+.vl__body {
+  max-width: 480px;
+  color: var(--clr-muted);
+  font-size: var(--body-lg);
+  line-height: 1.65;
+  margin-bottom: 28px;
+}
+
+/* ─── Actions ─────────────────────────────────────────────── */
+.vl__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.vl__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--clr-border);
+  background: var(--clr-glass);
+  color: var(--clr-maroon);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 12px 36px rgba(107,26,26,.07);
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease-out), box-shadow var(--t-fast);
+}
+
+.vl__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 52px rgba(107,26,26,.12);
+}
+
+.vl__btn:active { transform: scale(.97); }
+
+.vl__btn--primary {
+  background: var(--clr-maroon);
+  color: #FFFBF0;
+  border-color: transparent;
+  box-shadow: 0 12px 36px rgba(107,26,26,.26);
+}
+.vl__btn--primary:hover {
+  box-shadow: 0 20px 60px rgba(107,26,26,.36);
+}
+
+.vl__btn--ghost { background: rgba(255,253,248,.50); }
+
+.vl__btn--lg {
+  padding: 15px 32px;
+  font-size: 11px;
+}
+
+/* ─── Feature cards ───────────────────────────────────────── */
+.vl__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
+  width: 100%;
+}
+
+.vl__card {
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 20px 24px;
+  border: 1px solid var(--clr-border);
+  background: radial-gradient(circle at 100% 0%, rgba(245,166,35,.08) 0%, transparent 38%),
+              rgba(255,253,248,.72);
+  box-shadow: 0 16px 48px rgba(107,26,26,.06);
+  backdrop-filter: blur(20px);
+  will-change: transform;
+}
+
+.vl__card::before {
+  content: '';
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245,166,35,.28), transparent);
+  margin-bottom: 14px;
+}
+
+.vl__card-tag {
+  display: inline-block;
+  margin-bottom: 6px;
+  color: rgba(107,26,26,.50);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .38em;
+  text-transform: uppercase;
+}
+
+.vl__card h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(14px, 1.5vw, 20px);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  color: var(--clr-maroon);
+  margin-bottom: 4px;
+}
+
+.vl__card p {
+  font-size: 13px;
+  line-height: 1.60;
+  color: var(--clr-muted);
+}
+
+/* ─── Progress ────────────────────────────────────────────── */
+.vl__progress {
+  position: fixed;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  width: min(240px, 40vw);
+  height: 1.5px;
+  background: rgba(107,26,26,.09);
+  border-radius: 999px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.vl__progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--clr-maroon), var(--clr-gold));
+  transition: width .08s linear;
+}
+
+/* ─── Floating CTA ────────────────────────────────────────── */
+.vl__fcta {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(18px, env(safe-area-inset-right));
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: rgba(255,253,248,.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(107,26,26,.10);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--clr-maroon);
+  box-shadow: 0 4px 20px rgba(107,26,26,.08);
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity var(--t-base) var(--ease-out), transform var(--t-base) var(--ease-out), box-shadow var(--t-base);
+}
+
+.vl__fcta.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.vl__fcta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(107,26,26,.14);
+}
+
+/* ─── Keyframes ───────────────────────────────────────────── */
+@keyframes sl-spin    { to { transform: rotate(360deg); } }
+@keyframes sl-breathe { from { opacity: .70; } to { opacity: 1; } }
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .vl__scene--features {
+    align-items: center;
+    text-align: center;
+  }
+  .vl__scene--features .vl__scene-content {
+    align-items: center;
+    text-align: center;
+  }
+  .vl__scene--features .vl__inner { width: 100%; }
+
+  .vl__actions { justify-content: center; }
+}
+
+/* ─── Reduced motion ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .vl { min-height: auto; }
+  .vl__stage { position: relative; height: auto; min-height: 100svh; padding: 80px 0; }
+  .vl__progress, .vl__fcta { display: none; }
+  .vl__scene {
+    position: relative !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .vl__logo-shell {
+    position: relative;
+    left: 50% !important;
+    top: auto !important;
+    transform: translateX(-50%) !important;
+    margin: 40px auto;
+  }
+  .sl__rays { animation: none; }
+  .sl__aura { animation: none; }
+}

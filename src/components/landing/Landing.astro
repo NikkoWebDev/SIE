@@ -1,0 +1,101 @@
+---
+import SolarLogo from './SolarLogo.astro'
+
+export interface Props {
+  features?: Array<{ tag?: string; title: string; text: string }>
+}
+
+const {
+  features = [
+    {
+      tag: 'ABP',
+      title: 'Rendimiento vivo',
+      text: 'Indicadores claros, rutas de aprendizaje y alertas accionables para cada rol académico.',
+    },
+    {
+      tag: 'IA',
+      title: 'Tutor contextual',
+      text: 'Inteligencia artificial que entiende la sección activa y acompaña decisiones académicas reales.',
+    },
+    {
+      tag: 'NEXUS',
+      title: 'Gestión integral',
+      text: 'Notas, tareas, elecciones y analítica conectadas en una única experiencia coherente.',
+    },
+  ],
+} = Astro.props
+---
+
+<section class="vl" data-landing aria-label="VYNTRA Solaris">
+
+  <div class="vl__grain" aria-hidden="true"></div>
+  <div class="vl__aura" aria-hidden="true"></div>
+
+  <div class="vl__progress" aria-hidden="true">
+    <div class="vl__progress-fill" data-progress-fill></div>
+  </div>
+
+  <a href="/login" class="vl__fcta" data-float-cta data-magnetic>
+    <span>Acceder</span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+    </svg>
+  </a>
+
+  <div class="vl__stage" data-landing-stage>
+    <div class="vl__logo-shell" data-logo-shell>
+      <SolarLogo />
+    </div>
+
+    <div class="vl__scene" data-scene="hero">
+      <div class="vl__scene-content">
+        <p class="vl__kicker" data-shift>Colegio Técnico Ciudad del Sol · Sogamoso</p>
+        <h1 class="vl__brand" data-shift>VYNTRA <span class="vl__brand-accent">Solaris</span></h1>
+        <p class="vl__body" data-shift>
+          Plataforma académica inteligente para aprender,<br />
+          enseñar y dirigir con claridad solar.
+        </p>
+        <div class="vl__actions" data-shift>
+          <a href="/login" class="vl__btn vl__btn--primary" data-magnetic>Ingresar al Portal</a>
+          <a href="#vl-features" class="vl__btn vl__btn--ghost">Descubrir más</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="vl__scene vl__scene--features" id="vl-features" data-scene="features">
+      <div class="vl__inner">
+        <p class="vl__kicker">Sistema Solaris</p>
+        <h2 class="vl__heading-sm">Una interfaz<br />para cada rol</h2>
+        <div class="vl__cards">
+          {features.map((f) => (
+            <article class="vl__card" data-magnetic-card>
+              {f.tag && <span class="vl__card-tag">{f.tag}</span>}
+              <h3>{f.title}</h3>
+              <p>{f.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div class="vl__scene" data-scene="cta">
+      <div class="vl__scene-content">
+        <p class="vl__kicker" data-shift>El futuro comienza aquí</p>
+        <h2 class="vl__heading" data-shift>Entra<br />en órbita</h2>
+        <p class="vl__body" data-shift>
+          VYNTRA Solaris conecta comunidad, analítica<br />
+          e inteligencia académica en una experiencia memorable.
+        </p>
+        <div class="vl__actions" data-shift>
+          <a href="/login" class="vl__btn vl__btn--primary vl__btn--lg" data-magnetic>Ingresar al Portal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initLanding } from '../../lib/landingMotion'
+  initLanding()
+  document.addEventListener('astro:page-load', () => initLanding())
+</script>

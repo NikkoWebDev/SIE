@@ -37,6 +37,10 @@ DECLARE
 BEGIN
   query_lower := lower(query_text);
 
+  -- Normalize: strip SQL comments to prevent comment-based bypass
+  query_lower := regexp_replace(query_lower, '--.*$', '', 'ng');
+  query_lower := regexp_replace(query_lower, '/\*.*?\*/', '', 'ng');
+
   -- Only SELECT allowed
   IF NOT (query_lower ~ '^select ') THEN
     RETURN jsonb_build_object('error', 'Solo se permiten consultas SELECT.');
@@ -55,14 +59,15 @@ BEGIN
     RETURN jsonb_build_object('error', 'La consulta no referencia ninguna tabla permitida.');
   END IF;
 
-  -- Block dangerous keywords
-  IF query_lower ~ '\m(drop|truncate|delete|insert|update|alter|create|grant|revoke|exec|execute|call|fetch|copy|declare|raise|notify|listen)\M' THEN
+  -- Block dangerous keywords (expanded)
+  IF query_lower ~ '\m(drop|truncate|delete|insert|update|alter|create|grant|revoke|exec|execute|call|fetch|copy|declare|raise|notify|listen|set|reset|load|import|export|pg_sleep|dblink|lo_import|lo_export|pg_read_file|pg_write_file|pg_stat_file|generate_series|unnest)\M' THEN
     RETURN jsonb_build_object('error', 'Operación no permitida.');
   END IF;
 
-  -- Execute with statement_timeout
+  -- Execute with statement_timeout and read-only guard
   BEGIN
     SET LOCAL statement_timeout = '5000';
+    SET LOCAL session_replication_role = 'replica';
     EXECUTE 'SELECT coalesce(jsonb_agg(row_to_json(t)), ''[]''::jsonb) FROM (' || query_text || ' LIMIT 100) t' INTO result;
     RETURN result;
   EXCEPTION WHEN OTHERS THEN

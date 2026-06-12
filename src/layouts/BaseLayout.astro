@@ -1,4 +1,5 @@
 ---
+import '../styles/solaris-landing.css'
 import '../styles/theme.css'
 
 export interface Props {
@@ -86,25 +87,54 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
       "inLanguage": "es-CO",
     }])} />
   )}
+
+  <!-- Phase 1: Synchronous init — must run before paint -->
   <meta name="vyntra-api-url" content={apiUrl}>
   <script is:inline>
     window.__API_URL__ = document.querySelector('meta[name="vyntra-api-url"]').getAttribute('content')
   </script>
   <script is:inline>
-    // ── Service Worker cleanup ──
-    try { if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(function (a) { a.forEach(function (b) { b.unregister() }) }) } } catch(e){}
+    // Theme init — must run sync to avoid FOUC
+    (function () {
+      var dark = false
+      try { dark = localStorage.getItem('vyntra-theme') === 'dark' } catch (_) {}
+      if (!dark) {
+        try { dark = window.matchMedia('(prefers-color-scheme:dark)').matches } catch (_) {}
+      }
+      document.documentElement.classList.toggle('dark', dark)
+      window.setVyntraTheme = function (d) {
+        document.documentElement.classList.toggle('dark', d)
+        try { localStorage.setItem('vyntra-theme', d ? 'dark' : 'light') } catch (_) {}
+      }
+    })()
   </script>
   <script is:inline>
-    // VYNTRA Academic — Session Manager v3.2 (inline)
+    // Service worker cleanup — prevents stale SW from legacy deployments.
+    // Safe to remove if no PWA migration is planned.
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (r) { r.unregister() })
+        })
+      }
+    } catch (_) {}
+  </script>
+
+  <!-- Phase 2: Auth check, wakeup, XHR interceptor — early but not sync-critical -->
+  <script is:inline>
     (function () {
       var API_URL = window.__API_URL__ || 'http://localhost:8000'
-      var origFetch, origOpen
 
-      function getToken() { return null }
-      function isAuthenticated() { try { return !!localStorage.getItem('userId') } catch(e) { return false } }
+      function httpGet(url, cb) {
+        var x = new XMLHttpRequest()
+        x.open('GET', url, true)
+        x.onload = function () { cb && cb(x.status) }
+        x.onerror = function () {}
+        x.send()
+      }
 
       function wakeUp() {
-        fetch(API_URL + '/api/health', { method: 'GET', priority: 'low', signal: AbortSignal.timeout(5000) }).catch(function(){})
+        httpGet(API_URL + '/api/health', function () {})
       }
 
       function checkAuth() {
@@ -112,85 +142,67 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
           var uid = localStorage.getItem('userId')
           if (!uid) {
             var p = window.location.pathname
-            if (p !== '/' && p !== '/login' && p !== '/login/' && p !== '/api/health' && !p.startsWith('/api/')) {
+            if (p !== '/' && p !== '/login' && p !== '/login/' && !p.startsWith('/api/')) {
               localStorage.clear()
               window.location.href = '/login/'
             }
             return false
           }
           return true
-        } catch(e) { return false }
+        } catch (_) { return false }
       }
 
-      function setupAuthInterceptor() {
-        origOpen = XMLHttpRequest.prototype.open
-        XMLHttpRequest.prototype.open = function () {
-          this.addEventListener('load', function () {
-            if (this.status === 401) {
-              var hadSession = false
-              try { hadSession = !!localStorage.getItem('userId') } catch(_) {}
-              if (hadSession) {
-                localStorage.clear()
-                if (window.location.pathname !== '/login' && window.location.pathname !== '/login/') window.location.href = '/login/'
-              }
-            }
-          })
-          return origOpen.apply(this, arguments)
-        }
-
-        origFetch = window.fetch
-        window.fetch = function (url, opts) {
-          return origFetch(url, opts).then(function (r) {
-            if (r.status === 401) {
-              var hadSession = false
-              try { hadSession = !!localStorage.getItem('userId') } catch(_) {}
-              if (hadSession) {
-                localStorage.clear()
-                if (window.location.pathname !== '/login' && window.location.pathname !== '/login/') window.location.href = '/login/'
-              }
-            }
-            return r
-          })
-        }
+      // XHR interceptor for 401 handling
+      var origOpen = XMLHttpRequest.prototype.open
+      XMLHttpRequest.prototype.open = function () {
+        var xhr = this
+        xhr.addEventListener('load', function () {
+          if (xhr.status === 401) {
+            try { if (localStorage.getItem('userId')) { localStorage.clear(); window.location.href = '/login/' } } catch (_) {}
+          }
+        })
+        return origOpen.apply(this, arguments)
       }
 
       checkAuth()
       wakeUp()
-      setupAuthInterceptor()
 
       window.VYNTRA = window.VYNTRA || {}
-      window.VYNTRA.isAuthenticated = isAuthenticated
+      window.VYNTRA.isAuthenticated = function () {
+        try { return !!localStorage.getItem('userId') } catch (_) { return false }
+      }
       window.VYNTRA.getApiUrl = function () { return API_URL }
-      window.VYNTRA.getToken = getToken
-      window.VYNTRA.origFetch = origFetch
+      window.VYNTRA.getToken = function () { return null }
     })()
   </script>
+
+  <!-- Phase 3: Utility functions + fetch — inline for immediate availability -->
   <script is:inline>
     (function () {
-      window.setVyntraTheme = function (dark) {
-        document.documentElement.classList.toggle('dark', dark)
-        try { localStorage.setItem('vyntra-theme', dark ? 'dark' : 'light') } catch (_) {}
+      window.escapeHtml = function (text) {
+        var div = document.createElement('div')
+        div.appendChild(document.createTextNode(String(text || '')))
+        return div.innerHTML
       }
-      try {
-        var stored = localStorage.getItem('vyntra-theme')
-        window.setVyntraTheme(stored === 'dark')
-      } catch (_) {}
-
-      window.createShowSection = function (configs) {
-        var titles = configs.titles || {}, subs = configs.subs || {}, onN = configs.onNavigate || function () {}
-        return function showSection(id) {
-          document.querySelectorAll('[id^="sec-"]').forEach(function (s) { s.style.display = 'none'; s.classList.remove('section-enter') })
-          var sec = document.getElementById('sec-' + id)
-          if (sec) { sec.style.display = ''; sec.classList.add('section-enter') }
-          var t = document.querySelector('.topbar h1'), p = document.querySelector('.topbar p')
-          if (t) t.textContent = titles[id] || id
-          if (p) p.textContent = subs[id] || ''
-          window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id } }))
-          onN(id)
-        }
+      window.formatNum = function (n, d) {
+        var num = parseFloat(n)
+        return isNaN(num) ? '--' : num.toFixed(d || 1)
+      }
+      window.startVyntraClock = function (elId) {
+        var el = document.getElementById(elId)
+        if (!el) return
+        function tick() { if (el) el.textContent = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }
+        tick(); setInterval(tick, 1000)
+      }
+      window.getCurrentBimester = function () {
+        var m = new Date().getMonth() + 1
+        return m <= 3 ? 'P1' : m <= 6 ? 'P2' : m <= 9 ? 'P3' : 'P4'
       }
 
-      window.vfetch = function (apiUrl, path, opts) {
+      // Primary vfetch — immediately available for page inline scripts.
+      // api.ts (Phase 4 module) overwrites it with the typed version once loaded.
+      var API_URL = window.__API_URL__ || 'http://localhost:8000'
+      window.vfetch = function (baseUrl, path, opts) {
         opts = opts || {}
         var body = opts.body
         var isFormData = body instanceof FormData
@@ -198,14 +210,15 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
         if (!isFormData) headers['Content-Type'] = 'application/json'
         var ctrl = new AbortController()
         var timer = setTimeout(function () { ctrl.abort() }, 15000)
-        var merged = Object.assign({ credentials: 'include', signal: ctrl.signal }, opts, { headers: headers })
-        return fetch(apiUrl + path, merged).then(function (r) {
+        var merged = Object.assign({ credentials: 'include', signal: opts.signal || ctrl.signal }, opts, { headers: headers })
+        var url = (baseUrl || API_URL).replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '')
+        return fetch(url, merged).then(function (r) {
           clearTimeout(timer)
           if (r.status === 401) {
             try { localStorage.clear() } catch (_) {}
-            window.VyntraToast?.error('Sesion expirada. Redirigiendo al inicio...')
+            window.VyntraToast && window.VyntraToast.error('Sesión expirada. Redirigiendo al inicio...')
             setTimeout(function () { window.location.href = '/login' }, 1500)
-            throw new Error('Sesion expirada')
+            throw new Error('Sesión expirada')
           }
           return r
         }).catch(function (e) {
@@ -213,30 +226,15 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
           throw e
         })
       }
-
-      window.startVyntraClock = function (elId) {
-        var el = document.getElementById(elId)
-        if (!el) return
-        function tick() { if (el) el.textContent = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }
-        tick(); setInterval(tick, 1000)
-      }
-
-      window.getCurrentBimester = function () {
-        var m = new Date().getMonth() + 1
-        return m <= 3 ? 1 : m <= 6 ? 2 : m <= 9 ? 3 : 4
-      }
-
-      window.escapeHtml = function (text) {
-        var div = document.createElement('div')
-        div.appendChild(document.createTextNode(String(text || '')))
-        return div.innerHTML
-      }
-
-      window.formatNum = function (n, d) {
-        var num = parseFloat(n)
-        return isNaN(num) ? '--' : num.toFixed(d || 1)
-      }
     })()
+  </script>
+
+  <!-- Phase 4: Module imports — sets up richer API, session, and chart utilities on window -->
+  <script>
+    import '../lib/api'
+    import '../lib/session'
+    import '../lib/section-router'
+    import '../lib/charts'
   </script>
 
   <slot name="head" />

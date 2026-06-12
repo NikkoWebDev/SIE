@@ -252,3 +252,60 @@ export type SectionId =
   | 'avisos'
   | 'elecciones'
   | 'administradores'
+
+export interface SectionRouterConfig {
+  titles: Record<string, string>
+  subtitles: Record<string, string>
+  loaders: Record<string, () => Promise<void> | void>
+  onNavigate?: (section: string) => void
+  startSection?: string
+  defaultSection?: string
+  titleSelector?: string
+  subtitleSelector?: string
+}
+
+declare global {
+  interface Window {
+    __apiExposed?: boolean
+    __sessionExposed?: boolean
+    __sectionRouterExposed?: boolean
+    __chartsExposed?: boolean
+    __API_URL__: string
+    VYNTRA: {
+      isAuthenticated: () => boolean
+      getApiUrl: () => string
+      getToken: () => null
+    }
+    VyntraToast: {
+      show: (message: string, type?: 'success' | 'error' | 'warning' | 'info', duration?: number) => void
+      success: (message: string, duration?: number) => void
+      error: (message: string, duration?: number) => void
+      warning: (message: string, duration?: number) => void
+      info: (message: string, duration?: number) => void
+    }
+    VyntraSession: {
+      getUser: () => Record<string, string> | null
+      getRole: () => UserRole | null
+      isAuthenticated: () => boolean
+      clearSession: () => void
+      logout: () => Promise<void>
+      redirectToRole: (roleOverride?: string) => void
+      requireAuth: () => boolean
+      storeSession: (data: Record<string, string | undefined>) => void
+    }
+    setVyntraTheme: (dark: boolean) => void
+    vfetch: (baseUrl: string, path: string, opts?: RequestInit) => Promise<Response>
+    apiFetch: (path: string, opts?: RequestInit) => Promise<any>
+    createTimeoutSignal: (ms?: number) => { signal: AbortSignal; clear: () => void }
+    createShowSection: (configs: { titles: Record<string, string>; subs: Record<string, string>; onNavigate: (section: string) => void }) => (id: string) => void
+    createSectionRouter: (config: SectionRouterConfig) => { showSection: (id: string | undefined, forceReload?: boolean) => void; reloadSection: (id: string) => void; getCurrentSection: () => string }
+    getChartJS: () => Promise<{ Chart: any; registerables: any[] }>
+    getChartWhenReady: () => Promise<any>
+    Chart: any
+    startVyntraClock: (elId: string) => void
+    getCurrentBimester: () => string
+    escapeHtml: (text: string) => string
+    formatNum: (n: number | string, d?: number) => string
+    showSection: (id: string) => void
+  }
+}

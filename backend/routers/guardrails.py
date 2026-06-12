@@ -61,7 +61,7 @@ class InputGuardrail:
         for pattern in PROMPT_INJECTION_PATTERNS:
             if pattern.search(text):
                 logger.info("prompt injection detected (pattern=%s)", pattern.pattern[:40])
-                return None  # silently ignore rather than revealing detection to attacker
+                return "Lo siento, no puedo procesar esa solicitud. Por favor reformula tu consulta."
         return None
 
 

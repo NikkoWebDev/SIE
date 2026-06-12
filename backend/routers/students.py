@@ -26,7 +26,15 @@ async def list_students(
     query = db.table("profiles").select("id, login_credential, fullname, role, is_active", count="exact")
     query = query.eq("role", "student")
     if grade:
-        query = query.eq("grade", grade)
+        courses = db.table("courses").select("id").eq("name", grade).execute()
+        if courses.data:
+            course_ids = [c["id"] for c in courses.data]
+            meta_ids = db.table("student_metadata").select("profile_id").in_("course_id", course_ids).execute()
+            profile_ids = [m["profile_id"] for m in (meta_ids.data or [])]
+            if profile_ids:
+                query = query.in_("id", profile_ids)
+            else:
+                query = query.eq("id", "nonexistent")
     offset = (page - 1) * per_page
     result = query.range(offset, offset + per_page - 1).execute()
     students = [
@@ -137,13 +145,27 @@ async def get_student_report(student_id: str, request: Request, user_id: str = D
     if role == "student" and user_id != student_id:
         raise HTTPException(status_code=403, detail="No tienes permiso para ver el reporte de otro estudiante")
     if is_financial_locked_path("/api/students/report"):
-        req = type("_R", (), {"query_params": {"student_id": student_id}})()
+        class _MockRequest:
+            query_params = {"student_id": student_id}
+            method = "GET"
+            class url:
+                path = "/api/students/report"
+            @staticmethod
+            async def body():
+                return b""
+        req = _MockRequest()
         await financial_guard(req)
     profile = db.table("profiles").select("fullname").eq("id", student_id).execute()
     if not profile.data:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
-    meta = db.table("student_metadata").select("current_status, months_in_arrears, financial_override").eq("profile_id", student_id).execute()
+    meta = db.table("student_metadata").select("current_status, months_in_arrears, financial_override, course_id").eq("profile_id", student_id).execute()
     metadata = meta.data[0] if meta.data else {}
+    grade_name = ""
+    course_id = metadata.get("course_id")
+    if course_id:
+        course = db.table("courses").select("name").eq("id", course_id).execute()
+        if course.data:
+            grade_name = course.data[0].get("name", "")
     grades_result = db.table("grades").select("subject_id, project_id, score, observations, created_at").eq("student_id", student_id).order("created_at", desc=True).execute()
     grades = [
         {
@@ -158,7 +180,7 @@ async def get_student_report(student_id: str, request: Request, user_id: str = D
     avg_score = sum(g["score"] for g in grades) / len(grades) if grades else 0.0
     return JSONResponse(content={
         "student": profile.data[0].get("fullname"),
-        "grade": metadata.get("current_status", ""),
+        "grade": grade_name,
         "is_on_time": metadata.get("months_in_arrears", 0) < 2 or metadata.get("financial_override", False),
         "promedio": round(avg_score, 1),
         "estado": grade_status(avg_score),

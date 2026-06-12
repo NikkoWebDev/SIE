@@ -1,0 +1,408 @@
+---
+export interface Props {
+  role?: 'student' | 'teacher' | 'admin'
+}
+
+const { role = 'student' } = Astro.props as Props
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
+const cfg = {
+  student: { accent: '#6B1A1A', endpoint: '/api/ai/student-tutor', avatar: 'V', title: 'Tutor IA', name: 'Estudiante' },
+  teacher: { accent: '#34D399', endpoint: '/api/ai/teacher-tutor', avatar: 'D', title: 'Asistente Docente', name: 'Docente' },
+  admin: { accent: '#F5A623', endpoint: '/api/ai/admin-assistant', avatar: 'A', title: 'Asistente Administrativo', name: 'Administrador' },
+}
+const rc = cfg[role]
+---
+
+<div id="chat-full-{role}" class="flex h-full rounded-2xl border border-border overflow-hidden bg-[var(--bg)]" style="--chat-accent:{rc.accent}">
+  <!-- Left panel: thread list -->
+  <div class="w-64 shrink-0 border-r border-border flex flex-col bg-[var(--bg-secondary)]">
+    <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+      <h3 class="text-[13px] font-bold">Chats</h3>
+      <button id="new-thread-btn-{role}"
+        class="w-7 h-7 rounded-lg flex items-center justify-center text-text-secondary hover:text-text hover:bg-[var(--bg-tertiary)] transition-colors"
+        title="Nuevo chat">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      </button>
+    </div>
+    <div id="thread-list-{role}" class="flex-1 overflow-y-auto p-2 space-y-1">
+      <div id="thread-list-skeleton-{role}" class="space-y-2 p-2">
+        <div class="h-4 w-24 skeleton-shimmer rounded"></div>
+        <div class="h-10 skeleton-shimmer rounded-xl"></div>
+        <div class="h-10 skeleton-shimmer rounded-xl"></div>
+        <div class="h-10 skeleton-shimmer rounded-xl opacity-50"></div>
+        <div class="h-10 skeleton-shimmer rounded-xl opacity-30"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel: chat area -->
+  <div class="flex-1 flex flex-col">
+    <!-- Chat header -->
+    <div class="px-5 py-3 border-b border-border flex items-center gap-3 shrink-0">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style="background:var(--chat-accent)">{rc.avatar}</div>
+      <div class="flex-1 min-w-0">
+        <h3 id="chat-title-{role}" class="text-[13px] font-bold">{rc.title}</h3>
+        <p id="chat-subtitle-{role}" class="text-[10px] text-text-tertiary">Selecciona un chat o crea uno nuevo</p>
+      </div>
+      <span id="chat-model-indicator-{role}" class="text-[9px] text-text-tertiary/50 font-mono hidden shrink-0"></span>
+      <button id="chat-delete-btn-{role}" class="p-1.5 rounded-lg text-text-tertiary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors hidden" title="Eliminar chat">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </button>
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-msgs-{role}" class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3" role="log" aria-live="polite">
+      <div class="text-center text-text-tertiary text-[12px] py-16">
+        <p>Selecciona un hilo de chat o crea uno nuevo</p>
+        <p class="mt-2">Los chats se organizan por materia</p>
+      </div>
+    </div>
+
+    <!-- Typing -->
+    <div id="chat-typing-{role}" class="hidden px-4 sm:px-5 pb-2">
+      <div class="flex items-start gap-2.5">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style="background:var(--chat-accent)">{rc.avatar}</div>
+        <div class="rounded-2xl rounded-tl-sm px-3.5 py-3 bg-[var(--bg-secondary)] border border-border">
+          <div class="flex gap-1">
+            <span class="w-2 h-2 rounded-full bg-text-tertiary animate-bounce" style="animation-delay:0ms"></span>
+            <span class="w-2 h-2 rounded-full bg-text-tertiary animate-bounce" style="animation-delay:150ms"></span>
+            <span class="w-2 h-2 rounded-full bg-text-tertiary animate-bounce" style="animation-delay:300ms"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="px-4 sm:px-5 py-3 shrink-0 border-t border-border">
+      <form id="chat-form-{role}" class="flex gap-2">
+        <input id="chat-input-{role}" type="text" placeholder="Escribe tu consulta..." class="flex-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl px-4 py-2.5 text-sm text-text placeholder:text-text-tertiary/50 outline-none transition-all duration-200 focus:border-brand-maroon dark:focus:border-brand-gold" />
+        <button id="chat-send-{role}" type="submit" class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-white transition-all duration-200 hover:shadow-glow-maroon active:scale-95" style="background:var(--chat-accent)" aria-label="Enviar">
+          <svg id="send-icon-{role}" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          <span id="send-spinner-{role}" class="hidden h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin-slow"></span>
+        </button>
+        <button id="chat-stop-{role}" type="button" class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-white bg-brand-danger hover:bg-brand-danger/80 active:scale-95 hidden" aria-label="Detener">
+          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- New thread modal -->
+<div id="new-thread-modal-{role}" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+  <div class="bg-white dark:bg-surface-dark-elevated border border-border rounded-2xl shadow-modal p-6 max-w-md w-11/12 mx-auto animate-scale-in">
+    <h3 class="text-base font-bold mb-4">Nuevo chat</h3>
+    <form id="new-thread-form-{role}" class="space-y-4">
+      <div>
+        <label class="text-[12px] font-medium text-text-secondary block mb-1.5">Materia</label>
+        <select id="thread-subject-{role}" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl px-4 py-2.5 text-sm text-text outline-none focus:border-brand-maroon dark:focus:border-brand-gold" required>
+          <option value="">Selecciona una materia...</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-[12px] font-medium text-text-secondary block mb-1.5">Título (opcional)</label>
+        <input id="thread-title-{role}" type="text" placeholder="Ej: Duda sobre ecuaciones" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl px-4 py-2.5 text-sm text-text placeholder:text-text-tertiary/50 outline-none focus:border-brand-maroon dark:focus:border-brand-gold" />
+      </div>
+      <div class="flex gap-2 justify-end pt-2">
+        <button type="button" id="cancel-thread-{role}" class="px-4 py-2 rounded-xl text-sm font-medium text-text-secondary hover:text-text border border-border hover:bg-[var(--bg-tertiary)] transition-colors">Cancelar</button>
+        <button type="submit" class="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all duration-200" style="background:var(--chat-accent)">Crear chat</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script define:vars={{ apiUrl, role }}>
+(function() {
+  var ENDPOINT = {
+    student: '/api/ai/student-tutor',
+    teacher: '/api/ai/teacher-tutor',
+    admin: '/api/ai/admin-assistant',
+  }[role]
+  var chatEl = document.getElementById('chat-full-' + role)
+  if (!chatEl) return
+  var accent = getComputedStyle(chatEl).getPropertyValue('--chat-accent').trim()
+  var avatar = { student:'V', teacher:'D', admin:'A' }[role]
+  var userName = localStorage.getItem('userName') || { student:'Estudiante', teacher:'Docente', admin:'Admin' }[role]
+
+  var threadList = document.getElementById('thread-list-' + role)
+  var msgsEl = document.getElementById('chat-msgs-' + role)
+  var form = document.getElementById('chat-form-' + role)
+  var input = document.getElementById('chat-input-' + role)
+  var typing = document.getElementById('chat-typing-' + role)
+  var sendBtn = document.getElementById('chat-send-' + role)
+  var sendIcon = document.getElementById('send-icon-' + role)
+  var sendSpinner = document.getElementById('send-spinner-' + role)
+  var stopBtn = document.getElementById('chat-stop-' + role)
+  var chatTitle = document.getElementById('chat-title-' + role)
+  var chatSubtitle = document.getElementById('chat-subtitle-' + role)
+  var deleteBtn = document.getElementById('chat-delete-btn-' + role)
+  var newBtn = document.getElementById('new-thread-btn-' + role)
+  var modal = document.getElementById('new-thread-modal-' + role)
+  var modalForm = document.getElementById('new-thread-form-' + role)
+  var selectSubject = document.getElementById('thread-subject-' + role)
+  var inputTitle = document.getElementById('thread-title-' + role)
+  var cancelBtn = document.getElementById('cancel-thread-' + role)
+
+  var currentThreadId = null
+  var currentAbort = null
+  var cachedThreads = []
+  var _loadingThread = false
+
+  // ── Load threads ──
+  function loadThreads() {
+    _loadingThread = true
+    input.disabled = true
+    fetch(apiUrl + '/api/ai/threads?role=' + role, { credentials: 'include' })
+      .then(function(r) { return r.json() })
+      .then(function(threads) {
+        _loadingThread = false
+        input.disabled = false
+        var skel = document.getElementById('thread-list-skeleton-' + role)
+        if (skel) skel.classList.add('hidden')
+        threadList.innerHTML = ''
+        if (!threads || threads.length === 0) {
+          threadList.innerHTML = '<div class="text-[11px] text-text-tertiary text-center py-8">Sin chats aún.<br>Crea uno nuevo.</div>'
+          return
+        }
+        var groups = {}
+        threads.forEach(function(t) {
+          var subj = t.subject || 'General'
+          if (!groups[subj]) groups[subj] = []
+          groups[subj].push(t)
+        })
+        Object.keys(groups).sort().forEach(function(subj) {
+          var header = document.createElement('div')
+          header.className = 'text-[10px] font-bold text-text-tertiary uppercase tracking-widest px-2 pt-3 pb-1'
+          header.textContent = subj
+          threadList.appendChild(header)
+          groups[subj].forEach(function(t) {
+            var btn = document.createElement('button')
+            btn.className = 'w-full text-left px-2.5 py-2 rounded-xl text-[12px] transition-colors flex flex-col gap-0.5 thread-btn'
+            btn.dataset.threadId = t.id
+            btn.dataset.subject = t.subject || ''
+            btn.dataset.title = t.title || ''
+            btn.innerHTML = '<span class="font-medium truncate">' + escapeHtml(t.title || subj) + '</span>' +
+              (t.last_message ? '<span class="text-text-tertiary truncate text-[11px]">' + escapeHtml(t.last_message) + '</span>' : '')
+            btn.addEventListener('click', function() { selectThread(t.id, t.title || subj) })
+            threadList.appendChild(btn)
+          })
+        })
+        cachedThreads = threads
+        if (threads.length > 0) selectThread(threads[0].id, threads[0].title || threads[0].subject || 'Chat')
+      })
+      .catch(function() {
+        _loadingThread = false
+        input.disabled = false
+        var skel = document.getElementById('thread-list-skeleton-' + role)
+        if (skel) skel.classList.add('hidden')
+        threadList.innerHTML = '<div class="text-[11px] text-text-tertiary text-center py-8">Error al cargar</div>'
+      })
+  }
+
+  // ── Select thread ──
+  function selectThread(threadId, title) {
+    currentThreadId = threadId
+    chatTitle.textContent = title
+    chatSubtitle.textContent = 'Chat por materia'
+    deleteBtn.classList.remove('hidden')
+    document.querySelectorAll('.thread-btn').forEach(function(b) {
+      b.classList.toggle('bg-[var(--bg-tertiary)]', b.dataset.threadId === threadId)
+      b.classList.toggle('font-semibold', b.dataset.threadId === threadId)
+    })
+    renderMessages(threadId)
+  }
+
+  // ── Render messages for a thread ──
+  function renderMessages(threadId) {
+    var thread = cachedThreads.find(function(x) { return x.id === threadId })
+    if (thread && thread.messages && thread.messages.length > 0) {
+      msgsEl.innerHTML = ''
+      thread.messages.forEach(function(m) {
+        addMessage(m.content, m.role === 'user' ? 'user' : 'assistant')
+      })
+    } else {
+      msgsEl.innerHTML = '<div class="text-center text-text-tertiary text-[12px] py-8"><p>Escribe tu primera pregunta</p></div>'
+    }
+  }
+
+  // ── Send message (SSE streaming) ──
+  async function sendMessage(text) {
+    if (!currentThreadId || _loadingThread) return
+    input.value = ''
+    addMessage(text, 'user')
+    typing.classList.remove('hidden')
+    scrollBottom()
+
+    var bubble = document.createElement('div'); bubble.className = 'flex-1'; bubble.id = 'stream-bubble'
+    var div = document.createElement('div'); div.className = 'flex items-start gap-2.5'
+    var av = document.createElement('div')
+    av.style.cssText = 'width:28px;height:28px;border-radius:50%;background:var(--bg-tertiary);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0'
+    av.textContent = avatar
+    div.appendChild(av); div.appendChild(bubble); msgsEl.appendChild(div)
+    typing.classList.add('hidden')
+
+    setSending(true)
+    stopBtn.classList.remove('hidden')
+
+    if (currentAbort) { currentAbort.abort(); currentAbort = null }
+    currentAbort = new AbortController()
+    var fetchTimeout = setTimeout(function() { currentAbort.abort() }, 30000)
+
+    try {
+      var res = await fetch(apiUrl + ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message: text, thread_id: currentThreadId }),
+        signal: currentAbort.signal,
+      })
+      clearTimeout(fetchTimeout)
+      if (!res.ok) { bubble.innerHTML = '<span style="color:var(--danger)">Error (' + res.status + ')</span>'; setSending(false); stopBtn.classList.add('hidden'); return }
+      var reader = res.body.getReader(), decoder = new TextDecoder(), buffer = '', fullText = ''
+      while (true) {
+        var result = await reader.read()
+        if (result.done) {
+          if (fullText) { div.setAttribute('data-msg-text', fullText); div.setAttribute('data-msg-role', 'assistant') }
+          else bubble.innerHTML = '<span style="color:var(--text-tertiary)">Sin respuesta. Reformula.</span>'
+          setSending(false); stopBtn.classList.add('hidden'); loadThreads()
+          break
+        }
+        buffer += decoder.decode(result.value, { stream: true })
+        var lines = buffer.split('\n'); buffer = lines.pop() || ''
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i]
+          if (line.startsWith('data: ')) {
+            var d = line.slice(6)
+            if (d === '[DONE]') continue
+            try {
+              var p = JSON.parse(d)
+              if (p.model) { var mi = document.getElementById('chat-model-indicator-' + role); if(mi) { mi.textContent = p.model; mi.classList.remove('hidden') } }
+              else if (p.token) { fullText += p.token; bubble.innerHTML = renderMd(fullText); scrollBottom() }
+              else if (p.error) { bubble.innerHTML = '<span style="color:var(--danger)">' + p.error + '</span>' }
+            } catch(_) {}
+          }
+        }
+      }
+    } catch(err) {
+      clearTimeout(fetchTimeout)
+      if (err.name !== 'AbortError') bubble.innerHTML = '<span style="color:var(--danger)">Error de conexión</span>'
+      else bubble.innerHTML = '<span style="color:var(--text-tertiary)">[Tiempo de espera agotado]</span>'
+      setSending(false); stopBtn.classList.add('hidden')
+    }
+  }
+
+  // ── Helpers ──
+  function escapeHtml(t) { var d = document.createElement('div'); d.appendChild(document.createTextNode(t)); return d.innerHTML }
+  function renderMd(t) {
+    var h = escapeHtml(t), blocks = []
+    h = h.replace(/```(\w*)\n?([\s\S]*?)```/g, function(m, l, c) { blocks.push('<pre><code class="language-'+l+'">'+c+'</code></pre>'); return '\x00C'+(blocks.length-1)+'\x00' })
+    h = h.replace(/^### (.+)$/gm, '<h4>$1</h4>').replace(/^## (.+)$/gm, '<h3>$1</h3>').replace(/^# (.+)$/gm, '<h3>$1</h3>')
+    h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>')
+    h = h.replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, '<br>')
+    h = h.replace(/\x00C(\d+)\x00/g, function(m, i) { return blocks[parseInt(i)] })
+    return h
+  }
+  function scrollBottom() { msgsEl.scrollTop = msgsEl.scrollHeight }
+  function addMessage(content, msgRole) {
+    var isUser = msgRole === 'user'
+    var div = document.createElement('div'); div.className = 'flex items-start gap-2.5 ' + (isUser ? 'flex-row-reverse' : '')
+    div.setAttribute('data-msg-role', msgRole); div.setAttribute('data-msg-text', content)
+    var av = document.createElement('div'); av.textContent = isUser ? userName.charAt(0).toUpperCase() : avatar
+    av.style.cssText = 'width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;' + (isUser ? 'background:' + accent + ';color:white' : 'background:var(--bg-tertiary);color:var(--text)')
+    var bubble = document.createElement('div')
+    bubble.style.cssText = 'border-radius:16px;padding:.75rem 1rem;line-height:1.5;font-size:13px;max-width:85%;' + (isUser ? 'background:' + accent + ';color:white;border-top-right-radius:4px' : 'background:var(--bg-secondary);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px')
+    bubble.classList.add('msg-bubble')
+    if (isUser) bubble.textContent = content; else bubble.innerHTML = renderMd(content)
+    div.appendChild(av); div.appendChild(bubble); msgsEl.appendChild(div); scrollBottom()
+  }
+  function setSending(v) {
+    sendBtn.disabled = v
+    input.disabled = v
+    sendIcon.style.display = v ? 'none' : ''
+    sendSpinner.style.display = v ? '' : 'none'
+  }
+
+  // ── Events ──
+  form.addEventListener('submit', function(e) {
+    e.preventDefault()
+    var text = input.value.trim(); if (!text) return
+    if (!currentThreadId) { window.VyntraToast?.error('Selecciona o crea un chat primero'); return }
+    sendMessage(text)
+  })
+
+  stopBtn.addEventListener('click', function() {
+    if (currentAbort) { currentAbort.abort(); currentAbort = null }
+    typing.classList.add('hidden'); stopBtn.classList.add('hidden'); setSending(false)
+  })
+
+  deleteBtn.addEventListener('click', function() {
+    if (!currentThreadId) return
+    if (!confirm('¿Eliminar este chat?')) return
+    fetch(apiUrl + '/api/ai/threads/' + currentThreadId, { method: 'DELETE', credentials: 'include' })
+      .then(function() {
+        currentThreadId = null
+        chatTitle.textContent = { student:'Tutor IA', teacher:'Asistente Docente', admin:'Asistente Administrativo' }[role]
+        chatSubtitle.textContent = 'Selecciona un chat o crea uno nuevo'
+        deleteBtn.classList.add('hidden')
+        msgsEl.innerHTML = '<div class="text-center text-text-tertiary text-[12px] py-16"><p>Selecciona un hilo de chat</p></div>'
+        loadThreads()
+      })
+  })
+
+  // ── Modal ──
+  newBtn.addEventListener('click', function() { modal.classList.remove('hidden'); modal.classList.add('flex') })
+  cancelBtn.addEventListener('click', function() { modal.classList.add('hidden'); modal.classList.remove('flex') })
+  modal.addEventListener('click', function(e) { if (e.target === modal) { modal.classList.add('hidden'); modal.classList.remove('flex') } })
+  modalForm.addEventListener('submit', function(e) {
+    e.preventDefault()
+    var subject = selectSubject.value; if (!subject) return
+    var title = inputTitle.value.trim() || subject
+    fetch(apiUrl + '/api/ai/threads?role=' + role, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ subject: subject, title: title }),
+    }).then(function(r) { return r.json() }).then(function(t) {
+      modal.classList.add('hidden'); modal.classList.remove('flex')
+      selectSubject.value = ''; inputTitle.value = ''
+      loadThreads()
+      selectThread(t.id, t.title)
+      // Focus input
+      input.focus()
+    }).catch(function() {
+      window.VyntraToast?.error('Error al crear el chat')
+    })
+  })
+
+  // ── Load subjects dynamically for new thread modal ──
+  function loadSubjectOptions() {
+    var subjects = ['Matemáticas','Español','Inglés','Ciencias Naturales','Ciencias Sociales','Tecnología','Artística','Educación Física','Ética','General']
+    var sel = document.getElementById('thread-subject-' + role)
+    if (!sel) return
+    fetch(apiUrl + '/api/subjects', { credentials: 'include' })
+      .then(function(r) { return r.json() })
+      .then(function(data) {
+        var items = Array.isArray(data) ? data : (data.data || [])
+        if (items.length) {
+          var seen = {}
+          items.forEach(function(s) {
+            var name = s.name || s
+            if (!seen[name]) { seen[name] = true; subjects.push(name) }
+          })
+        }
+        sel.innerHTML = '<option value="">Selecciona una materia...</option>' +
+          subjects.filter(function(s, i, a) { return a.indexOf(s) === i }).sort().map(function(s) {
+            return '<option value="' + s + '">' + s + '</option>'
+          }).join('')
+      })
+      .catch(function() {
+        sel.innerHTML = '<option value="">Selecciona una materia...</option>' +
+          subjects.map(function(s) { return '<option value="' + s + '">' + s + '</option>' }).join('')
+      })
+  }
+
+  // ── Init ──
+  loadThreads()
+  loadSubjectOptions()
+})()
+</script>

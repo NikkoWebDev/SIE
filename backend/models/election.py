@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
+from uuid import uuid4
 
-from bson import ObjectId
 from pydantic import BaseModel, Field
 
 
@@ -14,7 +14,7 @@ class CandidateCreate(BaseModel):
 
 
 class CandidateDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     name: str
     position: str
     photo_url: str = ""
@@ -22,7 +22,7 @@ class CandidateDB(BaseModel):
     election_id: str = "2026"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class VoteRequest(BaseModel):
@@ -34,13 +34,13 @@ class VoteRequest(BaseModel):
 
 
 class VoteDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     student_id: str
     candidate_id: str
     election_id: str = "2026"
     date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class ElectionResult(BaseModel):

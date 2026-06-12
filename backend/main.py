@@ -19,7 +19,7 @@ if _dotenv_path.exists():
 import traceback
 
 import jwt
-from fastapi import FastAPI, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -154,6 +154,23 @@ if _env_origins:
 ALLOWED_ORIGINS = [o for o in ALLOWED_ORIGINS if o != "*"]
 
 
+MAX_BODY_SIZE = int(os.getenv("MAX_BODY_SIZE", "10485760"))  # 10 MB default
+
+@app.middleware("http")
+async def body_size_limit_middleware(request: Request, call_next: Any) -> Response:
+    if request.method in ("POST", "PUT", "PATCH"):
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > MAX_BODY_SIZE:
+            origin = _get_cors_origin(request)
+            return JSONResponse(status_code=413, content={"detail": "Payload demasiado grande. Máximo 10 MB."},
+                headers={
+                    "Access-Control-Allow-Origin": origin,
+                    "Access-Control-Allow-Credentials": "true",
+                },
+            )
+    return await call_next(request)
+
+
 @app.middleware("http")
 async def csrf_middleware(request: Request, call_next: Any) -> Response:
     try:
@@ -222,7 +239,7 @@ async def security_headers_middleware(request: Request, call_next: Any) -> Respo
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next: Any) -> Response:
     path = request.url.path
-    if request.method == "OPTIONS" or path.startswith("/ws") or path in SKIP_AUTH_PATHS:
+    if request.method == "OPTIONS" or path.startswith("/ws") or path in SKIP_AUTH_PATHS or (request.method == "GET" and path.startswith("/api/notices")):
         return await call_next(request)
     origin = _get_cors_origin(request)
     # Support both Authorization header and httpOnly cookie

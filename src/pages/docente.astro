@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro'
 import DashboardShell from '@components/layout/DashboardShell.astro'
 import AIChat from '@components/AIChat.astro'
+import ChatFull from '@components/ChatFull.astro'
 
 const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 ---
@@ -13,7 +14,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
   <div class="space-y-5">
     <!-- INICIO / DASHBOARD -->
     <section id="sec-inicio" class="section-active space-y-5">
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h2 class="font-bold text-sm mb-1" style="font-family:'Fraunces',serif">Bienvenido, <span id="teacher-name">Docente</span></h2>
         <p class="text-xs text-text-secondary" id="teacher-subjects">Cargando materias...</p>
       </div>
@@ -24,21 +25,21 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           { id:'stat-risk', label:'En Riesgo', value:'0' },
           { id:'stat-recent', label:'Notas Recientes', value:'0' },
         ].map(s => (
-          <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 text-center transition-all hover:-translate-y-1 hover:shadow-card-hover dark:hover:shadow-card-dark-hover">
+          <div class="solar-card solar-card-hover bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 text-center transition-all hover:-translate-y-1 hover:shadow-card-hover dark:hover:shadow-card-dark-hover">
             <div class="text-2xl sm:text-3xl font-extrabold text-brand-maroon dark:text-brand-gold" id={s.id} style="font-family:'Fraunces',serif">{s.value}</div>
             <div class="text-[10px] uppercase tracking-wider text-text-tertiary mt-1 font-semibold">{s.label}</div>
           </div>
         ))}
       </div>
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h3 class="font-bold text-sm mb-3">Últimas Calificaciones</h3>
         <div id="recent-grades-list" class="text-xs text-text-tertiary">No hay calificaciones recientes.</div>
       </div>
     </section>
 
     <!-- CONTROL DE NOTAS -->
-    <section id="sec-notas" class="hidden space-y-5">
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+    <section id="sec-notas" class="space-y-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
           <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Planilla de Calificaciones</h2>
           <button class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border hover:bg-solar-200 transition-colors" onclick="exportGradesPDF()">Exportar PDF</button>
@@ -62,8 +63,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     </section>
 
     <!-- GUIAS Y TAREAS -->
-    <section id="sec-contenidos" class="hidden space-y-5">
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+    <section id="sec-contenidos" class="space-y-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h2 class="font-bold text-sm mb-4" style="font-family:'Fraunces',serif">Publicar Guía o Recurso</h2>
         <div class="grid sm:grid-cols-2 gap-3 mb-3">
           <input id="guide-title" placeholder="Título de la guía" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon">
@@ -77,19 +78,19 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
         <div id="guide-preview" class="mb-3"></div>
         <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl" onclick="uploadGuide()">Publicar Guía</button>
       </div>
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h3 class="font-bold text-sm mb-3">Guías Publicadas</h3>
         <div id="guides-list" class="text-xs text-text-tertiary">Cargando...</div>
       </div>
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h3 class="font-bold text-sm mb-3">Buzón de Tareas</h3>
         <div id="tasks-list" class="text-xs text-text-tertiary">Cargando...</div>
       </div>
     </section>
 
     <!-- EXAMENES -->
-    <section id="sec-examenes" class="hidden space-y-5">
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+    <section id="sec-examenes" class="space-y-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h2 class="font-bold text-sm mb-4" style="font-family:'Fraunces',serif">Generar Examen</h2>
         <div class="grid sm:grid-cols-2 gap-3 mb-3">
           <input id="exam-title-input" placeholder="Título del examen" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon">
@@ -102,15 +103,15 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           <button class="flex-1 py-2.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white" onclick="saveExam()">Publicar Examen</button>
         </div>
       </div>
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h3 class="font-bold text-sm mb-3">Mis Exámenes</h3>
         <div id="my-exams-list" class="text-xs text-text-tertiary">Cargando...</div>
       </div>
     </section>
 
     <!-- HORARIO -->
-    <section id="sec-horario" class="hidden space-y-5">
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+    <section id="sec-horario" class="space-y-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h2 class="font-bold text-sm mb-4" style="font-family:'Fraunces',serif">Horario Semanal</h2>
         <p class="text-xs text-text-secondary mb-4" id="teacher-schedule-grade">Grado: --</p>
         <div class="overflow-x-auto"><div id="teacher-schedule-body" class="min-w-[680px] text-xs text-text-tertiary">Cargando...</div></div>
@@ -118,8 +119,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     </section>
 
     <!-- INCIDENTES -->
-    <section id="sec-incidentes" class="hidden space-y-5">
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+    <section id="sec-incidentes" class="space-y-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
           <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Seguridad en Exámenes</h2>
           <span class="px-2 py-0.5 rounded-full bg-brand-danger/10 text-brand-danger text-[10px] font-semibold uppercase">Monitor activo</span>
@@ -137,14 +138,18 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     </section>
 
     <!-- ALERTAS -->
-    <section id="sec-alertas" class="hidden space-y-5">
-      <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
+    <section id="sec-alertas" class="space-y-5">
+      <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h2 class="font-bold text-sm mb-4" style="font-family:'Fraunces',serif">Alertas de Riesgo Académico</h2>
         <div id="risk-alerts-list" class="space-y-3">
           <div class="skeleton-shimmer h-16 rounded-xl"></div>
           <div class="skeleton-shimmer h-16 rounded-xl"></div>
         </div>
       </div>
+    </section>
+
+    <section id="sec-chats" class="space-y-5" style="height:calc(100vh - 12rem)">
+      <ChatFull role="teacher" />
     </section>
   </div>
 </DashboardShell>
@@ -163,15 +168,21 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     var sbName = document.getElementById('sidebar-username-teacher'); if (sbName) sbName.textContent = userName
     var sbMeta = document.getElementById('sidebar-metadata-teacher'); if (sbMeta) sbMeta.textContent = 'Docente'
 
-    document.getElementById('theme-toggle-teacher')?.addEventListener('click', function() { window.setVyntraTheme(!document.documentElement.classList.contains('dark')) })
+    var sectionTitles = { inicio:'Panel Docente', notas:'Control de Notas', contenidos:'Guías y Tareas', examenes:'Exámenes', horario:'Horario Semanal', incidentes:'Incidentes de Seguridad', alertas:'Alertas de Riesgo', chats:'Chats por Materia' }
+    var sectionSubs = { inicio:'Vista general', notas:'Registrar calificaciones', contenidos:'Subir guías y revisar entregas', examenes:'Crear y publicar evaluaciones', horario:'Clases programadas', incidentes:'Monitoreo de seguridad', alertas:'Estudiantes con rendimiento crítico', chats:'Conversaciones por materia con el Asistente' }
+    function staggerCards(section) {
+      var cards = section.querySelectorAll('.solar-card')
+      cards.forEach(function(card, i) {
+        card.style.animationDelay = (i * 0.04) + 's'
+        card.classList.add('card-stagger')
+      })
+    }
 
-    var sectionTitles = { inicio:'Panel Docente', notas:'Control de Notas', contenidos:'Guías y Tareas', examenes:'Exámenes', horario:'Horario Semanal', incidentes:'Incidentes de Seguridad', alertas:'Alertas de Riesgo' }
-    var sectionSubs = { inicio:'Vista general', notas:'Registrar calificaciones', contenidos:'Subir guías y revisar entregas', examenes:'Crear y publicar evaluaciones', horario:'Clases programadas', incidentes:'Monitoreo de seguridad', alertas:'Estudiantes con rendimiento crítico' }
     window.showSection = function(id) {
       document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none'; s.classList.remove('section-enter') })
       var sec = document.getElementById('sec-' + id)
-      if (sec) { sec.style.display = ''; sec.classList.add('section-enter') }
-      var t = document.querySelector('.topbar h1'), p = document.querySelector('.topbar p')
+      if (sec) { sec.style.display = ''; sec.classList.remove('hidden'); sec.classList.add('section-enter'); staggerCards(sec) }
+      var t = document.querySelector('.topbar-heading'), p = document.querySelector('.topbar-subtitle')
       if (t) t.textContent = sectionTitles[id] || id
       if (p) p.textContent = sectionSubs[id] || ''
       window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id } }))
@@ -233,8 +244,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
                 }).join('')+'</tbody></table>'
             }
           }
-        } catch(e) {}
-      } catch(e) { window.VyntraToast?.error('Error cargando datos del panel'); console.error(e) }
+        } catch(e) { console.error('[docente] schedule load:', e) }
+      } catch(e) { window.VyntraToast?.error('Error cargando datos del panel'); console.error('[docente] loadData:', e) }
     }
 
     function loadGradesSheet() {
@@ -308,7 +319,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       try {
         var data = await vfetch(API, '/api/teacher/guides/'+userId).then(function(r){return r.json()})
         list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(g){ return '<div class="flex justify-between p-2.5 border-b border-border"><div><strong class="text-xs">'+window.escapeHtml(g.title)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(g.subject_name)+' · Grado '+window.escapeHtml(g.grade)+'</span></div>'+(g.file_url?'<a href="'+g.file_url+'" target="_blank" class="text-xs text-brand-maroon">Ver</a>':'')+'</div>' }).join('') : '<p class="py-4">No hay guías.</p>'
-      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando guías</p>' }
+      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando guías. Intenta de nuevo.</p>'; console.error('[docente] loadGuides:', e) }
     }
 
     async function loadTasks() {
@@ -317,7 +328,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       try {
         var data = await vfetch(API, '/api/teacher/deliveries/'+userId).then(function(r){return r.json()})
         list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(t){ return '<div class="flex justify-between p-2.5 border-b border-border"><div><strong class="text-xs">'+window.escapeHtml(t.student_name)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(t.subject)+'</span></div>'+(t.file_url?'<a href="'+t.file_url+'" target="_blank" class="text-xs text-brand-maroon">Ver</a>':'')+'</div>' }).join('') : '<p class="py-4">Buzón vacío.</p>'
-      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando entregas</p>' }
+      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando entregas. Intenta de nuevo.</p>'; console.error('[docente] loadTasks:', e) }
     }
 
     window.addQuestion = function() {
@@ -357,7 +368,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       try {
         var data = await vfetch(API, '/api/teacher/exams/'+userId).then(function(r){return r.json()})
         list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(e){ return '<div class="p-3 border border-border rounded-xl mb-2"><strong class="text-xs">'+window.escapeHtml(e.title)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(e.subject_name)+' · '+(e.questions?e.questions.length:0)+' preguntas</span></div>' }).join('') : '<p class="py-4">No hay exámenes.</p>'
-      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando exámenes</p>' }
+      } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando exámenes. Intenta de nuevo.</p>'; console.error('[docente] loadMyExams:', e) }
     }
 
     async function loadIncidents() {
@@ -366,14 +377,59 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       try {
         var data = await vfetch(API, '/api/teacher/incidents').then(function(r){return r.json()})
         tbody.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(i){ return '<tr class="border-b border-border"><td class="p-2 text-xs">'+window.escapeHtml(i.student_name)+'</td><td class="p-2 text-xs">'+window.escapeHtml(i.exam_title)+'</td><td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold '+(i.strikes>=3?'bg-brand-danger/10 text-brand-danger':'bg-brand-gold/10 text-brand-gold')+'">'+i.strikes+'</span></td><td class="p-2 text-xs">'+window.escapeHtml(i.incident_type)+'</td></tr>' }).join('') : '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">Sin incidentes registrados.</td></tr>'
-      } catch(e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">Error cargando incidentes</td></tr>' }
+      } catch(e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">Error cargando incidentes. Intenta de nuevo.</td></tr>'; console.error('[docente] loadIncidents:', e) }
     }
 
     loadData()
-    document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') s.style.display = 'none' })
-    document.querySelectorAll('[data-section-id]').forEach(function(btn) {
-      btn.addEventListener('click', function() { window.showSection(this.getAttribute('data-section-id')) })
+
+    function populateGradeSelects() {
+      var grades = ['6-A','6-B','7-A','7-B','8-A','8-B','9-A','9-B','10-A','10-B','11-A','11-B']
+      var selectors = ['filter-grade-notas','exam-grade']
+      var html = '<option value="">Grado...</option>' + grades.map(function(g){return '<option value="'+g+'">'+g+'</option>'}).join('')
+      selectors.forEach(function(id){ var el=document.getElementById(id); if(el) el.innerHTML = html })
+    }
+
+    function loadSubjectsForGrade(grade, targetId) {
+      var target = document.getElementById(targetId)
+      if (!target) return
+      if (!grade) { target.innerHTML = '<option value="">Primero elija grado</option>'; return }
+      target.innerHTML = '<option value="">Cargando...</option>'
+      vfetch(API, '/api/subjects').then(function(r){return r.json()}).then(function(subjects) {
+        var filtered = (Array.isArray(subjects) ? subjects : []).filter(function(s){ return s.grade === grade })
+        target.innerHTML = '<option value="">Seleccione materia</option>' + filtered.map(function(s){
+          return '<option value="'+s.name+'|'+s.grade+'">'+s.name+'</option>'
+        }).join('') || '<option value="">Sin materias para este grado</option>'
+        if (targetId === 'filter-subject-notas' && target.value) loadGradesSheet()
+      }).catch(function(){
+        target.innerHTML = '<option value="">Error al cargar materias</option>'
+      })
+    }
+
+    function populateAllSubjects() {
+      var target = document.getElementById('guide-subject')
+      if (!target) return
+      vfetch(API, '/api/subjects').then(function(r){return r.json()}).then(function(subjects) {
+        var arr = Array.isArray(subjects) ? subjects : []
+        target.innerHTML = '<option value="">Materia...</option>' + arr.map(function(s){
+          return '<option value="'+s.name+'|'+s.grade+'">'+s.name+' ('+s.grade+')</option>'
+        }).join('')
+      }).catch(function(err){
+        console.error('[docente] populateAllSubjects:', err)
+        target.innerHTML = '<option value="">Error al cargar materias</option>'
+      })
+    }
+
+    populateGradeSelects()
+    populateAllSubjects()
+
+    document.getElementById('filter-grade-notas')?.addEventListener('change', function() {
+      loadSubjectsForGrade(this.value, 'filter-subject-notas')
     })
+    document.getElementById('exam-grade')?.addEventListener('change', function() {
+      loadSubjectsForGrade(this.value, 'exam-subject')
+    })
+
+    document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') s.style.display = 'none' })
 
     var guideDrop = document.getElementById('guide-drop-zone')
     var guideFile = document.getElementById('guide-file')

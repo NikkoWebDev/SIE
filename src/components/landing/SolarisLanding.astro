@@ -1,0 +1,127 @@
+---
+import SolarisLogoMark from './SolarisLogoMark.astro'
+
+export interface SolarisMetric { value: string; label: string; detail?: string }
+export interface SolarisFeature { eyebrow?: string; title: string; text: string }
+export interface SolarisNotice { date?: string; title: string; text: string }
+
+export interface Props {
+  stats?: SolarisMetric[]
+  features?: SolarisFeature[]
+  notices?: SolarisNotice[]
+}
+
+const {
+  stats = [
+    { value: '98%', label: 'Precisión académica', detail: 'seguimiento por periodo' },
+    { value: '4.2ms', label: 'Latencia visual', detail: 'interfaz optimizada' },
+    { value: '12k', label: 'Eventos vivos', detail: 'telemetría institucional' },
+    { value: '∞', label: 'Archivo Solaris', detail: 'memoria académica' },
+  ],
+  features = [
+    { eyebrow: 'ABP', title: 'Rendimiento vivo', text: 'Indicadores claros, rutas de aprendizaje y alertas accionables para cada rol.' },
+    { eyebrow: 'IA', title: 'Tutor contextual', text: 'La IA entiende la sección activa y acompaña decisiones académicas reales.' },
+    { eyebrow: 'NEXUS', title: 'Gestión integral', text: 'Notas, tareas, avisos, elecciones y analítica conectadas en una misma experiencia.' },
+  ],
+  notices = [
+    { title: 'Comunicados oficiales', text: 'Publicaciones institucionales con jerarquía visual y lectura rápida.', date: 'Hoy' },
+    { title: 'Calendario académico', text: 'Eventos relevantes, cierres de periodo y actividades destacadas.', date: 'Semana' },
+    { title: 'Estado del sistema', text: 'Servicios activos, sincronización estable y datos protegidos.', date: 'Live' },
+  ],
+} = Astro.props
+---
+
+<section id="solaris-landing" class="solaris-landing" data-solaris-landing>
+  <div class="solaris-noise" aria-hidden="true"></div>
+  <div class="solaris-grid" aria-hidden="true"></div>
+  <div class="solaris-glow solaris-glow--gold" aria-hidden="true"></div>
+  <div class="solaris-glow solaris-glow--maroon" aria-hidden="true"></div>
+  <div id="journey-progress" aria-hidden="true"></div>
+
+  <a href="/login" class="floating-portal-cta solar-button" data-floating-cta>
+    Acceder al Portal
+  </a>
+
+  <div class="solaris-stage" id="solaris-stage">
+    <div class="solar-logo-orbit" data-solar-logo-shell>
+      <SolarisLogoMark />
+    </div>
+
+    <div class="scene scene--curtain" data-scene="curtain">
+      <p class="scene-kicker">VYNTRA Academic</p>
+      <h1 class="scene-title scene-title--brand">VYNTRA</h1>
+    </div>
+
+    <div class="scene scene--hero" data-scene="hero">
+      <p class="scene-kicker">Amanecer educativo</p>
+      <h2 class="scene-title">Solaris</h2>
+      <p class="scene-copy">Plataforma académica inteligente para aprender, enseñar y dirigir con claridad.</p>
+      <div class="scene-actions">
+        <a href="/login" class="solar-button solar-button--primary">Ingresar al Portal</a>
+        <a href="#solaris-stats" class="solar-button solar-button--ghost">Descubrir</a>
+      </div>
+    </div>
+
+    <div class="scene scene--stats" id="solaris-stats" data-scene="stats">
+      <div class="scene-heading">
+        <p class="scene-kicker">Pulso institucional</p>
+        <h2>Datos que iluminan decisiones</h2>
+      </div>
+      <div class="solar-card-grid solar-card-grid--stats">
+        {stats.map((item) => (
+          <article class="solar-card stat-card">
+            <strong>{item.value}</strong>
+            <span>{item.label}</span>
+            {item.detail && <small>{item.detail}</small>}
+          </article>
+        ))}
+      </div>
+    </div>
+
+    <div class="scene scene--features" data-scene="features">
+      <div class="scene-heading">
+        <p class="scene-kicker">Sistema Solaris</p>
+        <h2>Una interfaz para cada rol</h2>
+      </div>
+      <div class="solar-card-grid solar-card-grid--features">
+        {features.map((item) => (
+          <article class="solar-card feature-card">
+            {item.eyebrow && <span class="feature-eyebrow">{item.eyebrow}</span>}
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+
+    <div class="scene scene--notices" data-scene="notices">
+      <div class="scene-heading">
+        <p class="scene-kicker">Archivo vivo</p>
+        <h2>Lo importante aparece con luz propia</h2>
+      </div>
+      <div class="solar-card-grid solar-card-grid--notices">
+        {notices.map((item) => (
+          <article class="solar-card notice-card">
+            {item.date && <span>{item.date}</span>}
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+
+    <div class="scene scene--cta" data-scene="cta">
+      <p class="scene-kicker">El futuro comienza aquí</p>
+      <h2 class="scene-title">Entra en órbita</h2>
+      <p class="scene-copy">VYNTRA Solaris conecta comunidad, analítica e inteligencia académica en una experiencia memorable.</p>
+      <a href="/login" class="solar-button solar-button--primary solar-button--large">Ingresar al Portal</a>
+    </div>
+  </div>
+
+  <div class="solaris-scroll-space" aria-hidden="true"></div>
+</section>
+
+<script>
+  import { initSolarisLanding } from '../../lib/solarisLandingMotion'
+  initSolarisLanding()
+</script>

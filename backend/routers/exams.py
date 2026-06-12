@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from supabase import Client
 
 from config.database import get_db
-from dependencies import auth_dependency, financial_guard, is_financial_locked_path
+from dependencies import auth_dependency, teacher_dependency, financial_guard, is_financial_locked_path
 from managers import ws_manager
 from models import ExamCreate, ExamProgressSchema, ExamSubmit, IncidentReport, grade_status
 
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api", tags=["exams"])
 
 
 @router.post("/teacher/create-exam", status_code=201)
-async def create_exam(data: ExamCreate, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def create_exam(data: ExamCreate, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     doc = data.model_dump()
     doc["questions"] = [q.model_dump() for q in doc["questions"]]
@@ -30,10 +30,10 @@ async def create_exam(data: ExamCreate, user_id: str = Depends(auth_dependency))
 
 
 @router.get("/teacher/exams")
-async def list_exams(
+async def list_teacher_exams(
     grade: Optional[str] = None,
     subject: Optional[str] = None,
-    user_id: str = Depends(auth_dependency),
+    user_id: str = Depends(teacher_dependency),
 ) -> JSONResponse:
     db: Client = next(get_db())
     query = db.table("exams").select("*")
@@ -177,7 +177,7 @@ async def get_exam_progress(student_id: str, exam_id: str, user_id: str = Depend
 
 
 @router.get("/teacher/exam-results/{exam_id}")
-async def get_exam_results(exam_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def get_exam_results(exam_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("exam_results").select("*").eq("exam_id", exam_id).execute()
     formatted = []

@@ -1,0 +1,20 @@
+---
+export interface Props { class?: string }
+const { class: className = '' } = Astro.props
+---
+
+<div class={`solaris-logo ${className}`} data-solaris-logo aria-hidden="true">
+  <div class="solaris-logo__aura"></div>
+  <div class="solaris-logo__ring solaris-logo__ring--outer"></div>
+  <div class="solaris-logo__ring solaris-logo__ring--inner"></div>
+  <div class="solaris-logo__rays">
+    {Array.from({ length: 16 }).map((_, i) => <span style={`--i:${i}`}></span>)}
+  </div>
+  <div class="solaris-logo__core">
+    <div class="solaris-logo__shine"></div>
+    <svg viewBox="0 0 160 160" class="solaris-logo__glyph" role="img" aria-label="VYNTRA Solaris">
+      <path d="M80 24c18 28 37 46 62 56-25 10-44 28-62 56-18-28-37-46-62-56 25-10 44-28 62-56Z" />
+      <circle cx="80" cy="80" r="18" />
+    </svg>
+  </div>
+</div>

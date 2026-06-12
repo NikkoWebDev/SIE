@@ -9,9 +9,18 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
   (function () {
     var container = document.getElementById('risk-alert-slot')
     if (!container) return
-    var ws = null, reconnectTimer = null, delay = 1000
+    var ws = null, reconnectTimer = null, delay = 1000, maxDelay = 30000
+    var destroyed = false
+    var audioCtx = null
+    var hasUserGesture = false
+
+    // Track user interaction for audio eligibility
+    function onUserGesture() { hasUserGesture = true }
+    document.addEventListener('click', onUserGesture, { once: true })
+    document.addEventListener('keydown', onUserGesture, { once: true })
 
     function connect() {
+      if (destroyed) return
       var token = localStorage.getItem('ws_access_token')
       if (!token) { scheduleReconnect(); return }
       try { ws = new WebSocket(wsUrl + '?token=' + encodeURIComponent(token)) } catch(e) { scheduleReconnect(); return }
@@ -27,8 +36,12 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
     }
 
     function scheduleReconnect() {
+      if (destroyed) return
       if (reconnectTimer) clearTimeout(reconnectTimer)
-      reconnectTimer = setTimeout(function() { delay = Math.min(delay * 1.5, 30000); connect() }, delay)
+      reconnectTimer = setTimeout(function() {
+        delay = Math.min(delay * 1.5, maxDelay)
+        connect()
+      }, delay)
     }
 
     function showRiskAlert(msg) {
@@ -40,8 +53,8 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
         '<svg class="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>' +
         '</div>' +
         '<div class="flex-1 min-w-0">' +
-        '<p class="text-xs sm:text-sm font-bold text-brand-danger truncate">' + (msg.msg || 'Alerta académica') + '</p>' +
-        '<p class="text-[10px] sm:text-xs text-text-tertiary mt-0.5">Estudiante: ' + (msg.student_id || '') + ' · Nota: ' + (msg.score || '--') + '</p>' +
+        '<p class="text-xs sm:text-sm font-bold text-brand-danger truncate">' + window.escapeHtml(msg.msg || 'Alerta académica') + '</p>' +
+        '<p class="text-[10px] sm:text-xs text-text-tertiary mt-0.5">Estudiante: ' + window.escapeHtml(msg.student_id || '') + ' · Nota: ' + window.escapeHtml(String(msg.score || '--')) + '</p>' +
         '</div>' +
         '<button class="shrink-0 rounded-lg p-1 text-text-tertiary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors text-sm" onclick="this.parentElement.remove()">&times;</button>'
       container.appendChild(el)
@@ -59,19 +72,38 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
     }
 
     function playAlertSound() {
+      if (!hasUserGesture) return // Browser requires user gesture for AudioContext
       try {
-        var ctx = new (window.AudioContext || window.webkitAudioContext)()
-        var osc = ctx.createOscillator()
-        var gain = ctx.createGain()
-        osc.connect(gain); gain.connect(ctx.destination)
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+        if (audioCtx.state === 'suspended') audioCtx.resume()
+        var osc = audioCtx.createOscillator()
+        var gain = audioCtx.createGain()
+        osc.connect(gain); gain.connect(audioCtx.destination)
         osc.type = 'sine'
-        osc.frequency.setValueAtTime(523, ctx.currentTime)
-        osc.frequency.setValueAtTime(784, ctx.currentTime + 0.08)
-        gain.gain.setValueAtTime(0.12, ctx.currentTime)
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35)
-        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35)
+        osc.frequency.setValueAtTime(523, audioCtx.currentTime)
+        osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.08)
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35)
+        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.35)
       } catch(_) {}
     }
+
+    // ── Cleanup on unload ──
+    window.addEventListener('beforeunload', function() {
+      destroyed = true
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (ws) { ws.onclose = null; ws.close(); ws = null }
+      if (audioCtx) { audioCtx.close().catch(function(){ /* cleanup — ignore errors on unload */ }); audioCtx = null }
+    })
+
+    // ── Listen for storage changes (logout clears localStorage) ──
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'ws_access_token' && !e.newValue) {
+        destroyed = true
+        if (reconnectTimer) clearTimeout(reconnectTimer)
+        if (ws) { ws.onclose = null; ws.close(); ws = null }
+      }
+    })
 
     document.addEventListener('DOMContentLoaded', connect)
     if (document.readyState !== 'loading') connect()

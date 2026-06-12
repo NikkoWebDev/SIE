@@ -18,7 +18,6 @@ export default defineConfig({
       rollupOptions: {
         output: {
           manualChunks: {
-            chartjs: ['chart.js'],
             jspdf: ['jspdf', 'jspdf-autotable'],
           },
         },

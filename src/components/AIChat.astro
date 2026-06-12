@@ -32,8 +32,14 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       <div class="flex-1 min-w-0">
         <h3 class="text-[13px] font-bold">{rc.title}</h3>
         <p class="text-[10px] text-white/60">{rc.subtitle}</p>
+        <p id="chat-section-context" class="text-[9px] text-white/40 hidden"></p>
       </div>
       <div class="flex items-center gap-1.5">
+        <span id="chat-model-indicator" class="text-[9px] text-white/40 font-mono hidden"></span>
+        <button id="chat-fullscreen-btn" class="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors text-[10px] font-medium hidden sm:block" title="Chat completo">Completo</button>
+        <button id="chat-fullscreen-btn-mobile" class="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors sm:hidden" title="Chat completo" aria-label="Chat completo">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+        </button>
         <button id="chat-clear-btn" class="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors" title="Limpiar conversación">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </button>
@@ -62,9 +68,12 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     <div class="px-3 sm:px-4 py-3 shrink-0 border-t border-border bg-[var(--bg)]">
       <form id="chat-form" class="flex gap-2">
         <input id="chat-input" type="text" placeholder="Escribe tu consulta..." class="flex-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl px-4 py-2.5 text-sm text-text placeholder:text-text-tertiary/50 outline-none transition-all duration-200 focus:border-brand-maroon dark:focus:border-brand-gold" />
-        <button id="chat-send" type="submit" class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-white transition-all duration-200 hover:shadow-glow-maroon active:scale-95" style="background:var(--chat-accent)">
+        <button id="chat-send" type="submit" class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-white transition-all duration-200 hover:shadow-glow-maroon active:scale-95" style="background:var(--chat-accent)" aria-label="Enviar mensaje">
           <svg id="chat-send-icon" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
           <span id="chat-send-spinner" class="hidden h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin-slow"></span>
+        </button>
+        <button id="chat-stop" type="button" class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-white transition-all duration-200 bg-brand-danger hover:bg-brand-danger/80 active:scale-95 hidden" aria-label="Detener generación" title="Detener">
+          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
         </button>
       </form>
     </div>
@@ -83,6 +92,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     var userName = localStorage.getItem('userName') || userNameText
 
     var toggle = document.getElementById('ai-chat-toggle')
+    var root = document.getElementById('ai-chat-root')
+    var toggle = document.getElementById('ai-chat-toggle')
     var panel = document.getElementById('ai-chat-panel')
     var messages = document.getElementById('chat-messages')
     var form = document.getElementById('chat-form')
@@ -90,9 +101,16 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     var typing = document.getElementById('chat-typing')
     var sendIcon = document.getElementById('chat-send-icon')
     var spinner = document.getElementById('chat-send-spinner')
+    var stopBtn = document.getElementById('chat-stop')
     var statusBar = document.getElementById('chat-tool-status')
 
+    if (!root || !toggle || !panel) return
+
+    var currentAbortController = null
+    var activeSection = ''
+
     toggle.addEventListener('click', function () {
+      if (!panel || !messages) return
       var isOpen = !toggle._open
       toggle._open = isOpen
       panel.classList.toggle('opacity-0', !isOpen)
@@ -101,30 +119,57 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       panel.classList.toggle('opacity-100', isOpen)
       panel.classList.toggle('scale-100', isOpen)
       panel.classList.toggle('pointer-events-auto', isOpen)
-      document.getElementById('chat-icon-open').classList.toggle('hidden', isOpen)
-      document.getElementById('chat-icon-close').classList.toggle('hidden', !isOpen)
+      var openIcon = document.getElementById('chat-icon-open')
+      var closeIcon = document.getElementById('chat-icon-close')
+      if (openIcon) openIcon.classList.toggle('hidden', isOpen)
+      if (closeIcon) closeIcon.classList.toggle('hidden', !isOpen)
       if (isOpen) loadMessages()
     })
 
-    document.getElementById('chat-clear-btn').addEventListener('click', function () {
+    document.getElementById('chat-fullscreen-btn')?.addEventListener('click', function () {
+      if (currentAbortController) { currentAbortController.abort(); currentAbortController = null }
+      toggle._open = false
+      panel.classList.add('opacity-0', 'scale-95', 'pointer-events-none')
+      panel.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto')
+      document.getElementById('chat-icon-open').classList.remove('hidden')
+      document.getElementById('chat-icon-close').classList.add('hidden')
+      if (typeof window.showSection === 'function') window.showSection('chats')
+    })
+    document.getElementById('chat-fullscreen-btn-mobile')?.addEventListener('click', function () {
+      if (currentAbortController) { currentAbortController.abort(); currentAbortController = null }
+      toggle._open = false
+      panel.classList.add('opacity-0', 'scale-95', 'pointer-events-none')
+      panel.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto')
+      document.getElementById('chat-icon-open').classList.remove('hidden')
+      document.getElementById('chat-icon-close').classList.add('hidden')
+      if (typeof window.showSection === 'function') window.showSection('chats')
+    })
+
+    var clearBtn = document.getElementById('chat-clear-btn')
+    if (clearBtn) clearBtn.addEventListener('click', function () {
+      if (!messages) return
       localStorage.removeItem(storageKey); messages.innerHTML = ''; addWelcome()
     })
 
     function escapeHtml(text) { var d = document.createElement('div'); d.appendChild(document.createTextNode(text)); return d.innerHTML }
     function renderMarkdown(text) {
-      var html = escapeHtml(text)
+      var html = escapeHtml(text), blocks = []
+      html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, function(m, l, c) { blocks.push('<pre><code class="language-'+l+'">'+c+'</code></pre>'); return '\x00C'+ (blocks.length-1) +'\x00' })
       html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>').replace(/^## (.+)$/gm, '<h3>$1</h3>').replace(/^# (.+)$/gm, '<h3>$1</h3>')
       html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>')
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
       html = html.replace(/\n/g, '<br>')
+      html = html.replace(/\x00C(\d+)\x00/g, function(m, i) { return blocks[parseInt(i)] })
       return html
     }
 
     function addWelcome() {
+      if (!messages) return
       var div = document.createElement('div'); div.className = 'flex items-start gap-2.5'
       var av = document.createElement('div'); av.style.cssText = 'width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:'+accent+';color:white;flex-shrink:0'
       av.textContent = avatar
       var bubble = document.createElement('div'); bubble.style.cssText = 'border-radius:16px;border-top-left-radius:4px;padding:.75rem 1rem;line-height:1.6;font-size:13px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text)'
+      bubble.classList.add('msg-bubble')
       bubble.innerHTML = welcomeText
       div.appendChild(av); div.appendChild(bubble); messages.appendChild(div)
 
@@ -141,9 +186,10 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       messages.appendChild(chipsDiv); messages.scrollTop = messages.scrollHeight
     }
 
-    function scrollToBottom() { messages.scrollTop = messages.scrollHeight }
+    function scrollToBottom() { if (messages) messages.scrollTop = messages.scrollHeight }
 
     function saveMessages() {
+      if (!messages) return
       var msgs = []; messages.querySelectorAll('[data-msg-role]').forEach(function(el) {
         msgs.push({ role: el.getAttribute('data-msg-role'), content: el.getAttribute('data-msg-text') })
       })
@@ -152,6 +198,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     }
 
     function loadMessages() {
+      if (!messages) return
       messages.innerHTML = ''
       var saved = localStorage.getItem(storageKey)
       if (saved) {
@@ -162,6 +209,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
             var av = document.createElement('div'); av.textContent = isUser ? userName.charAt(0).toUpperCase() : avatar
             av.style.cssText = 'width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;'+(isUser?'background:'+accent+';color:white':'background:var(--bg-tertiary);color:var(--text)')
             var bubble = document.createElement('div'); bubble.style.cssText = 'border-radius:16px;padding:.75rem 1rem;line-height:1.5;font-size:13px;max-width:85%;'+(isUser?'background:'+accent+';color:white;border-top-right-radius:4px':'background:var(--bg-secondary);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px')
+            bubble.classList.add('msg-bubble')
             if (isUser) bubble.textContent = m.content; else bubble.innerHTML = renderMarkdown(m.content)
             div.appendChild(av); div.appendChild(bubble); messages.appendChild(div)
           })
@@ -172,31 +220,77 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       addWelcome()
     }
 
-    form.addEventListener('submit', async function(e) {
+    // ── Listen for section changes (for contextual AI + UI) ──
+    var sectionLabels = { inicio:'Inicio', notas:'Notas', examenes:'Exámenes', horarios:'Horarios', horario:'Horario', tareas:'Tareas', saber:'Pruebas Saber', biblioteca:'Biblioteca', votaciones:'Votaciones', perfil:'Perfil', contenidos:'Guías y Tareas', incidentes:'Incidentes', alertas:'Alertas', estudiantes:'Estudiantes', docentes:'Docentes', materias:'Materias', avisos:'Avisos', elecciones:'Elecciones', administradores:'Administradores' }
+    var placeholders = { notas:'Pregunta sobre tus notas...', examenes:'¿Dudas con algún examen?', tareas:'¿Necesitas ayuda con una tarea?', saber:'Pregunta sobre Pruebas Saber...', biblioteca:'Busca recursos de estudio...', horarios:'Consulta tu horario...', perfil:'¿Quieres ver tu progreso?', votaciones:'Pregunta sobre las elecciones...', inicio:'¿En qué te ayudo hoy?' }
+    var ctxEl = document.getElementById('chat-section-context')
+    window.addEventListener('vyntra:navigate', function(e) {
+      activeSection = (e).detail.section || ''
+      if (ctxEl && activeSection) {
+        ctxEl.textContent = 'Estás en: ' + (sectionLabels[activeSection] || activeSection.charAt(0).toUpperCase() + activeSection.slice(1))
+        ctxEl.classList.remove('hidden')
+      } else if (ctxEl) {
+        ctxEl.classList.add('hidden')
+      }
+      // Dynamic placeholder
+      var placeholderText = placeholders[activeSection]
+      if (input && placeholderText) input.placeholder = placeholderText
+      else if (input) input.placeholder = 'Escribe tu consulta...'
+    })
+    // Initial section (dashboard pages set activeSection via showSection already)
+    if (ctxEl && activeSection) {
+      ctxEl.textContent = 'Estás en: ' + (sectionLabels[activeSection] || activeSection)
+      ctxEl.classList.remove('hidden')
+    }
+
+    // ── Stop button ──
+    if (stopBtn) stopBtn.addEventListener('click', function() {
+      if (currentAbortController) {
+        currentAbortController.abort()
+        currentAbortController = null
+      }
+      typing.classList.add('hidden')
+      stopBtn.classList.add('hidden')
+      setSending(false)
+      toggle.style.pointerEvents = 'auto'
+    })
+
+    if (form && input && typing && stopBtn && messages) form.addEventListener('submit', async function(e) {
       e.preventDefault()
       var text = input.value.trim(); if (!text) return
       input.value = ''
+
+      // Cancel any existing stream
+      if (currentAbortController) { currentAbortController.abort(); currentAbortController = null }
+
       setSending(true)
       toggle.style.pointerEvents = 'none'
+      stopBtn.classList.remove('hidden')
 
       addMessage(text, 'user')
       typing.classList.remove('hidden'); scrollToBottom()
 
-      // Context is built server-side from userId — no client fetches needed
       var bubble = document.createElement('div'); bubble.className = 'flex-1'; bubble.id = 'streaming-bubble'
       var div = document.createElement('div'); div.className = 'flex items-start gap-2.5'
       var av = document.createElement('div'); av.textContent = avatar; av.style.cssText = 'width:28px;height:28px;border-radius:50%;background:var(--bg-tertiary);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0'
       div.appendChild(av); div.appendChild(bubble); messages.appendChild(div)
       typing.classList.add('hidden')
 
+      currentAbortController = new AbortController()
+
+      // Build payload with optional section context
+      var payload = { message: text }
+      if (activeSection) payload.section = activeSection
+
       try {
         var res = await fetch(apiUrl + endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ message: text }),
+          body: JSON.stringify(payload),
+          signal: currentAbortController.signal,
         })
-        if (!res.ok) { bubble.innerHTML = '<span style="color:var(--danger)">Error del asistente.</span>'; setSending(false); return }
+        if (!res.ok) { bubble.innerHTML = '<span style="color:var(--danger)">Error del asistente (' + res.status + ').</span>'; setSending(false); stopBtn.classList.add('hidden'); currentAbortController = null; return }
         var reader = res.body.getReader(), decoder = new TextDecoder(), buffer = '', fullText = ''
         while (true) {
           var result = await reader.read(); if (result.done) break
@@ -208,7 +302,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
               var data = line.slice(6); if (data === '[DONE]') continue
               try {
                 var parsed = JSON.parse(data)
-                if (parsed.token) { fullText += parsed.token; bubble.innerHTML = renderMarkdown(fullText); scrollToBottom() }
+                if (parsed.model) { var mi = document.getElementById('chat-model-indicator'); if(mi) { mi.textContent = parsed.model; mi.classList.remove('hidden') } }
+                else if (parsed.token) { fullText += parsed.token; bubble.innerHTML = renderMarkdown(fullText); scrollToBottom() }
                 else if (parsed.tool_status) {
                   if (statusBar) statusBar.textContent = parsed.tool_status
                   else { typing.classList.remove('hidden'); var tb = typing.querySelector('.tool-status'); if(tb) tb.textContent = parsed.tool_status }
@@ -222,13 +317,24 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
         typing.classList.add('hidden')
         if (fullText) { div.setAttribute('data-msg-role','assistant'); div.setAttribute('data-msg-text',fullText); saveMessages() }
         else bubble.innerHTML = '<span style="color:var(--text-tertiary)">Sin respuesta. Reformula tu consulta.</span>'
-      } catch(_) { bubble.innerHTML = '<span style="color:var(--danger)">Error de conexión.</span>'; typing.classList.add('hidden') }
+      } catch(err) {
+        if (err.name === 'AbortError') {
+          bubble.innerHTML = '<span style="color:var(--text-tertiary)">[Generación detenida]</span>'
+        } else {
+          bubble.innerHTML = '<span style="color:var(--danger)">Error de conexión. Intenta de nuevo.</span>'
+          window.VyntraToast?.error('Error al conectar con el asistente.')
+        }
+        typing.classList.add('hidden')
+      }
       setSending(false)
+      stopBtn.classList.add('hidden')
       toggle.style.pointerEvents = 'auto'
+      currentAbortController = null
     })
 
     function setSending(v) {
       var btn = document.getElementById('chat-send'); btn.disabled = v
+      input.disabled = v
       if (sendIcon) { sendIcon.style.display = v ? 'none' : ''; sendIcon.classList.toggle('hidden', v) }
       if (spinner) { spinner.style.display = v ? '' : 'none'; spinner.classList.toggle('hidden', !v) }
     }
@@ -239,6 +345,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var av = document.createElement('div'); av.textContent = isUser ? userName.charAt(0).toUpperCase() : avatar
       av.style.cssText = 'width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;'+(isUser?'background:'+accent+';color:white':'background:var(--bg-tertiary);color:var(--text)')
       var bubble = document.createElement('div'); bubble.style.cssText = 'border-radius:16px;padding:.75rem 1rem;line-height:1.5;font-size:13px;max-width:85%;'+(isUser?'background:'+accent+';color:white;border-top-right-radius:4px':'background:var(--bg-secondary);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px')
+      bubble.classList.add('msg-bubble')
       if (isUser) bubble.textContent = content; else bubble.innerHTML = renderMarkdown(content)
       div.appendChild(av); div.appendChild(bubble); messages.appendChild(div); scrollToBottom(); saveMessages()
     }

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
+from uuid import uuid4
 
-from bson import ObjectId
 from pydantic import BaseModel, Field
 
 
@@ -15,7 +15,7 @@ class NoticeCreate(BaseModel):
 
 
 class NoticeDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     content: str
     file_url: str = ""
     category: str = "General"
@@ -23,4 +23,4 @@ class NoticeDB(BaseModel):
     date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_pinned: bool = False
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}

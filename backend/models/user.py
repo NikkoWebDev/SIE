@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Optional
+from uuid import uuid4
 
-from bson import ObjectId
 from pydantic import BaseModel, Field
 
 
@@ -23,14 +23,14 @@ class StudentCreate(BaseModel):
 
 
 class StudentDB(StudentCreate):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_at_risk: bool = False
     risk_updated_at: Optional[datetime] = None
     enrollment_year: int = Field(default=2026)
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class StudentUpdate(BaseModel):
@@ -66,7 +66,7 @@ class TeacherCreate(BaseModel):
 
 
 class TeacherDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     document_id: str
     teacher_name: str
     password: str
@@ -76,7 +76,7 @@ class TeacherDB(BaseModel):
     is_homeroom_teacher: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class TeacherResponse(BaseModel):
@@ -99,14 +99,14 @@ class AdminCreate(BaseModel):
 
 
 class AdminDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     document_id: str
     fullname: str
     password: str
     role: UserRole = UserRole.ADMIN
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class AdminResponse(BaseModel):

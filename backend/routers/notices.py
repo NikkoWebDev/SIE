@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from supabase import Client
 
 from config.database import get_db
-from dependencies import auth_dependency
+from dependencies import auth_dependency, admin_dependency
 
 logger = logging.getLogger("siee.notices")
 router = APIRouter(prefix="/api", tags=["notices"])
@@ -48,7 +48,7 @@ async def create_notice(
     contenido: str = Form(..., min_length=1),
     categoria: str = Form(default="General"),
     file: Optional[UploadFile] = File(None),
-    user_id: str = Depends(auth_dependency),
+    user_id: str = Depends(admin_dependency),
 ) -> JSONResponse:
     db: Client = next(get_db())
     archivo_url: Optional[str] = None
@@ -78,7 +78,7 @@ async def update_notice(
     titulo: str = Form(None),
     contenido: str = Form(None),
     categoria: str = Form(None),
-    user_id: str = Depends(auth_dependency),
+    user_id: str = Depends(admin_dependency),
 ) -> JSONResponse:
     db: Client = next(get_db())
     update: dict[str, Any] = {"fecha": datetime.now(timezone.utc).isoformat()}
@@ -96,7 +96,7 @@ async def update_notice(
 
 
 @router.delete("/admin/notices/{notice_id}")
-async def delete_notice(notice_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def delete_notice(notice_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("notices").delete().eq("id", notice_id).execute()
     if not result.data:

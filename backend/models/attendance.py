@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from enum import StrEnum
+from uuid import uuid4
 
-from bson import ObjectId
 from pydantic import BaseModel, Field
 
 
@@ -23,7 +23,7 @@ class AttendanceRecord(BaseModel):
 
 
 class AttendanceDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     student_id: str
     grade: str = ""
     date: str
@@ -33,7 +33,7 @@ class AttendanceDB(BaseModel):
     registered_by: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class AttendanceStats(BaseModel):

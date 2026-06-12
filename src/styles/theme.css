@@ -9,8 +9,15 @@
 @tailwind utilities;
 
 :root {
-  --text-tertiary: #7A6050;
+  --bg: #FFFBF0;
+  --text: #1A1106;
+  --solar-cream: #FFFBF0;
+  --bg-card: rgba(255,255,255,0.7);
+  --bg-secondary: #FFF8E7;
+  --bg-tertiary: #FFF0CC;
 
+  --text-tertiary: #7A6050;
+  --text-secondary: #7A6254;
   --text-inverse: #FFFBF0;
 
   --border: rgba(107,26,26,0.06);
@@ -38,6 +45,17 @@
   --glow-maroon: rgba(107,26,26,0.06);
   --glow-gold: rgba(245,166,35,0.1);
 
+  --brand-maroon: #6B1A1A;
+  --brand-maroon-light: #8B2A2A;
+  --brand-maroon-dark: #4A0E0E;
+  --brand-gold: #F5A623;
+  --brand-gold-light: #FFD166;
+  --brand-gold-dark: #C47F0A;
+  --brand-amber: #FF8C00;
+  --brand-ember: #E8650A;
+  --brand-danger: #DC2626;
+  --brand-success: #34D399;
+  --brand-info: #3B82F6;
   --success: #34D399;
   --danger: #DC2626;
   --warning: #F5A623;
@@ -61,11 +79,33 @@
   --text-h1: clamp(2.5rem, 6vw, 5rem);
   --text-h2: clamp(1.8rem, 4vw, 3rem);
   --text-h3: clamp(1.2rem, 2vw, 1.5rem);
+
+  /* ── Motion variables ── */
+  --ease-out: cubic-bezier(0.19,1,0.22,1);
+  --ease-inout: cubic-bezier(0.87,0,0.13,1);
+  --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+  --ease-smooth: cubic-bezier(0.33,1,0.68,1);
+  --ease-snap: cubic-bezier(0.4,0,0.2,1);
+
+  --t-fast: 160ms;
+  --t-base: 320ms;
+  --t-slow: 640ms;
+  --t-cinematic: 1200ms;
+
+  /* ── Scroll progress (landing) ── */
+  --progress: 0;
 }
 
 .dark {
-  --text-tertiary: #A89080;
+  --bg: #0D0A08;
+  --text: #FFFBF0;
+  --solar-cream: #1A1106;
+  --bg-card: rgba(20,16,10,0.8);
+  --bg-secondary: #1A1512;
+  --bg-tertiary: #221D18;
 
+  --text-tertiary: #A89080;
+  --text-secondary: #B8A090;
   --text-inverse: #0D0A08;
 
   --border: rgba(245,166,35,0.06);
@@ -91,6 +131,18 @@
 
   --glow-maroon: rgba(245,166,35,0.08);
   --glow-gold: rgba(245,166,35,0.12);
+
+  --brand-maroon: #8B2A2A;
+  --brand-maroon-light: #A04040;
+  --brand-maroon-dark: #4A0E0E;
+  --brand-gold: #F5A623;
+  --brand-gold-light: #FFD166;
+  --brand-gold-dark: #C47F0A;
+  --brand-amber: #FF8C00;
+  --brand-ember: #E8650A;
+  --brand-danger: #EF4444;
+  --brand-success: #34D399;
+  --brand-info: #3B82F6;
 }
 
 /* ── Minimal base reset ── */
@@ -191,17 +243,86 @@ img,canvas,video,iframe{max-width:100%!important;height:auto}
 
 /* ── Section transition animations ── */
 @keyframes sectionEnter {
-  from { opacity: 0; transform: translateY(12px) }
-  to { opacity: 1; transform: translateY(0) }
+  from { opacity: 0; transform: translateY(16px) scale(.98); filter: blur(6px) }
+  to { opacity: 1; transform: none; filter: none }
 }
 .section-enter {
-  animation: sectionEnter 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  animation: sectionEnter var(--t-base) var(--ease-out) both;
 }
 .section-enter-fast {
   animation: sectionEnter 0.25s cubic-bezier(0.22,1,0.36,1) both;
 }
 
+/* ── Card system ── */
+.solar-card {
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(107,26,26,0.06);
+}
+.dark .solar-card {
+  background: rgba(20,16,10,0.8);
+  border-color: rgba(245,166,35,0.06);
+}
+.solar-card-hover {
+  transition: transform var(--t-fast) var(--ease-out), box-shadow var(--t-base) var(--ease-out);
+}
+.solar-card-hover:hover {
+  transform: translateY(-4px);
+}
+.solar-card-primary {
+  border-color: rgba(245,166,35,0.2);
+  box-shadow: 0 20px 60px rgba(245,166,35,0.12);
+}
+.solar-card-danger {
+  border-color: rgba(220,38,38,0.2);
+  box-shadow: 0 20px 60px rgba(220,38,38,0.12);
+}
+
+/* ── Microinteractions ── */
+.solar-btn {
+  transition: transform var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out);
+}
+.solar-btn:hover {
+  transform: translateY(-1px);
+}
+.solar-btn:active {
+  transform: scale(.98);
+}
+.solar-input:focus {
+  box-shadow: 0 0 0 3px rgba(245,166,35,.15), 0 10px 40px rgba(245,166,35,.1);
+}
+
+/* ── Landing progress bar ── */
+#solar-progress {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 2px;
+  background: rgba(0,0,0,.1);
+  border-radius: 999px;
+  z-index: 50;
+}
+.dark #solar-progress {
+  background: rgba(255,255,255,.08);
+}
+#solar-progress::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: calc(var(--progress,0)*100%);
+  background: linear-gradient(90deg,#6B1A1A,#F5A623);
+  border-radius: 999px;
+  transition: width 0.1s linear;
+}
+
 /* ── Sidebar: active section glow ── */
+[id^="vyntra-sidebar-"] [data-section-id] {
+  border-left: 3px solid transparent;
+  transition: background 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth);
+}
 [id^="vyntra-sidebar-"] [data-section-id].active {
   box-shadow: inset 0 0 20px rgba(107,26,26,0.04);
   color: var(--brand-maroon);
@@ -211,6 +332,91 @@ img,canvas,video,iframe{max-width:100%!important;height:auto}
   box-shadow: inset 0 0 20px rgba(245,166,35,0.06);
   color: var(--brand-gold-light);
   border-left-color: var(--brand-gold);
+}
+
+/* ── Staggered card entrance (dashboard sections) ── */
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(16px) }
+  to { opacity: 1; transform: none }
+}
+.card-stagger {
+  animation: cardEnter 0.45s var(--ease-smooth) both;
+}
+
+/* ── Message bubble enter (AIChat) ── */
+@keyframes msgEnter {
+  from { opacity: 0; transform: translateY(8px) scale(.99) }
+  to { opacity: 1; transform: none }
+}
+.msg-bubble {
+  animation: msgEnter 0.3s var(--ease-smooth) both;
+}
+/* Stagger consecutive messages (delay on 2nd+) */
+.msg-bubble + .msg-bubble { animation-delay: 0.06s; }
+
+/* ── Table row hover ── */
+.solar-table tr:hover {
+  background: rgba(107,26,26,0.03);
+  transition: background var(--t-fast) var(--ease-out);
+}
+.dark .solar-table tr:hover {
+  background: rgba(245,166,35,0.04);
+}
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+.empty-state svg {
+  width: 40px; height: 40px; margin-bottom: 1rem;
+  opacity: 0.15; color: var(--brand-maroon);
+}
+.empty-state p {
+  font-size: 0.8125rem; color: var(--text-tertiary);
+  margin-bottom: 0.5rem;
+  max-width: 320px;
+}
+.empty-state .empty-action {
+  font-size: 0.75rem; font-weight: 500;
+  color: var(--brand-maroon);
+  cursor: pointer;
+  transition: color var(--t-fast) var(--ease-out);
+}
+.empty-state .empty-action:hover { color: var(--brand-gold); }
+
+/* ── Floating CTA (landing) ── */
+#floating-cta {
+  position: fixed;
+  bottom: 2rem; right: 2rem;
+  z-index: 50;
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(107,26,26,0.08);
+  border-radius: 1rem;
+  font-size: 0.8125rem; font-weight: 700;
+  color: var(--brand-maroon);
+  box-shadow: 0 4px 24px rgba(107,26,26,0.08);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
+}
+#floating-cta.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+#floating-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(107,26,26,0.14);
 }
 
 /* ── Skeleton: table row variant ── */
@@ -262,4 +468,3 @@ img,canvas,video,iframe{max-width:100%!important;height:auto}
   .animate-logo-breathe,
   .animate-star { animation: none; }
 }
-

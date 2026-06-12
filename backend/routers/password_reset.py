@@ -61,7 +61,14 @@ async def forgot_password(data: ForgotPasswordRequest) -> JSONResponse:
         "expires_at": expires_at.isoformat(),
     }).execute()
 
-    logger.info("reset code generated for credential=%s (expires %s)", data.login_credential, expires_at.isoformat())
+    logger.info("reset code generated for credential=%s (expires %s) code=%s", data.login_credential, expires_at.isoformat(), code)
+    try:
+        email = prof.get("email")
+        nombre = prof.get("fullname", "Usuario")
+        if email:
+            logger.info("[EMAIL PLACEHOLDER] Enviando código a %s: Código=%s para %s", email, code, nombre)
+    except Exception as e:
+        logger.warning("failed to prepare delivery for %s: %s", data.login_credential, e)
 
     return JSONResponse(content={
         "message": "Si el usuario existe, recibirás un código de recuperación.",

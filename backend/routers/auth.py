@@ -105,14 +105,17 @@ async def login(data: UserLogin, request: Request) -> JSONResponse:
             .eq("login_credential", data.login_credential)
     )
     if not res.data:
+        logger.warning("login failed: credential not found credential=%s ip=%s", data.login_credential, client_ip)
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     profile = res.data[0]
     if not profile.get("is_active", True):
+        logger.warning("login failed: user inactive credential=%s ip=%s", data.login_credential, client_ip)
         raise HTTPException(status_code=403, detail="Usuario desactivado")
 
     stored_hash = profile.get("password_hash", "")
     if not stored_hash or not _verify_password(data.password, stored_hash):
+        logger.warning("login failed: wrong password credential=%s ip=%s", data.login_credential, client_ip)
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     claims: dict[str, Any] = {

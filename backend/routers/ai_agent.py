@@ -30,6 +30,7 @@ OPENROUTER_BASE = "https://openrouter.ai/api/v1/chat/completions"
 REFERER_URL = "https://colegiociudaddelsol.edu.co"
 MAX_HISTORY = 20
 RATE_LIMIT_PER_MINUTE = 15
+CONTEXT_CACHE_TTL = 300  # seconds: reuse user context within a session
 REACT_MAX_ITERATIONS = 5
 TOOL_RESULT_MAX_CHARS = 2000
 TOKEN_BUDGET_MAX = 12000
@@ -39,7 +40,12 @@ RETRY_BASE_DELAY = 1.0
 CIRCUIT_BREAKER_MAX_ERRORS = 3
 ITERATION_TIMEOUT_SECONDS = 45
 
+DEFAULT_MODEL = "openrouter/free"
 FALLBACK_MODEL = "openrouter/auto"
+
+GROQ_BASE = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_FALLBACK_MODEL = "qwen/qwen3-32b"
 
 SCHOOL_CONTEXT = """Institución: Colegio Técnico Ciudad del Sol (Sogamoso, Boyacá, Colombia)
 Metodología: Aprendizaje Basado en Proyectos (ABP) con 9 materias vinculadas
@@ -55,12 +61,12 @@ SYSTEM_PROMPTS: dict[str, str] = {
         "INSTRUCCIONES:\n"
         "- Responde en español, tono motivador, claro y cercano.\n"
         "- Usa lenguaje sencillo — el estudiante puede tener 12-17 años.\n"
-        "- Cuando te den contexto del estudiante (notas, riesgo), úsalo activamente.\n"
+        "- Cuando te den contexto del estudiante (nombre, notas, materias), úsalo activamente para personalizar tu respuesta.\n"
+        "- NUNCA preguntes al estudiante su nombre, curso, notas o cualquier información que YA esté en el contexto proporcionado.\n"
         "- Ofrece consejos de estudio, explicaciones de materias ABP, ayuda con tareas.\n"
         "- Si el estudiante está en riesgo académico, motívalo y sugiere estrategias.\n"
-        "- Puedes usar las herramientas disponibles para consultar datos del estudiante.\n"
         "- NUNCA inventes notas o datos académicos — solo usa la información proporcionada.\n"
-        "- Sé breve y directo en tus respuestas."
+        "- Sé breve y directo en tus respuestas. Si es un saludo, saluda cordialmente y ofrece ayuda."
     ),
     "teacher": (
         f"Eres el ASISTENTE DOCENTE VYNTRA, analista pedagógico del Colegio Ciudad del Sol.\n\n"
@@ -71,6 +77,7 @@ SYSTEM_PROMPTS: dict[str, str] = {
         "- Sugiere estrategias pedagógicas basadas en datos.\n"
         "- Identifica patrones de riesgo y propone intervenciones.\n"
         "- Usa los datos de contexto (calificaciones, estudiantes en riesgo) en tus análisis.\n"
+        "- NO preguntes por información que ya está en el contexto (tu nombre, materias, etc).\n"
         "- Sé concreto: da números, porcentajes y recomendaciones accionables."
     ),
     "admin": (
@@ -81,6 +88,7 @@ SYSTEM_PROMPTS: dict[str, str] = {
         "- Proporciona análisis numéricos claros de situación financiera.\n"
         "- Ofrece recomendaciones estratégicas sobre morosidad, cobertura de pagos.\n"
         "- Usa los datos de contexto (estadísticas, estudiantes en mora) en tu análisis.\n"
+        "- NO preguntes por información que ya está en el contexto.\n"
         "- Ayuda a identificar tendencias y tomar decisiones basadas en datos."
     ),
 }
@@ -107,6 +115,8 @@ ROLE_ENDPOINT: dict[str, str] = {
 class ChatRequest(BaseModel):
     message: str = Field(default="", max_length=4000)
     context: str = Field(default="", max_length=8000)
+    thread_id: str | None = Field(default=None, max_length=64)
+    section: str = Field(default="")
 
     @model_validator(mode="after")
     def ensure_message(self) -> "ChatRequest":
@@ -117,6 +127,7 @@ class ChatRequest(BaseModel):
 
 # In-memory conversation cache (DB is primary storage, cache reduces latency)
 _conversation_cache: dict[str, list[dict[str, str]]] = {}
+_user_context_cache: dict[str, tuple[str, float]] = {}
 CONVERSATION_CACHE_MAX = 100
 
 rate_limit_store: dict[str, list[float]] = {}
@@ -162,7 +173,30 @@ def _cache_evict(role: str, user_id: str) -> None:
     _conversation_cache.pop(f"{role}:{user_id}", None)
 
 
-def _load_conversation(role: str, user_id: str) -> list[dict[str, str]]:
+def _thread_cache_key(thread_id: str) -> str:
+    return f"thread:{thread_id}"
+
+
+def _load_messages(role: str, user_id: str, thread_id: str | None = None) -> list[dict[str, str]]:
+    if thread_id:
+        ck = _thread_cache_key(thread_id)
+        cached = _conversation_cache.get(ck)
+        if cached is not None:
+            return cached
+        try:
+            db = _get_db()
+            result = db.table("conversations").select("messages")\
+                .eq("id", thread_id).eq("user_id", user_id).execute()
+            if result.data:
+                msgs = result.data[0].get("messages", [])
+                # Strip thread metadata marker (first message with role=system, content=_thread_meta_)
+                if msgs and isinstance(msgs[0], dict) and msgs[0].get("content") == "_thread_meta_":
+                    msgs = msgs[1:]
+                _conversation_cache[ck] = msgs
+                return msgs
+        except Exception as e:
+            logger.debug("thread db load error: %s", e)
+        return []
     cached = _cache_get(role, user_id)
     if cached is not None:
         return cached
@@ -180,7 +214,32 @@ def _load_conversation(role: str, user_id: str) -> list[dict[str, str]]:
     return []
 
 
-def _save_conversation(role: str, user_id: str, messages: list[dict[str, str]]) -> None:
+def _save_messages(role: str, user_id: str, messages: list[dict[str, str]], thread_id: str | None = None) -> None:
+    if thread_id:
+        ck = _thread_cache_key(thread_id)
+        _conversation_cache[ck] = messages
+        try:
+            db = _get_db()
+            now = datetime.now(timezone.utc).isoformat()
+            # Load existing row to preserve thread metadata marker
+            existing = db.table("conversations").select("messages").eq("id", thread_id).eq("user_id", user_id).execute()
+            if existing.data:
+                existing_msgs = existing.data[0].get("messages", [])
+                # If first msg is thread metadata, keep it; otherwise just save messages
+                if existing_msgs and isinstance(existing_msgs[0], dict) and existing_msgs[0].get("content") == "_thread_meta_":
+                    msgs_to_save = [existing_msgs[0]] + messages
+                else:
+                    msgs_to_save = messages
+                db.table("conversations").update({"messages": msgs_to_save, "updated_at": now})\
+                    .eq("id", thread_id).eq("user_id", user_id).execute()
+            else:
+                db.table("conversations").insert({
+                    "id": thread_id, "user_id": user_id, "role": role,
+                    "messages": messages, "updated_at": now, "created_at": now
+                }).execute()
+        except Exception as e:
+            logger.warning("thread db save error: %s", e)
+        return
     _cache_put(role, user_id, messages)
     try:
         db = _get_db()
@@ -464,9 +523,12 @@ async def _tool_run_sql_query(db: Client, args: dict[str, Any], user_id: str) ->
         return json.dumps({"error": "La consulta no referencia ninguna tabla permitida."}, ensure_ascii=False, default=str)
 
     # Block dangerous patterns regardless
-    dangerous = re.search(r'(drop|truncate|delete|insert|update|alter|create|grant|revoke|exec|execute|call|fetch|copy)\s', query_lower, re.I)
+    dangerous = re.search(r'(drop|truncate|delete|insert|update|alter|create|grant|revoke|exec|execute|call|fetch|copy|set|reset|load|import|export|pg_sleep|dblink|lo_import|lo_export|pg_read_file|pg_write_file|pg_stat_file|generate_series|unnest)\s', query_lower, re.I)
     if dangerous:
         return json.dumps({"error": "Operación no permitida."}, ensure_ascii=False, default=str)
+
+    # Log query for audit
+    logger.info("ai_agent running read-only query: user=%s query=%.200s", user_id, query)
 
     # Use parameterized query via Supabase RPC if available, otherwise deny
     try:
@@ -498,21 +560,55 @@ TOOL_FUNCTIONS = {
 
 
 def _build_user_context(role: str, user_id: str) -> str:
-    """Auto-build user context from database when none is provided by the client."""
+    """Auto-build rich user context from database. Results cached per session."""
+    ck = f"{role}:{user_id}"
+    cached = _user_context_cache.get(ck)
+    if cached and time.time() - cached[1] < CONTEXT_CACHE_TTL:
+        return cached[0]
     try:
         db = _get_db()
-        parts = []
+        profile = db.table("profiles").select("id, fullname, login_credential, role").eq("id", user_id).maybe_single().execute()
+        name = profile.data.get("fullname", "") if profile.data else ""
+        ctx_parts = []
         if role == "student":
-            grades = db.table("grades").select("score").eq("student_id", user_id).execute()
-            if grades.data:
-                scores = [float(g["score"]) for g in grades.data]
-                avg = sum(scores) / len(scores)
+            if name:
+                ctx_parts.append(f"Nombre: {name}")
+            # Fetch grades with subject names
+            grades_raw = db.table("grades").select("score, subject_id").eq("student_id", user_id).execute()
+            subjects_raw = db.table("subjects").select("id, name").execute()
+            sub_map = {s["id"]: s.get("name", "?") for s in subjects_raw.data} if subjects_raw.data else {}
+            if grades_raw.data:
+                subject_grades = []
+                scores = []
+                for g in grades_raw.data:
+                    sname = sub_map.get(g.get("subject_id", ""), "?")
+                    score = float(g.get("score", 0))
+                    scores.append(score)
+                    subject_grades.append(f"{sname}: {score:.1f}")
+                avg = sum(scores) / len(scores) if scores else 0
                 at_risk = sum(1 for s in scores if s < 3.5)
-                parts.append(f"Promedio actual: {avg:.1f}/5.0. Materias en riesgo: {at_risk}.")
-            meta = db.table("student_metadata").select("current_status, months_in_arrears, financial_override").eq("profile_id", user_id).execute()
+                risk_subjects = [sg for i, sg in enumerate(subject_grades) if scores[i] < 3.5]
+                ctx_parts.append(f"Promedio general: {avg:.1f}/5.0")
+                ctx_parts.append(f"Materias cursadas: {', '.join(subject_grades)}")
+                if at_risk:
+                    ctx_parts.append(f"Materias en riesgo (<3.5): {', '.join(risk_subjects)}")
+                ctx_parts.append(f"Estado: {'Sobresaliente' if avg >= 4.0 else 'Aceptable' if avg >= 3.5 else 'En Riesgo'}")
+            # Financial status
+            meta = db.table("student_metadata").select("current_status, months_in_arrears, financial_override, total_balance").eq("profile_id", user_id).execute()
             if meta.data and meta.data[0].get("current_status"):
-                parts.append(f"Estado financiero: {meta.data[0]['current_status']}.")
+                m = meta.data[0]
+                ctx_parts.append(f"Estado financiero: {m['current_status']}")
+                if m.get("months_in_arrears", 0) > 0:
+                    ctx_parts.append(f"Meses en mora: {m['months_in_arrears']}")
         elif role == "teacher":
+            if name:
+                ctx_parts.append(f"Nombre: {name}")
+            # Teacher's subjects
+            my_subjects = db.table("subjects").select("name").execute()
+            sub_names = [s.get("name", "") for s in my_subjects.data if s.get("name")]
+            if sub_names:
+                ctx_parts.append(f"Materias: {', '.join(sub_names[:10])}")
+            # Risk summary
             risk = db.table("grades").select("student_id, score").execute()
             score_map: dict[str, list[float]] = {}
             for g in risk.data:
@@ -520,29 +616,49 @@ def _build_user_context(role: str, user_id: str) -> str:
                 if sid:
                     score_map.setdefault(sid, []).append(float(g["score"]))
             risk_count = sum(1 for s in score_map.values() if (sum(s) / len(s)) < 3.5)
-            parts.append(f"Estudiantes en riesgo académico: aproximadamente {risk_count}.")
+            ctx_parts.append(f"Estudiantes en riesgo académico: aproximadamente {risk_count}")
+            ctx_parts.append(f"Total estudiantes con notas: {len(score_map)}")
         elif role == "admin":
-            profiles = db.table("profiles").select("role").execute()
-            total_students = sum(1 for p in profiles.data if p.get("role") == "student")
-            total_teachers = sum(1 for p in profiles.data if p.get("role") == "teacher")
-            parts.append(f"Total estudiantes: {total_students}. Total docentes: {total_teachers}.")
-            meta = db.table("student_metadata").select("current_status").execute()
-            en_mora = sum(1 for m in meta.data if m.get("current_status") == "EN_MORA")
-            al_dia = len(meta.data) - en_mora
-            parts.append(f"Al día: {al_dia}. En mora: {en_mora}.")
-        return " | ".join(parts) if parts else ""
+            if name:
+                ctx_parts.append(f"Nombre: {name}")
+            students_res = db.table("profiles").select("*", count="exact").eq("role", "student").execute()
+            teachers_res = db.table("profiles").select("*", count="exact").eq("role", "teacher").execute()
+            total_students = getattr(students_res, 'count', 0) or 0
+            total_teachers = getattr(teachers_res, 'count', 0) or 0
+            ctx_parts.append(f"Total estudiantes: {total_students}")
+            ctx_parts.append(f"Total docentes: {total_teachers}")
+            paid_res = db.table("student_metadata").select("*", count="exact").eq("current_status", "AL_DIA").execute()
+            mora_res = db.table("student_metadata").select("*", count="exact").eq("current_status", "EN_MORA").execute()
+            al_dia = getattr(paid_res, 'count', 0) or 0
+            en_mora = getattr(mora_res, 'count', 0) or 0
+            ctx_parts.append(f"Al día: {al_dia} | En mora: {en_mora}")
+            try:
+                avg_res = db.table("grades").select("score.avg()").execute()
+                if avg_res.data and len(avg_res.data) > 0:
+                    raw = avg_res.data[0]
+                    avg_val = raw.get("avg", raw) if isinstance(raw, dict) else raw
+                    if isinstance(avg_val, dict):
+                        avg_val = avg_val.get("score")
+                    if avg_val is not None:
+                        ctx_parts.append(f"Promedio general institucional: {round(float(avg_val), 2)}/5.0")
+            except Exception:
+                pass
+        result = "\n".join(ctx_parts)
+        logger.debug("user context for %s (%s): %d chars", role, user_id[:8], len(result))
+        _user_context_cache[ck] = (result, time.time())
+        return result
     except Exception as e:
         logger.debug("auto-build context error: %s", e)
         return ""
 
 
-def _build_messages(role: str, user_message: str, context: str, user_id: str) -> list[dict[str, str]]:
+def _build_messages(role: str, user_message: str, context: str, user_id: str, thread_id: str | None = None) -> list[dict[str, str]]:
     system_prompt = SYSTEM_PROMPTS.get(role, SYSTEM_PROMPTS["student"])
     messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
     resolved_context = context or _build_user_context(role, user_id)
     if resolved_context:
         messages.append({"role": "system", "content": f"Datos del usuario:\n{resolved_context}"})
-    history = _load_conversation(role, user_id)
+    history = _load_messages(role, user_id, thread_id)
     for msg in history[-MAX_HISTORY:]:
         messages.append(msg)
     messages.append({"role": "user", "content": user_message})
@@ -555,7 +671,7 @@ def _build_messages(role: str, user_message: str, context: str, user_id: str) ->
     return messages
 
 
-def _build_payload(role: str, messages: list[dict[str, str]]) -> dict[str, Any]:
+def _build_payload(role: str, messages: list[dict[str, str]], tools_enabled: bool = True) -> dict[str, Any]:
     config = ROLE_CONFIG.get(role, ROLE_CONFIG["student"])
     model = os.getenv("OPENROUTER_MODEL", "openrouter/free")
     payload: dict[str, Any] = {
@@ -565,20 +681,21 @@ def _build_payload(role: str, messages: list[dict[str, str]]) -> dict[str, Any]:
         "max_tokens": config["max_tokens"],
         "temperature": config["temperature"],
     }
-    tools = _get_available_for_role(role)
-    if tools:
-        payload["tools"] = [{
-            "type": "function",
-            "function": {
-                "name": t["name"],
-                "description": t["description"],
-                "parameters": {
-                    "type": "object",
-                    "properties": t.get("parameters", {}),
-                    "required": [k for k, v in t.get("parameters", {}).items() if k != "student_id"],
+    if tools_enabled:
+        tools = _get_available_for_role(role)
+        if tools:
+            payload["tools"] = [{
+                "type": "function",
+                "function": {
+                    "name": t["name"],
+                    "description": t["description"],
+                    "parameters": {
+                        "type": "object",
+                        "properties": t.get("parameters", {}),
+                        "required": [k for k, v in t.get("parameters", {}).items() if k != "student_id"],
+                    },
                 },
-            },
-        } for t in tools]
+            } for t in tools]
     return payload
 
 
@@ -590,32 +707,35 @@ def _build_headers(api_key: str) -> dict[str, str]:
     }
 
 
-async def _call_openrouter_with_retry(
+async def _call_llm_with_retry(
     api_key: str,
     payload: dict[str, Any],
     headers: dict[str, str],
+    base_url: str = OPENROUTER_BASE,
+    provider: str = "OpenRouter",
 ) -> httpx.Response:
     last_error = None
     for attempt in range(RETRY_MAX_ATTEMPTS + 1):
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
-                resp = await client.post(OPENROUTER_BASE, json=payload, headers=headers)
+                resp = await client.post(base_url, json=payload, headers=headers)
             if resp.status_code < 500 or attempt == RETRY_MAX_ATTEMPTS:
                 return resp
             last_error = resp.status_code
             if attempt < RETRY_MAX_ATTEMPTS:
                 delay = RETRY_BASE_DELAY * (2 ** attempt)
-                logger.info("retrying OpenRouter after status=%s attempt=%d/%d", resp.status_code, attempt + 1, RETRY_MAX_ATTEMPTS)
-                await __import__("asyncio").sleep(delay)
+                logger.info("retrying %s after status=%s attempt=%d/%d", provider, resp.status_code, attempt + 1, RETRY_MAX_ATTEMPTS)
+                await asyncio.sleep(delay)
+                continue
         except (httpx.TimeoutException, httpx.ConnectError) as e:
             last_error = e
             if attempt < RETRY_MAX_ATTEMPTS:
                 delay = RETRY_BASE_DELAY * (2 ** attempt)
-                logger.info("retrying OpenRouter after %s attempt=%d/%d", type(e).__name__, attempt + 1, RETRY_MAX_ATTEMPTS)
-                await __import__("asyncio").sleep(delay)
+                logger.info("retrying %s after %s attempt=%d/%d", provider, type(e).__name__, attempt + 1, RETRY_MAX_ATTEMPTS)
+                await asyncio.sleep(delay)
             else:
                 raise
-    raise HTTPException(status_code=502, detail="Error de conexión con el asistente después de reintentos")
+    raise HTTPException(status_code=502, detail=f"Error de conexión con {provider} después de reintentos")
 
 
 async def _execute_tool_call(db: Client, tool_call: dict[str, Any], user_id: str, role: str = "student") -> str:
@@ -667,6 +787,18 @@ def _parse_tool_calls(choice: dict[str, Any]) -> list[dict[str, Any]]:
     return []
 
 
+def _try_save_react_result(role: str, user_id: str, original_message: str, full_text: str) -> None:
+    if not full_text or not full_text.strip():
+        return
+    history = _load_messages(role, user_id)
+    history.append({"role": "user", "content": original_message})
+    history.append({"role": "assistant", "content": full_text})
+    while len(history) > MAX_HISTORY * 2:
+        history.pop(0)
+    _save_messages(role, user_id, history)
+    logger.info("saved partial react result role=%s user=%s msgs=%d", role, user_id, len(history))
+
+
 async def _stream_with_react(
     api_key: str,
     payload: dict[str, Any],
@@ -681,6 +813,7 @@ async def _stream_with_react(
     iteration = 0
     current_messages = list(payload["messages"])
     used_fallback = False
+    used_groq = False
     consecutive_errors = 0
 
     while iteration < REACT_MAX_ITERATIONS:
@@ -691,13 +824,14 @@ async def _stream_with_react(
 
         try:
             resp = await asyncio.wait_for(
-                _call_openrouter_with_retry(api_key, current_payload, headers),
+                _call_llm_with_retry(api_key, current_payload, headers),
                 timeout=ITERATION_TIMEOUT_SECONDS,
             )
         except asyncio.TimeoutError:
             consecutive_errors += 1
             logger.error("timeout req=%s iter=%s consecutive=%d", request_id, iteration, consecutive_errors)
             if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                _try_save_react_result(role, user_id, original_message, full_assistant_text)
                 yield f"data: {json.dumps({'error': 'El asistente no está respondiendo. Intenta de nuevo más tarde.'})}\n\n"
                 yield "data: [DONE]\n\n"
                 return
@@ -708,6 +842,7 @@ async def _stream_with_react(
             consecutive_errors += 1
             logger.error("OpenRouter call failed req=%s iter=%s: %s", request_id, iteration, e.detail)
             if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                _try_save_react_result(role, user_id, original_message, full_assistant_text)
                 yield f"data: {json.dumps({'error': 'Error de conexión con el asistente. Intenta de nuevo.'})}\n\n"
                 yield "data: [DONE]\n\n"
                 return
@@ -718,22 +853,24 @@ async def _stream_with_react(
         if resp.status_code != 200:
             consecutive_errors += 1
             if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                _try_save_react_result(role, user_id, original_message, full_assistant_text)
                 yield f"data: {json.dumps({'error': 'Error del asistente después de múltiples intentos.'})}\n\n"
                 yield "data: [DONE]\n\n"
                 return
-            # Try fallback model
+            # Try fallback model on same provider
             if not used_fallback:
                 used_fallback = True
                 logger.info("retrying with fallback model req=%s iter=%s", request_id, iteration)
                 current_payload["model"] = FALLBACK_MODEL
                 try:
                     resp = await asyncio.wait_for(
-                        _call_openrouter_with_retry(api_key, current_payload, headers),
+                        _call_llm_with_retry(api_key, current_payload, headers),
                         timeout=ITERATION_TIMEOUT_SECONDS,
                     )
                 except (asyncio.TimeoutError, HTTPException) as e:
                     logger.error("fallback also failed req=%s iter=%s: %s", request_id, iteration, e)
                     if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                        _try_save_react_result(role, user_id, original_message, full_assistant_text)
                         yield f"data: {json.dumps({'error': 'Error del asistente. Intenta de nuevo más tarde.'})}\n\n"
                         yield "data: [DONE]\n\n"
                         return
@@ -741,18 +878,48 @@ async def _stream_with_react(
                 if resp.status_code != 200:
                     logger.error("OpenRouter+fallback error req=%s status=%s", request_id, resp.status_code)
                     if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                        _try_save_react_result(role, user_id, original_message, full_assistant_text)
+                        yield f"data: {json.dumps({'error': 'Error del asistente. Intenta de nuevo más tarde.'})}\n\n"
+                        yield "data: [DONE]\n\n"
+                        return
+                    continue
+            elif GROQ_API_KEY and not used_groq:
+                used_groq = True
+                logger.info("retrying with Groq req=%s iter=%s", request_id, iteration)
+                current_payload["model"] = GROQ_FALLBACK_MODEL
+                try:
+                    resp = await asyncio.wait_for(
+                        _call_llm_with_retry(GROQ_API_KEY, current_payload, {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}, GROQ_BASE, "Groq"),
+                        timeout=ITERATION_TIMEOUT_SECONDS,
+                    )
+                except (asyncio.TimeoutError, HTTPException) as e:
+                    logger.error("Groq also failed req=%s iter=%s: %s", request_id, iteration, e)
+                    if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                        _try_save_react_result(role, user_id, original_message, full_assistant_text)
+                        yield f"data: {json.dumps({'error': 'Error del asistente. Intenta de nuevo más tarde.'})}\n\n"
+                        yield "data: [DONE]\n\n"
+                        return
+                    continue
+                if resp.status_code != 200:
+                    logger.error("Groq error req=%s status=%s", request_id, resp.status_code)
+                    if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                        _try_save_react_result(role, user_id, original_message, full_assistant_text)
                         yield f"data: {json.dumps({'error': 'Error del asistente. Intenta de nuevo más tarde.'})}\n\n"
                         yield "data: [DONE]\n\n"
                         return
                     continue
             else:
                 logger.error("OpenRouter error req=%s status=%s", request_id, resp.status_code)
+                _try_save_react_result(role, user_id, original_message, full_assistant_text)
                 if iteration == 1:
                     yield f"data: {json.dumps({'error': f'Error del asistente (código {resp.status_code})'})}\n\n"
                     yield "data: [DONE]\n\n"
                 return
 
         consecutive_errors = 0
+        if iteration == 1:
+            model_name = current_payload.get("model", DEFAULT_MODEL)
+            yield f"data: {json.dumps({'model': model_name})}\n\n"
         assistant_content = ""
         tool_calls_buffer: dict[int, dict[str, Any]] = {}
         tool_call_names: list[str] = []
@@ -776,9 +943,8 @@ async def _stream_with_react(
             if delta.get("content"):
                 token = delta["content"]
                 assistant_content += token
-                if iteration == 1:
-                    full_assistant_text += token
-                    yield f"data: {json.dumps({'token': _sanitize_output(token)})}\n\n"
+                full_assistant_text += token
+                yield f"data: {json.dumps({'token': _sanitize_output(token)})}\n\n"
 
             finish_reason = choice.get("finish_reason")
             tc_raw = delta.get("tool_calls") or choice.get("message", {}).get("tool_calls")
@@ -800,7 +966,7 @@ async def _stream_with_react(
                             buf["function"]["arguments"] += fn["arguments"]
 
             if finish_reason == "tool_calls" or (finish_reason == "stop" and tool_calls_buffer):
-                if tool_call_names and iteration == 1:
+                if tool_call_names:
                     tool_names_str = ", ".join(tool_call_names)
                     status = json.dumps({"tool_status": f"Consultando datos: {tool_names_str}"})
                     yield f"data: {status}\n\n"
@@ -822,23 +988,35 @@ async def _stream_with_react(
                     logger.info("tool=%s user=%s req=%s result_len=%d", tool_name, user_id, request_id, len(tool_result))
                 break
         else:
-            if iteration == 1 and not full_assistant_text and not assistant_content:
+            if not full_assistant_text and not assistant_content:
                 yield f"data: {json.dumps({'token': '...'})}\n\n"
             break
 
         if not tool_calls_buffer:
             break
 
+    if not full_assistant_text.strip():
+        fallback = "No pude generar una respuesta. ¿Podrías reformular tu consulta?"
+        yield f"data: {json.dumps({'token': fallback})}\n\n"
+        full_assistant_text = fallback
     guardrails.check_output(full_assistant_text)
     yield "data: [DONE]\n\n"
-    if full_assistant_text.strip():
-        history = _load_conversation(role, user_id)
-        history.append({"role": "user", "content": original_message})
-        history.append({"role": "assistant", "content": full_assistant_text})
-        while len(history) > MAX_HISTORY * 2:
-            history.pop(0)
-        _save_conversation(role, user_id, history)
-        logger.info("saved conv role=%s user=%s req=%s msgs=%d", role, user_id, request_id, len(history))
+    history = _load_messages(role, user_id)
+    history.append({"role": "user", "content": original_message})
+    history.append({"role": "assistant", "content": full_assistant_text})
+    while len(history) > MAX_HISTORY * 2:
+        history.pop(0)
+    _save_messages(role, user_id, history)
+    logger.info("saved conv role=%s user=%s req=%s msgs=%d", role, user_id, request_id, len(history))
+
+
+def _save_stream_result(role: str, user_id: str, original_message: str, full_text: str, thread_id: str | None = None) -> None:
+    history = _load_messages(role, user_id, thread_id)
+    history.append({"role": "user", "content": original_message})
+    history.append({"role": "assistant", "content": full_text})
+    while len(history) > MAX_HISTORY * 2:
+        history.pop(0)
+    _save_messages(role, user_id, history, thread_id)
 
 
 async def _stream_simple(
@@ -849,27 +1027,63 @@ async def _stream_simple(
     original_message: str,
     role: str,
     request_id: str = "",
+    thread_id: str | None = None,
 ) -> AsyncGenerator[str, None]:
     full_text = ""
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            async with client.stream("POST", OPENROUTER_BASE, json=payload, headers=headers) as resp:
-                if resp.status_code != 200:
-                    logger.error("OpenRouter error [%s] user=%s req=%s status=%s", role, user_id, request_id, resp.status_code)
-                    yield f"data: {json.dumps({'error': f'Error del asistente (código {resp.status_code})'})}\n\n"
-                    yield "data: [DONE]\n\n"
-                    return
-                async for line in resp.aiter_lines():
-                    if line.startswith("data: "):
+    consecutive_errors = 0
+    used_fallback = False
+    used_groq = False
+
+    for attempt in range(RETRY_MAX_ATTEMPTS + 1):
+        current_payload = dict(payload)
+        current_headers = dict(headers)
+        current_key = api_key
+        current_base = OPENROUTER_BASE
+
+        if used_groq:
+            current_payload["model"] = GROQ_FALLBACK_MODEL
+            current_key = GROQ_API_KEY
+            current_headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+            current_base = GROQ_BASE
+        elif used_fallback:
+            current_payload["model"] = FALLBACK_MODEL
+
+        try:
+            async with httpx.AsyncClient(timeout=ITERATION_TIMEOUT_SECONDS) as client:
+                async with client.stream("POST", current_base, json=current_payload, headers=current_headers) as resp:
+                    if resp.status_code != 200:
+                        consecutive_errors += 1
+                        if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                            logger.error("OpenRouter fatal [%s] user=%s status=%d", role, user_id, resp.status_code)
+                            yield f"data: {json.dumps({'error': 'El asistente no está disponible. Intenta de nuevo.'})}\n\n"
+                            yield "data: [DONE]\n\n"
+                            return
+                        if not used_fallback:
+                            used_fallback = True
+                            logger.info("fallback model [%s] user=%s attempt=%d", role, user_id, attempt)
+                            continue
+                        if GROQ_API_KEY and not used_groq:
+                            used_groq = True
+                            logger.info("fallback Groq [%s] user=%s attempt=%d", role, user_id, attempt)
+                            continue
+                        logger.error("all fallbacks exhausted [%s] user=%s status=%d", role, user_id, resp.status_code)
+                        yield f"data: {json.dumps({'error': f'Error del asistente (código {resp.status_code})'})}\n\n"
+                        yield "data: [DONE]\n\n"
+                        return
+
+                    consecutive_errors = 0
+                    model_name = current_payload.get("model", DEFAULT_MODEL)
+                    yield f"data: {json.dumps({'model': model_name})}\n\n"
+                    async for line in resp.aiter_lines():
+                        if not line.startswith("data: "):
+                            continue
                         data_str = line[6:]
                         if data_str == "[DONE]":
-                            if full_text.strip():
-                                history = _load_conversation(role, user_id)
-                                history.append({"role": "user", "content": original_message})
-                                history.append({"role": "assistant", "content": full_text})
-                                while len(history) > MAX_HISTORY * 2:
-                                    history.pop(0)
-                                _save_conversation(role, user_id, history)
+                            if not full_text.strip():
+                                full_text = "No pude generar una respuesta. ¿Podrías reformular tu consulta?"
+                                yield f"data: {json.dumps({'token': full_text})}\n\n"
+                            _save_stream_result(role, user_id, original_message, full_text, thread_id)
+                            logger.info("stream done [%s] user=%s req=%s tokens=%d", role, user_id, request_id, len(full_text))
                             yield "data: [DONE]\n\n"
                             return
                         try:
@@ -884,10 +1098,38 @@ async def _stream_simple(
                                 yield f"data: {json.dumps({'token': _sanitize_output(content)})}\n\n"
                         except json.JSONDecodeError:
                             continue
-    except Exception as e:
-        logger.error("stream_simple error req=%s: %s", request_id, e)
-        yield f"data: {json.dumps({'error': 'Error de conexión. Verifica tu red e intenta de nuevo.'})}\n\n"
-        yield "data: [DONE]\n\n"
+
+                    # Stream closed without [DONE] — save partial content
+                    if full_text.strip():
+                        _save_stream_result(role, user_id, original_message, full_text, thread_id)
+                        logger.info("stream incomplete but saved [%s] user=%s req=%s tokens=%d", role, user_id, request_id, len(full_text))
+                    else:
+                        full_text = "La respuesta se interrumpió. Intenta de nuevo."
+                        yield f"data: {json.dumps({'token': full_text})}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+
+        except (httpx.TimeoutException, httpx.ConnectError) as e:
+            consecutive_errors += 1
+            logger.warning("stream %s [%s] user=%s attempt=%d err=%s", type(e).__name__, role, user_id, attempt, e)
+            if consecutive_errors >= CIRCUIT_BREAKER_MAX_ERRORS:
+                yield f"data: {json.dumps({'error': 'El asistente no responde. Intenta de nuevo.'})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+            if attempt == 0:
+                yield f"data: {json.dumps({'error': 'Reconectando...'})}\n\n"
+            continue
+
+        except Exception as e:
+            logger.error("stream_simple unexpected [%s] user=%s req=%s: %s", role, user_id, request_id, e)
+            if full_text.strip():
+                _save_stream_result(role, user_id, original_message, full_text, thread_id)
+            yield f"data: {json.dumps({'error': 'Error de conexión. Verifica tu red e intenta de nuevo.'})}\n\n"
+            yield "data: [DONE]\n\n"
+            return
+
+    yield f"data: {json.dumps({'error': 'No se pudo conectar con el asistente.'})}\n\n"
+    yield "data: [DONE]\n\n"
 
 
 def _build_role_endpoint(role: str) -> str:
@@ -895,20 +1137,34 @@ def _build_role_endpoint(role: str) -> str:
 
 
 def _create_chat_handler(role: str):
-    async def handler(req: ChatRequest, user_id: str) -> StreamingResponse:
+    async def handler(req: ChatRequest, user_id: str = Depends(auth_dependency)) -> StreamingResponse:
         request_id = uuid.uuid4().hex[:12]
+        _t0 = time.monotonic()
         logger.info("chat req=%s role=%s user=%s msg_len=%d", request_id, role, user_id, len(req.message))
         guard_result = guardrails.check_input(req.message, role)
         if guard_result:
+            logger.info("chat guard blocked req=%s dt=%.2fms", request_id, (time.monotonic() - _t0) * 1000)
             return StreamingResponse(
                 _stream_error(guard_result),
                 media_type="text/event-stream",
             )
         _check_rate_limit(user_id)
         api_key = _get_api_key(role)
-        messages = _build_messages(role, req.message, req.context, user_id)
+        thread_id = req.thread_id
+        messages = _build_messages(role, req.message, req.context, user_id, thread_id)
+        if role == "student" or thread_id:
+            payload = _build_payload(role, messages, tools_enabled=False)
+            headers = _build_headers(api_key)
+            _t1 = time.monotonic()
+            logger.info("chat setup done req=%s dt=%.2fms stream=simple", request_id, (_t1 - _t0) * 1000)
+            return StreamingResponse(
+                _stream_simple(api_key, payload, headers, user_id, req.message, role, request_id, thread_id),
+                media_type="text/event-stream",
+            )
         payload = _build_payload(role, messages)
         headers = _build_headers(api_key)
+        _t1 = time.monotonic()
+        logger.info("chat setup done req=%s dt=%.2fms stream=react", request_id, (_t1 - _t0) * 1000)
         return StreamingResponse(
             _stream_with_react(api_key, payload, headers, user_id, req.message, role, request_id),
             media_type="text/event-stream",
@@ -940,6 +1196,89 @@ async def clear_conversation(role: str = "student", user_id: str = Depends(auth_
     except Exception as e:
         logger.debug("clear_conversation db error: %s", e)
     return {"status": "cleared"}
+
+
+# ── Chat Threads (full-screen chat by subject) ──
+
+
+class ThreadCreate(BaseModel):
+    subject: str = Field(default="", max_length=100)
+    title: str = Field(default="", max_length=200)
+
+
+class ThreadResponse(BaseModel):
+    id: str
+    subject: str
+    title: str
+    last_message: str = ""
+    updated_at: str
+
+
+def _extract_thread_meta(messages: list) -> tuple[str, str]:
+    subject = ""
+    title = ""
+    if messages and isinstance(messages[0], dict) and messages[0].get("content") == "_thread_meta_":
+        subject = messages[0].get("subject", "")
+        title = messages[0].get("title", "")
+    return subject, title
+
+
+@router.get("/threads")
+async def list_threads(role: str = "student", user_id: str = Depends(auth_dependency)) -> list[dict[str, Any]]:
+    db = _get_db()
+    result = db.table("conversations").select("id, messages, updated_at")\
+        .eq("user_id", user_id).eq("role", role)\
+        .order("updated_at", desc=True).limit(50).execute()
+    threads = []
+    for row in result.data or []:
+        msgs = row.get("messages", [])
+        subject, title = _extract_thread_meta(msgs)
+        # Skip floating-chat rows (no thread metadata)
+        if not subject and not title:
+            continue
+        # Skip metadata marker to get real messages for last_message
+        real_msgs = msgs[1:] if msgs and msgs[0].get("content") == "_thread_meta_" else msgs
+        last = ""
+        for m in reversed(real_msgs):
+            if m.get("role") == "assistant" and m.get("content", "").strip():
+                last = m["content"][:120]
+                break
+        threads.append({
+            "id": row["id"],
+            "subject": subject,
+            "title": title,
+            "last_message": last,
+            "updated_at": row.get("updated_at", ""),
+        })
+    return threads
+
+
+@router.post("/threads")
+async def create_thread(body: ThreadCreate, role: str = "student", user_id: str = Depends(auth_dependency)) -> dict[str, Any]:
+    db = _get_db()
+    now = datetime.now(timezone.utc).isoformat()
+    title = body.title or body.subject or "Nuevo chat"
+    # Store thread metadata as first message in conversations table
+    meta_msg = {"role": "system", "content": "_thread_meta_", "subject": body.subject, "title": title}
+    doc = {
+        "user_id": user_id,
+        "role": role,
+        "messages": [meta_msg],
+        "created_at": now,
+        "updated_at": now,
+    }
+    result = db.table("conversations").insert(doc).execute()
+    row = result.data[0] if result.data else doc
+    return {"id": row["id"], "subject": body.subject, "title": title}
+
+
+@router.delete("/threads/{thread_id}")
+async def delete_thread(thread_id: str, user_id: str = Depends(auth_dependency)) -> dict[str, str]:
+    db = _get_db()
+    db.table("conversations").delete().eq("id", thread_id).eq("user_id", user_id).execute()
+    ck = _thread_cache_key(thread_id)
+    _conversation_cache.pop(ck, None)
+    return {"status": "deleted"}
 
 
 @router.get("/usage")

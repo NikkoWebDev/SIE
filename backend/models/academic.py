@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
+from uuid import uuid4
 
-from bson import ObjectId
 from pydantic import BaseModel, Field
 
 
@@ -16,7 +16,7 @@ class GradeEntry(BaseModel):
 
 
 class GradeDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     student_id: str
     subject_id: str
     subject_name: str = ""
@@ -27,7 +27,7 @@ class GradeDB(BaseModel):
     period: str = "P1"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class GradeSubmission(BaseModel):
@@ -54,18 +54,18 @@ class SubjectCreate(BaseModel):
 
 
 class SubjectDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     name: str
     grade: str
     gem_tutor_url: str = ""
     gem_planner_url: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class DeliveryDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     student_id: str
     grade: str
     subject: str
@@ -76,11 +76,11 @@ class DeliveryDB(BaseModel):
     reviewed: bool = False
     review_score: Optional[float] = None
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class GuideDB(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="_id")
     grade: str
     subject: str
     filename: str
@@ -89,7 +89,7 @@ class GuideDB(BaseModel):
     date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     resource_type: str = "guide"
 
-    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+    model_config = {"populate_by_name": True}
 
 
 class RiskEvent(BaseModel):

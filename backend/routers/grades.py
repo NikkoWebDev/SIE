@@ -119,7 +119,15 @@ async def download_grade_pdf(
     if role == "student" and user_id != student_id:
         raise HTTPException(status_code=403, detail="No tienes permiso para descargar el PDF de otro estudiante")
     if is_financial_locked_path("/api/grades/download-pdf"):
-        req = type("_R", (), {"query_params": {"student_id": student_id}})()
+        class _MockRequest:
+            query_params = {"student_id": student_id}
+            method = "GET"
+            class url:
+                path = "/api/grades/download-pdf"
+            @staticmethod
+            async def body():
+                return b""
+        req = _MockRequest()
         await financial_guard(req)
 
     result = db.table("grades").select("*").eq("student_id", student_id).order("created_at", desc=True).execute()

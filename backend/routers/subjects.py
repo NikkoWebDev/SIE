@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from supabase import Client
 
 from config.database import get_db
-from dependencies import auth_dependency
+from dependencies import admin_dependency, teacher_dependency, auth_dependency
 from models import SubjectCreate, TeacherAssignment
 
 logger = logging.getLogger("siee.subjects")
@@ -25,21 +25,21 @@ async def list_subjects(grade: Optional[str] = Query(None)) -> JSONResponse:
 
 
 @router.post("/admin/subjects", status_code=201)
-async def create_subject(data: SubjectCreate, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def create_subject(data: SubjectCreate, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     db.table("subjects").insert(data.model_dump()).execute()
     return JSONResponse(content={"message": "Materia creada"}, status_code=201)
 
 
 @router.delete("/admin/subjects/{subject_id}")
-async def delete_subject(subject_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def delete_subject(subject_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     db.table("subjects").delete().eq("id", subject_id).execute()
     return JSONResponse(content={"message": "Materia eliminada"})
 
 
 @router.post("/admin/assign-teacher", status_code=201)
-async def assign_teacher(data: TeacherAssignment, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def assign_teacher(data: TeacherAssignment, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     teacher_cred = data.document_id.strip()
     subject_name = data.subject
@@ -66,7 +66,7 @@ async def assign_teacher(data: TeacherAssignment, user_id: str = Depends(auth_de
 
 
 @router.get("/admin/teachers")
-async def list_teachers(user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def list_teachers(user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("teacher_assignments").select("*, profiles!inner(fullname, login_credential), subjects!inner(name)").execute()
     teachers = []
@@ -83,18 +83,18 @@ async def list_teachers(user_id: str = Depends(auth_dependency)) -> JSONResponse
 
 
 @router.delete("/admin/teachers/{assignment_id}")
-async def delete_teacher(assignment_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def delete_teacher(assignment_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     db.table("teacher_assignments").delete().eq("id", assignment_id).execute()
     return JSONResponse(content={"message": "Asignación eliminada"})
 
 
 @router.post("/admin/upload-guide", status_code=201)
-async def upload_guide(
+async def upload_guide_admin(
     grade: str = Form(...),
     subject: str = Form(...),
     file: UploadFile = File(...),
-    user_id: str = Depends(auth_dependency),
+    user_id: str = Depends(admin_dependency),
 ) -> JSONResponse:
     try:
         import cloudinary
@@ -119,7 +119,7 @@ async def upload_guide(
 
 
 @router.get("/teacher/my-files/{grade}/{subject}")
-async def get_teacher_files(grade: str, subject: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def get_teacher_files(grade: str, subject: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("guides").select("*").eq("grade", grade).eq("subject", subject).execute()
     files = [{"name": f.get("filename"), "url": f.get("url")} for f in result.data]
@@ -171,7 +171,7 @@ async def upload_homework(
 
 
 @router.get("/teacher/view-deliveries/{grade}/{subject}")
-async def view_deliveries(grade: str, subject: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+async def view_deliveries(grade: str, subject: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("deliveries").select("*").eq("grade", grade).eq("subject", subject).execute()
     deliveries = [{

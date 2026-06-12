@@ -1,127 +1,364 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro'
-import Logo from '@components/Logo.astro'
+import SolarLogo from '@components/landing/SolarLogo.astro'
 
 const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
 ---
 
-<BaseLayout titulo="Acceso" descripcion="Portal VYNTRA Solaris — Iniciar Sesión" noIndex={true} withNoise={false}>
-  <main class="min-h-[100svh] flex items-center justify-center bg-[var(--solar-cream)] px-4 py-12">
-    <!-- Glow sutil detrás del logo -->
-    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] rounded-full bg-brand-gold/[0.06] blur-[100px] pointer-events-none"></div>
+<BaseLayout titulo="Acceso — VYNTRA Solaris" descripcion="Portal VYNTRA Solaris — Iniciar Sesión" noIndex={true} withNoise={false}>
+  <main class="lp">
+    <div class="lp__aura" aria-hidden="true"></div>
 
-    <!-- Grid dots decorativo -->
-    <div class="fixed inset-0 opacity-[0.03] pointer-events-none" style="background-image:radial-gradient(rgba(107,26,26,0.3) 1px,transparent 1px);background-size:44px 44px"></div>
-
-    <div class="relative z-10 w-full max-w-[360px]">
-      <!-- Logo — la joya central -->
-      <div class="flex justify-center mb-6">
-        <div class="relative">
-          <div class="absolute inset-0 rounded-full bg-brand-gold/[0.1] blur-[35px] scale-110"></div>
-          <Logo size={130} class="relative drop-shadow-[0_0_35px_rgba(245,166,35,0.15)]" />
-        </div>
+    <div class="lp__inner">
+      <div class="lp__logo">
+        <SolarLogo />
       </div>
 
-      <!-- Marca -->
-      <div class="text-center mb-7">
-        <h1 class="text-2xl font-bold text-[var(--text)] tracking-tight" style="font-family:'Fraunces',serif">
-          VYNTRA <span class="text-brand-gold">Solaris</span>
-        </h1>
-        <p class="text-[10px] text-text-tertiary tracking-[0.25em] uppercase mt-2 font-medium">Portal Académico &middot; v5.0</p>
+      <div class="lp__brand">
+        <h1 class="lp__brand-name">VYNTRA <span class="lp__brand-accent">Solaris</span></h1>
+        <p class="lp__brand-tag">Portal Académico · v5.0</p>
       </div>
 
-      <!-- Formulario -->
-      <div class="bg-white/60 backdrop-blur-xl border border-border rounded-2xl p-6 sm:p-7 shadow-card">
-        <form id="login-form" class="space-y-4">
-          <!-- ID -->
-          <div>
-            <label for="credential" class="block ml-1 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-1.5">
-              Identificación Institucional
-            </label>
-            <div class="relative group">
-              <div class="absolute inset-0 rounded-lg bg-gradient-to-r from-brand-maroon/0 via-brand-gold/5 to-brand-maroon/0 opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 -m-[1px] pointer-events-none"></div>
-              <input
-                id="credential"
-                type="text"
-                autocomplete="username"
-                placeholder="ID institucional"
-                required
-                class="relative w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-3.5 py-2.5 text-sm text-[var(--text)] placeholder:text-text-tertiary/40 outline-none transition-all duration-300 focus:border-brand-maroon/30 focus:shadow-[0_0_0_3px_var(--input-focus-ring)]"
-              />
-            </div>
+      <div class="lp__form-card">
+        <form id="login-form" novalidate>
+          <div class="lp__field">
+            <label for="credential" class="lp__label">Identificación Institucional</label>
+            <input
+              id="credential"
+              type="text"
+              autocomplete="username"
+              placeholder="ID institucional"
+              required
+              aria-describedby="credential-error"
+              class="lp__input"
+            />
+            <p id="credential-error" class="lp__field-error is-hidden" role="alert"></p>
           </div>
 
-          <!-- Password -->
-          <div>
-            <label for="password" class="block ml-1 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary mb-1.5">
-              Contraseña
-            </label>
-            <div class="relative group">
-              <div class="absolute inset-0 rounded-lg bg-gradient-to-r from-brand-maroon/0 via-brand-gold/5 to-brand-maroon/0 opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 -m-[1px] pointer-events-none"></div>
-              <input
-                id="password"
-                type="password"
-                autocomplete="current-password"
-                placeholder="••••••••"
-                required
-                class="relative w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-3.5 py-2.5 text-sm text-[var(--text)] placeholder:text-text-tertiary/40 outline-none transition-all duration-300 focus:border-brand-maroon/30 focus:shadow-[0_0_0_3px_var(--input-focus-ring)]"
-              />
-            </div>
+          <div class="lp__field">
+            <label for="password" class="lp__label">Contraseña</label>
+            <input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              required
+              minlength="4"
+              aria-describedby="password-error"
+              class="lp__input"
+            />
+            <p id="password-error" class="lp__field-error is-hidden" role="alert"></p>
           </div>
 
-          <!-- Submit -->
-          <button
-            id="login-submit"
-            type="submit"
-            class="relative w-full h-11 flex items-center justify-center gap-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-bold rounded-lg hover:shadow-[0_0_30px_rgba(107,26,26,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 mt-1"
-          >
+          <button id="login-submit" type="submit" class="lp__submit" data-magnetic-btn>
             <span id="submit-text">Ingresar al Portal</span>
-            <svg id="submit-arrow" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-            <svg id="submit-spinner" class="hidden h-4 w-4 animate-spin-slow" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            <svg id="submit-arrow" class="lp__submit-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+            <svg id="submit-spinner" class="lp__submit-spinner is-hidden" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="lp__sp-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="lp__sp-head" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
           </button>
 
-          <!-- Error -->
-          <div id="login-error" class="hidden rounded-lg border border-brand-danger/15 bg-brand-danger/[0.03] px-4 py-2.5 text-xs text-brand-danger/80 text-center" role="alert"></div>
+          <div id="login-error" class="lp__alert lp__alert--danger is-hidden" role="alert"></div>
+          <div id="login-status" class="lp__alert lp__alert--info is-hidden" role="status"></div>
         </form>
 
-        <!-- Footer del form -->
-        <div class="mt-5 pt-4 border-t border-border text-center">
-          <button id="forgot-link" class="text-[10px] text-brand-maroon/40 hover:text-brand-maroon/70 transition-colors duration-300">
-            ¿Problemas de acceso? Recuperar cuenta
-          </button>
+        <div class="lp__form-footer">
+          <button id="forgot-link" class="lp__link">¿Problemas de acceso? Recuperar cuenta</button>
         </div>
       </div>
 
-      <!-- Info institucional -->
-      <p class="text-center mt-6 text-[9px] text-text-tertiary/30">
-        Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá
-      </p>
+      <p class="lp__institution">Colegio Técnico Ciudad del Sol · Sogamoso, Boyacá</p>
     </div>
   </main>
 
-  <!-- Modal Recuperar Contraseña -->
-  <div id="forgot-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/30 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Recuperar acceso">
-    <div class="bg-white border border-border rounded-2xl shadow-modal p-6 max-w-sm w-11/12 mx-auto">
+  <div id="forgot-modal" class="lp__modal is-hidden" role="dialog" aria-modal="true" aria-label="Recuperar acceso">
+    <div class="lp__modal-card">
       <div id="forgot-step-1">
-        <h3 class="font-bold text-[var(--text)] mb-1" style="font-family:'Fraunces',serif">Recuperar Acceso</h3>
-        <p class="text-xs text-text-tertiary mb-4">Ingresa tu identificación para recibir un código.</p>
-        <input type="text" id="forgot-credential" placeholder="Identificación institucional" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-3.5 py-2.5 text-sm text-[var(--text)] placeholder:text-text-tertiary/40 outline-none focus:border-brand-maroon/30 mb-3 transition-all duration-300" />
-        <button id="forgot-send-btn" class="w-full h-10 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg hover:shadow-[0_0_20px_rgba(107,26,26,0.15)] transition-all duration-300">Enviar Código</button>
-        <div id="forgot-step-1-error" class="hidden mt-2 text-xs text-brand-danger text-center" role="alert"></div>
+        <h3 class="lp__modal-title">Recuperar Acceso</h3>
+        <p class="lp__modal-desc">Ingresa tu identificación para recibir un código.</p>
+        <input type="text" id="forgot-credential" placeholder="Identificación institucional" class="lp__input" />
+        <button id="forgot-send-btn" type="button" class="lp__submit lp__submit--sm">Enviar Código</button>
+        <div id="forgot-step-1-error" class="lp__field-error is-hidden" role="alert"></div>
       </div>
-      <div id="forgot-step-2" class="hidden">
-        <h3 class="font-bold text-[var(--text)] mb-1" style="font-family:'Fraunces',serif">Restablecer Contraseña</h3>
-        <p class="text-xs text-text-tertiary mb-4">Ingresa el código y tu nueva contraseña.</p>
-        <input type="text" id="forgot-code" placeholder="Código de 6 dígitos" maxlength="6" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-3.5 py-2.5 text-sm text-[var(--text)] placeholder:text-text-tertiary/40 outline-none focus:border-brand-maroon/30 mb-3 transition-all duration-300" />
-        <input type="password" id="forgot-new-pass" placeholder="Nueva contraseña" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-3.5 py-2.5 text-sm text-[var(--text)] placeholder:text-text-tertiary/40 outline-none focus:border-brand-maroon/30 mb-3 transition-all duration-300" />
-        <input type="password" id="forgot-confirm-pass" placeholder="Confirmar contraseña" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-3.5 py-2.5 text-sm text-[var(--text)] placeholder:text-text-tertiary/40 outline-none focus:border-brand-maroon/30 mb-3 transition-all duration-300" />
-        <button id="forgot-reset-btn" class="w-full h-10 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg hover:shadow-[0_0_20px_rgba(107,26,26,0.15)] transition-all duration-300">Restablecer</button>
-        <div id="forgot-step-2-error" class="hidden mt-2 text-xs text-brand-danger text-center" role="alert"></div>
-        <div id="forgot-step-2-success" class="hidden mt-2 text-xs text-success text-center" role="status"></div>
+      <div id="forgot-step-2" class="is-hidden">
+        <h3 class="lp__modal-title">Restablecer Contraseña</h3>
+        <p class="lp__modal-desc">Ingresa el código y tu nueva contraseña.</p>
+        <input type="text" id="forgot-code" placeholder="Código de 6 dígitos" maxlength="6" class="lp__input" />
+        <input type="password" id="forgot-new-pass" placeholder="Nueva contraseña" minlength="4" class="lp__input" />
+        <input type="password" id="forgot-confirm-pass" placeholder="Confirmar contraseña" minlength="4" class="lp__input" />
+        <button id="forgot-reset-btn" type="button" class="lp__submit lp__submit--sm">Restablecer</button>
+        <div id="forgot-step-2-error" class="lp__field-error is-hidden" role="alert"></div>
+        <div id="forgot-step-2-success" class="lp__modal-success is-hidden" role="status"></div>
       </div>
-      <button class="mt-4 w-full text-xs text-text-tertiary hover:text-[var(--text)] transition-colors py-1" onclick="document.getElementById('forgot-modal').classList.add('hidden');document.getElementById('forgot-modal').classList.remove('flex')">Cerrar</button>
+      <button id="forgot-close" type="button" class="lp__modal-close">Cerrar</button>
     </div>
   </div>
+
+  <style>
+    .is-hidden { display: none !important; }
+
+    .lp {
+      position: relative;
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245,166,35,.08) 0%, transparent 55%),
+        #FFFBF0;
+      font-family: 'DM Sans', system-ui, sans-serif;
+    }
+
+    .lp__aura {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      filter: blur(90px);
+      background: radial-gradient(circle at 50% 18%, rgba(245,166,35,.12) 0%, transparent 42%);
+    }
+
+    .lp__inner {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .lp__logo {
+      width: 78px;
+      height: 78px;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 8px 24px rgba(245,166,35,.16));
+    }
+
+    .lp__brand {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .lp__brand-name {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      color: #1A1106;
+      line-height: 1;
+    }
+
+    .lp__brand-accent { color: #6B1A1A; }
+
+    .lp__brand-tag {
+      margin-top: 6px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: rgba(26,17,6,.45);
+    }
+
+    .lp__form-card {
+      width: 100%;
+      background: rgba(255,255,255,.78);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(107,26,26,.08);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(107,26,26,.07);
+    }
+
+    .lp__field { margin-bottom: 14px; }
+
+    .lp__label {
+      display: block;
+      margin: 0 0 5px 2px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      color: rgba(26,17,6,.5);
+    }
+
+    .lp__input {
+      width: 100%;
+      padding: 11px 14px;
+      background: rgba(107,26,26,.04);
+      border: 1px solid rgba(107,26,26,.1);
+      border-radius: 10px;
+      font-size: 14px;
+      color: #1A1106;
+      outline: none;
+      transition: border-color 200ms, box-shadow 200ms;
+    }
+
+    .lp__input::placeholder { color: rgba(26,17,6,.28); }
+
+    .lp__input:focus {
+      border-color: rgba(107,26,26,.28);
+      box-shadow: 0 0 0 3px rgba(107,26,26,.1);
+    }
+
+    .lp__field-error {
+      margin: 4px 0 0 2px;
+      font-size: 10px;
+      color: #DC2626;
+    }
+
+    .lp__submit {
+      width: 100%;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 6px;
+      background: #6B1A1A;
+      color: #FFFBF0;
+      border: none;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 8px 28px rgba(107,26,26,.28);
+      will-change: transform;
+      transition: box-shadow 160ms, filter 160ms;
+    }
+
+    .lp__submit:hover {
+      box-shadow: 0 14px 36px rgba(107,26,26,.36);
+      filter: brightness(1.03);
+    }
+
+    .lp__submit:active { filter: brightness(.97); }
+
+    .lp__submit--sm { height: 38px; font-size: 10px; }
+
+    .lp__submit-arrow { width: 14px; height: 14px; }
+    .lp__submit-spinner { width: 14px; height: 14px; animation: lp-spin .8s linear infinite; }
+    .lp__sp-track { opacity: .25; }
+    .lp__sp-head { opacity: .75; }
+
+    .lp__alert {
+      margin-top: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .lp__alert--danger {
+      background: rgba(220,38,38,.06);
+      border: 1px solid rgba(220,38,38,.15);
+      color: rgba(220,38,38,.85);
+    }
+
+    .lp__alert--info {
+      background: rgba(59,130,246,.06);
+      border: 1px solid rgba(59,130,246,.15);
+      color: rgba(59,130,246,.85);
+    }
+
+    .lp__form-footer {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(107,26,26,.07);
+      text-align: center;
+    }
+
+    .lp__link {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(107,26,26,.45);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: color 200ms;
+    }
+
+    .lp__link:hover { color: rgba(107,26,26,.8); }
+
+    .lp__institution {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 9px;
+      letter-spacing: .05em;
+      color: rgba(26,17,6,.25);
+    }
+
+    .lp__modal {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(7,3,2,.3);
+      backdrop-filter: blur(6px);
+    }
+
+    .lp__modal-card {
+      background: #FFFBF0;
+      border: 1px solid rgba(107,26,26,.1);
+      border-radius: 20px;
+      padding: 28px 24px;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 24px 60px rgba(0,0,0,.12);
+    }
+
+    .lp__modal-title {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: #1A1106;
+      margin-bottom: 6px;
+    }
+
+    .lp__modal-desc {
+      font-size: 12px;
+      color: rgba(26,17,6,.55);
+      margin-bottom: 18px;
+    }
+
+    .lp__modal-card .lp__input { margin-bottom: 10px; }
+
+    .lp__modal-success {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #34D399;
+      text-align: center;
+    }
+
+    .lp__modal-close {
+      width: 100%;
+      margin-top: 14px;
+      padding: 8px;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(26,17,6,.45);
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color 200ms;
+    }
+
+    .lp__modal-close:hover { color: #1A1106; }
+
+    @keyframes lp-spin { to { transform: rotate(360deg); } }
+
+    @media (prefers-reduced-motion: reduce) { .lp__submit-spinner { animation: none; } }
+  </style>
 
   <script define:vars={{ baseUrl }}>
     (function() {
@@ -129,27 +366,69 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
       var credInput = document.getElementById('credential')
       var passInput = document.getElementById('password')
       var endpoint = baseUrl + '/api/auth/login'
+      var submitting = false
+
+      function showFieldError(id, msg) {
+        var el = document.getElementById(id + '-error')
+        if (el) { el.textContent = msg; el.classList.remove('is-hidden') }
+      }
+      function clearFieldError(id) {
+        var el = document.getElementById(id + '-error')
+        if (el) el.classList.add('is-hidden')
+      }
+
+      credInput.addEventListener('blur', function() {
+        if (!this.value.trim()) showFieldError('credential', 'Ingresa tu identificación.')
+        else clearFieldError('credential')
+      })
+      credInput.addEventListener('input', function() { if (this.value.trim()) clearFieldError('credential') })
+
+      passInput.addEventListener('blur', function() {
+        if (!this.value) showFieldError('password', 'Ingresa tu contraseña.')
+        else if (this.value.length < 4) showFieldError('password', 'Mínimo 4 caracteres.')
+        else clearFieldError('password')
+      })
+      passInput.addEventListener('input', function() { if (this.value.length >= 4) clearFieldError('password') })
+
+      var submitBtn = document.getElementById('login-submit')
+      submitBtn.addEventListener('mousemove', function(e) {
+        var r = submitBtn.getBoundingClientRect()
+        submitBtn.style.transform = 'translate(' + (e.clientX - (r.left + r.width / 2)) * 0.12 + 'px,' + (e.clientY - (r.top + r.height / 2)) * 0.2 + 'px)'
+      })
+      submitBtn.addEventListener('mouseleave', function() { submitBtn.style.transform = '' })
 
       form.addEventListener('submit', async function(e) {
         e.preventDefault()
+        if (submitting) return
+
         var errDiv = document.getElementById('login-error')
+        var statusDiv = document.getElementById('login-status')
         var submitText = document.getElementById('submit-text')
         var spinner = document.getElementById('submit-spinner')
         var arrow = document.getElementById('submit-arrow')
 
-        errDiv.classList.add('hidden')
-        submitText.textContent = 'Validando...'
-        arrow.classList.add('hidden')
-        spinner.classList.remove('hidden')
+        errDiv.classList.add('is-hidden')
+        statusDiv.classList.add('is-hidden')
 
         var cred = credInput.value.trim()
         var pass = passInput.value
-        if (!cred) { reset(); showErr('Ingresa tu identificación institucional.'); return }
-        if (!pass) { reset(); showErr('Ingresa tu contraseña.'); return }
+        var valid = true
+
+        if (!cred) { showFieldError('credential', 'Ingresa tu identificación.'); valid = false }
+        if (!pass) { showFieldError('password', 'Ingresa tu contraseña.'); valid = false }
+        else if (pass.length < 4) { showFieldError('password', 'Mínimo 4 caracteres.'); valid = false }
+        if (!valid) return
+
+        submitting = true
+        submitText.textContent = 'Validando...'
+        arrow.classList.add('is-hidden')
+        spinner.classList.remove('is-hidden')
 
         try {
           var res = await fetch(endpoint, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ login_credential: cred, password: pass })
           })
           if (!res.ok) {
@@ -159,63 +438,94 @@ const baseUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').repl
           var data = await res.json()
           var usuario = data.usuario || {}
           var role = (usuario.rol || data.rol || 'ESTUDIANTE').toUpperCase()
-          if (data.access_token) localStorage.setItem('ws_access_token', data.access_token)
-          localStorage.setItem('userRole', role)
-          localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
-          localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || cred)
-          if (usuario.profile_id) localStorage.setItem('profile_id', usuario.profile_id)
-          if (data.grado || data.grade) localStorage.setItem('userGrade', data.grado || data.grade)
-          submitText.textContent = '¡Bienvenido!'
-          var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }
-          window.location.href = map[role] || '/dashboard'
-        } catch(err) { reset(); showErr(err.message || 'Error de conexión.') }
 
-        function reset() { submitText.textContent = 'Ingresar al Portal'; arrow.classList.remove('hidden'); spinner.classList.add('hidden') }
-        function showErr(msg) { errDiv.textContent = msg; errDiv.classList.remove('hidden') }
+          if (window.VyntraSession && window.VyntraSession.storeSession) {
+            window.VyntraSession.storeSession({
+              access_token: data.access_token,
+              rol: role,
+              nombre: usuario.nombre || data.nombre || data.fullname || '',
+              profile_id: usuario.profile_id,
+              userIdFromCred: cred,
+              grado: data.grado || data.grade,
+            })
+          } else {
+            if (data.access_token) localStorage.setItem('ws_access_token', data.access_token)
+            localStorage.setItem('userRole', role)
+            localStorage.setItem('userName', usuario.nombre || data.nombre || data.fullname || '')
+            localStorage.setItem('userId', usuario.profile_id || usuario.login_credential || cred)
+            if (usuario.profile_id) localStorage.setItem('profile_id', usuario.profile_id)
+            if (data.grado || data.grade) localStorage.setItem('userGrade', data.grado || data.grade)
+          }
+
+          submitText.textContent = '¡Bienvenido!'
+          statusDiv.textContent = 'Acceso correcto. Redirigiendo...'
+          statusDiv.classList.remove('is-hidden')
+
+          var map = { ADMIN:'/admin', RECTOR:'/admin', PROFESOR:'/docente', DOCENTE:'/docente', ESTUDIANTE:'/estudiante', STUDENT:'/estudiante', TEACHER:'/docente' }
+          setTimeout(function() { window.location.href = map[role] || '/dashboard' }, 600)
+        } catch(err) {
+          submitText.textContent = 'Ingresar al Portal'
+          arrow.classList.remove('is-hidden')
+          spinner.classList.add('is-hidden')
+          errDiv.textContent = err.message || 'Error de conexión.'
+          errDiv.classList.remove('is-hidden')
+          submitting = false
+        }
       })
 
-      // ── Forgot password ──
       var forgotModal = document.getElementById('forgot-modal')
+      function closeModal() { forgotModal.classList.add('is-hidden') }
       document.getElementById('forgot-link')?.addEventListener('click', function() {
-        forgotModal.classList.add('flex'); forgotModal.classList.remove('hidden')
-        document.getElementById('forgot-step-1').style.display = 'block'
-        document.getElementById('forgot-step-2').style.display = 'none'
+        forgotModal.classList.remove('is-hidden')
+        document.getElementById('forgot-step-1').classList.remove('is-hidden')
+        document.getElementById('forgot-step-2').classList.add('is-hidden')
         ;['forgot-step-1-error','forgot-step-2-error','forgot-step-2-success'].forEach(function(id) {
-          var el = document.getElementById(id); if (el) el.classList.add('hidden')
+          var el = document.getElementById(id); if (el) el.classList.add('is-hidden')
         })
       })
-      forgotModal?.addEventListener('click', function(e) { if (e.target === this) { this.classList.add('hidden'); this.classList.remove('flex') } })
+      document.getElementById('forgot-close')?.addEventListener('click', closeModal)
+      forgotModal?.addEventListener('click', function(e) { if (e.target === this) closeModal() })
+
       document.getElementById('forgot-send-btn')?.addEventListener('click', async function() {
         var c = document.getElementById('forgot-credential').value.trim()
         var e1 = document.getElementById('forgot-step-1-error')
-        if (!c) { e1.textContent = 'Ingresa tu identificación.'; e1.classList.remove('hidden'); return }
+        if (!c) { e1.textContent = 'Ingresa tu identificación.'; e1.classList.remove('is-hidden'); return }
         try {
           var r = await fetch(baseUrl + '/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login_credential: c }) })
           var d = await r.json()
           if (!r.ok) throw new Error(d.detail || 'Error.')
-          document.getElementById('forgot-step-1').style.display = 'none'
-          document.getElementById('forgot-step-2').style.display = 'block'
-        } catch(er) { e1.textContent = er.message; e1.classList.remove('hidden') }
+          document.getElementById('forgot-step-1').classList.add('is-hidden')
+          document.getElementById('forgot-step-2').classList.remove('is-hidden')
+        } catch(er) { e1.textContent = er.message; e1.classList.remove('is-hidden') }
       })
+
       document.getElementById('forgot-reset-btn')?.addEventListener('click', async function() {
         var code = document.getElementById('forgot-code').value.trim()
         var p1 = document.getElementById('forgot-new-pass').value
         var p2 = document.getElementById('forgot-confirm-pass').value
+        var e2 = document.getElementById('forgot-step-2-error')
+        function showErr2(m) { e2.textContent = m; e2.classList.remove('is-hidden') }
         if (!code || code.length !== 6) { showErr2('Código inválido (6 dígitos).'); return }
-        if (!p1 || p1.length < 4) { showErr2('Contraseña muy corta.'); return }
-        if (p1 !== p2) { showErr2('No coinciden.'); return }
+        if (!p1 || p1.length < 4) { showErr2('Contraseña muy corta (mínimo 4).'); return }
+        if (p1 !== p2) { showErr2('Las contraseñas no coinciden.'); return }
         try {
           var r = await fetch(baseUrl + '/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login_credential: document.getElementById('forgot-credential').value, code: code, new_password: p1 }) })
           var d = await r.json()
           if (!r.ok) throw new Error(d.detail || 'Error.')
           var s = document.getElementById('forgot-step-2-success')
           s.textContent = 'Contraseña actualizada. Ya puedes iniciar sesión.'
-          s.classList.remove('hidden')
-          setTimeout(function() { forgotModal.classList.add('hidden'); forgotModal.classList.remove('flex') }, 2500)
+          s.classList.remove('is-hidden')
+          setTimeout(closeModal, 3000)
         } catch(er) { showErr2(er.message) }
-        function showErr2(m) { var e2 = document.getElementById('forgot-step-2-error'); e2.textContent = m; e2.classList.remove('hidden') }
       })
-      fetch(baseUrl + '/api/health', { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(5000) }).catch(function(){})
+
+      fetch(baseUrl + '/api/health', { method: 'GET' })
+        .then(function(r) { if (r.ok) console.log('[VYNTRA] Backend conectado.') })
+        .catch(function() { console.warn('[VYNTRA] Backend no disponible.') })
+      // Silenciar errores de fetch para no mostrar al usuario
+      ;['/api/auth/login', '/api/auth/forgot-password'].forEach(function(p) {
+        fetch(baseUrl + p, { method: 'OPTIONS' }).catch(function() {})
+      })
     })()
   </script>
 </BaseLayout>

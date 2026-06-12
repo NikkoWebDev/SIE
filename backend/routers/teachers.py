@@ -165,10 +165,18 @@ async def submit_grade(submission: GradeSubmission, user_id: str = Depends(teach
     )
     logger.info("grade=%s student=%s score=%.1f propagated=%s", grade_id, student_uuid, submission.score, propagated)
 
-    is_abp_subject = submission.subject_id.strip().lower()
+    is_abp_subject = False
+    try:
+        subj = db.table("subjects").select("is_abp").eq("id", submission.subject_id).execute()
+        if subj.data:
+            is_abp_subject = subj.data[0].get("is_abp", False)
+    except Exception:
+        pass
+    if submission.subject_id.strip().lower() in ("abp", "proyecto", "investigación"):
+        is_abp_subject = True
     propagation_note = ""
-    if any(k in is_abp_subject for k in ("abp", "proyecto", "investigación", "matemáticas", "ciencias", "lenguaje", "inglés", "sociales", "tecnología", "arte", "música")):
-        propagation_note = f"Nota propagada automáticamente a las {len(propagated) + 1} materias vinculadas"
+    if is_abp_subject:
+        propagation_note = f"Nota propagada automáticamente a las {len(propagated)} materias vinculadas"
         if propagated:
             subject_ids = []
             for name in propagated:
@@ -379,7 +387,7 @@ async def upload_material(
     task_id = secrets.token_hex(12)
     filename = file.filename or "document.pdf"
     _set_upload_progress(task_id, "queued", 0, "En cola...")
-    background_tasks.add_task(_process_material_upload, task_id, raw, filename, subject_id, grade_id, user_id)
+    background_tasks.add_task(_process_material_upload, task_id, raw, filename, subject_id, grade_id, user_id, file.content_type)
     return JSONResponse(status_code=202, content={"task_id": task_id, "status": "processing"})
 
 
@@ -391,7 +399,7 @@ async def get_upload_material_status(task_id: str, user_id: str = Depends(teache
     return JSONResponse(content=status)
 
 
-async def _process_material_upload(task_id: str, raw: bytes, filename: str, subject_id: str, grade_id: str, user_id: str) -> None:
+async def _process_material_upload(task_id: str, raw: bytes, filename: str, subject_id: str, grade_id: str, user_id: str, file_content_type: str = "application/octet-stream") -> None:
     try:
         _set_upload_progress(task_id, "extracting", 15, "Extrayendo texto del archivo...")
         raw_text = _extract_text_from_bytes(raw, filename)
@@ -470,7 +478,7 @@ async def _process_material_upload(task_id: str, raw: bytes, filename: str, subj
         # Upload original file to Google Drive
         try:
             from google_drive import upload_to_drive
-            drive_result = upload_to_drive(raw, filename, file.content_type or "application/octet-stream")
+            drive_result = upload_to_drive(raw, filename, file_content_type or "application/octet-stream")
             drive_url = drive_result.get("url", "")
         except Exception as exc:
             logger.error("google drive upload error: %s", exc)
