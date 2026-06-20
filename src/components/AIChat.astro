@@ -14,7 +14,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
 ---
 
 <div id="ai-chat-root" class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50" style="--chat-accent:{rc.accent};--chat-accent-light:{rc.accentLight}" data-endpoint={rc.endpoint} data-avatar={rc.avatar} data-username={rc.name} data-welcome={rc.welcome}>
-  <button id="ai-chat-toggle"
+  <button id="ai-chat-toggle" aria-label="Abrir chat"
     class="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 ease-spring relative"
     style="background:var(--chat-accent)">
     <svg id="chat-icon-open" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
@@ -36,11 +36,11 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       </div>
       <div class="flex items-center gap-1.5">
         <span id="chat-model-indicator" class="text-[9px] text-white/40 font-mono hidden"></span>
-        <button id="chat-fullscreen-btn" class="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors text-[10px] font-medium hidden sm:block" title="Chat completo">Completo</button>
+        <button id="chat-fullscreen-btn" class="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors text-[10px] font-medium hidden sm:block" title="Chat completo" aria-label="Chat completo">Completo</button>
         <button id="chat-fullscreen-btn-mobile" class="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors sm:hidden" title="Chat completo" aria-label="Chat completo">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
         </button>
-        <button id="chat-clear-btn" class="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors" title="Limpiar conversación">
+        <button id="chat-clear-btn" class="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors" title="Limpiar conversación" aria-label="Limpiar conversación">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </button>
       </div>
@@ -91,8 +91,6 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     var storageKey = 'vyntra-chat-' + role
     var userName = localStorage.getItem('userName') || userNameText
 
-    var toggle = document.getElementById('ai-chat-toggle')
-    var root = document.getElementById('ai-chat-root')
     var toggle = document.getElementById('ai-chat-toggle')
     var panel = document.getElementById('ai-chat-panel')
     var messages = document.getElementById('chat-messages')
@@ -170,7 +168,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       av.textContent = avatar
       var bubble = document.createElement('div'); bubble.style.cssText = 'border-radius:16px;border-top-left-radius:4px;padding:.75rem 1rem;line-height:1.6;font-size:13px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text)'
       bubble.classList.add('msg-bubble')
-      bubble.innerHTML = welcomeText
+      bubble.innerHTML = welcomeText || ''
       div.appendChild(av); div.appendChild(bubble); messages.appendChild(div)
 
       var suggestions = role === 'student' ? ['¿Cómo mejorar mi promedio?','Explica el proyecto ABP','¿Qué materias tengo en riesgo?'] :
@@ -224,7 +222,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     var sectionLabels = { inicio:'Inicio', notas:'Notas', examenes:'Exámenes', horarios:'Horarios', horario:'Horario', tareas:'Tareas', saber:'Pruebas Saber', biblioteca:'Biblioteca', votaciones:'Votaciones', perfil:'Perfil', contenidos:'Guías y Tareas', incidentes:'Incidentes', alertas:'Alertas', estudiantes:'Estudiantes', docentes:'Docentes', materias:'Materias', avisos:'Avisos', elecciones:'Elecciones', administradores:'Administradores' }
     var placeholders = { notas:'Pregunta sobre tus notas...', examenes:'¿Dudas con algún examen?', tareas:'¿Necesitas ayuda con una tarea?', saber:'Pregunta sobre Pruebas Saber...', biblioteca:'Busca recursos de estudio...', horarios:'Consulta tu horario...', perfil:'¿Quieres ver tu progreso?', votaciones:'Pregunta sobre las elecciones...', inicio:'¿En qué te ayudo hoy?' }
     var ctxEl = document.getElementById('chat-section-context')
-    window.addEventListener('vyntra:navigate', function(e) {
+    window._vyntraNavHandler = function(e) {
       activeSection = (e).detail.section || ''
       if (ctxEl && activeSection) {
         ctxEl.textContent = 'Estás en: ' + (sectionLabels[activeSection] || activeSection.charAt(0).toUpperCase() + activeSection.slice(1))
@@ -235,8 +233,9 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       // Dynamic placeholder
       var placeholderText = placeholders[activeSection]
       if (input && placeholderText) input.placeholder = placeholderText
-      else if (input) input.placeholder = 'Escribe tu consulta...'
-    })
+      else       if (input) input.placeholder = 'Escribe tu consulta...'
+    }
+    window.addEventListener('vyntra:navigate', window._vyntraNavHandler)
     // Initial section (dashboard pages set activeSection via showSection already)
     if (ctxEl && activeSection) {
       ctxEl.textContent = 'Estás en: ' + (sectionLabels[activeSection] || activeSection)
@@ -308,7 +307,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
                   if (statusBar) statusBar.textContent = parsed.tool_status
                   else { typing.classList.remove('hidden'); var tb = typing.querySelector('.tool-status'); if(tb) tb.textContent = parsed.tool_status }
                 }
-                else if (parsed.error) { bubble.innerHTML = '<span style="color:var(--danger)">'+parsed.error+'</span>'; if(statusBar) statusBar.textContent = '' }
+                else if (parsed.error) { bubble.textContent = parsed.error; bubble.style.color = 'var(--danger)'; if(statusBar) statusBar.textContent = '' }
               } catch(_) {}
             }
           }

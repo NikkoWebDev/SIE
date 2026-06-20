@@ -131,6 +131,8 @@ async def get_my_deliveries(
     student_id: str, grade: str, subject: str,
     user_id: str = Depends(auth_dependency),
 ) -> JSONResponse:
+    if user_id != student_id:
+        raise HTTPException(status_code=403, detail="Acceso no autorizado")
     db: Client = next(get_db())
     result = db.table("deliveries").select("*").eq("student_id", student_id).eq("grade", grade).eq("subject", subject).order("created_at", desc=True).execute()
     files = [{"filename": d.get("filename"), "url": d.get("url"), "date": d.get("date", "")} for d in result.data]
@@ -145,6 +147,8 @@ async def upload_homework(
     file: UploadFile = File(...),
     user_id: str = Depends(auth_dependency),
 ) -> JSONResponse:
+    if user_id != student_id:
+        raise HTTPException(status_code=403, detail="Acceso no autorizado")
     try:
         import cloudinary
         import cloudinary.uploader
@@ -185,6 +189,8 @@ async def view_deliveries(grade: str, subject: str, user_id: str = Depends(teach
 
 @router.get("/student/deliveries/{student_id}")
 async def get_student_deliveries(student_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+    if user_id != student_id:
+        raise HTTPException(status_code=403, detail="Acceso no autorizado")
     db: Client = next(get_db())
     result = db.table("deliveries").select("*").eq("student_id", student_id).order("created_at", desc=True).limit(30).execute()
     deliveries = [{

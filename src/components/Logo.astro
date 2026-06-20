@@ -6,6 +6,7 @@ export interface Props {
 }
 
 const { size = 64, animated = false, class: className = '' } = Astro.props
+const uid = `logo-${crypto.randomUUID().slice(0, 8)}`
 ---
 
 <svg
@@ -19,23 +20,23 @@ const { size = 64, animated = false, class: className = '' } = Astro.props
   role="img"
 >
   <defs>
-    <linearGradient id="sol-grad" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id={`${uid}-sol-grad`} x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#F5A623" />
       <stop offset="60%" stop-color="#FFD166" />
       <stop offset="100%" stop-color="#C47F0A" />
     </linearGradient>
-    <linearGradient id="book-grad" x1="0" y1="1" x2="1" y2="0">
+    <linearGradient id={`${uid}-book-grad`} x1="0" y1="1" x2="1" y2="0">
       <stop offset="0%" stop-color="#6B1A1A" />
       <stop offset="100%" stop-color="#8B2A2A" />
     </linearGradient>
-    <radialGradient id="sol-glow" cx="0.5" cy="0.5" r="0.5">
+    <radialGradient id={`${uid}-sol-glow`} cx="0.5" cy="0.5" r="0.5">
       <stop offset="0%" stop-color="#F5A623" stop-opacity="0.3" />
       <stop offset="100%" stop-color="#F5A623" stop-opacity="0" />
     </radialGradient>
   </defs>
 
   <!-- Outer glow ring -->
-  <circle cx="128" cy="112" r="96" fill="url(#sol-glow)" />
+  <circle cx="128" cy="112" r="96" fill={`url(#${uid}-sol-glow)`} />
 
   <!-- Solar corona rays (8 minimalist rays alternating sizes) -->
   {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
@@ -44,7 +45,7 @@ const { size = 64, animated = false, class: className = '' } = Astro.props
       y1={112 + 52 * Math.sin(angle * Math.PI / 180)}
       x2={128 + (i % 2 === 0 ? 75 : 68) * Math.cos(angle * Math.PI / 180)}
       y2={112 + (i % 2 === 0 ? 75 : 68) * Math.sin(angle * Math.PI / 180)}
-      stroke="url(#sol-grad)"
+      stroke={`url(#${uid}-sol-grad)`}
       stroke-width="1.5"
       stroke-linecap="round"
       opacity="0.4"
@@ -54,7 +55,7 @@ const { size = 64, animated = false, class: className = '' } = Astro.props
   <!-- Book (base, below sun) -->
   <g transform="translate(128, 188)">
     <!-- Book spine -->
-    <rect x="-30" y="-12" width="60" height="24" rx="3" fill="url(#book-grad)" />
+    <rect x="-30" y="-12" width="60" height="24" rx="3" fill={`url(#${uid}-book-grad)`} />
     <!-- Left page -->
     <path d="M-2 -12 L-30 -6 L-30 12 L-2 12 Z" fill="#FFFBF0" opacity="0.15" />
     <!-- Right page -->
@@ -62,11 +63,11 @@ const { size = 64, animated = false, class: className = '' } = Astro.props
     <!-- Center fold line -->
     <line x1="0" y1="-12" x2="0" y2="12" stroke="#6B1A1A" stroke-width="1" opacity="0.5" />
     <!-- Bookmark ribbon dropping from center -->
-    <path d="M-3 12 L0 20 L3 12 Z" fill="url(#sol-grad)" opacity="0.85" />
+    <path d="M-3 12 L0 20 L3 12 Z" fill={`url(#${uid}-sol-grad)`} opacity="0.85" />
   </g>
 
   <!-- Sun circle (center) -->
-  <circle cx="128" cy="112" r="38" fill="url(#sol-grad)" />
+  <circle cx="128" cy="112" r="38" fill={`url(#${uid}-sol-grad)`} />
   <!-- Sun inner highlight -->
   <circle cx="128" cy="112" r="28" fill="#FFD166" opacity="0.35" />
   <!-- Sun core -->

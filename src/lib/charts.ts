@@ -37,6 +37,7 @@ export function getChartJS(): Promise<ChartJSModule> {
     })
     .catch((err) => {
       chartModulePromise = null
+      chartReady = false
       throw err
     })
 

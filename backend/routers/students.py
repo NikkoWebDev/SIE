@@ -338,3 +338,40 @@ async def get_student_materials(student_id: str, user_id: str = Depends(auth_dep
     except Exception as e:
         logger.warning("student materials fetch error: %s", e)
         return JSONResponse(content=[])
+
+
+@router.get("/schedule")
+async def get_student_schedule(
+    student_id: str = Query(..., min_length=1),
+    user_id: str = Depends(auth_dependency),
+) -> JSONResponse:
+    db: Client = next(get_db())
+    profile = db.table("profiles").select("id").eq("login_credential", student_id).execute()
+    if not profile.data:
+        return JSONResponse(content={"days": {}, "hours": []})
+    pid = profile.data[0]["id"]
+    meta = db.table("student_metadata").select("course_id").eq("profile_id", pid).execute()
+    if not meta.data or not meta.data[0].get("course_id"):
+        return JSONResponse(content={"days": {}, "hours": []})
+    course_id = meta.data[0]["course_id"]
+    rows = db.table("class_schedules").select("*, subjects(name)").eq("course_id", course_id).execute()
+    if not rows.data:
+        return JSONResponse(content={"days": {}, "hours": []})
+
+    def _fmt(t):
+        s = str(t)
+        return s[:5] if ":" in s else s
+    pairs = sorted(set((_fmt(r["start_time"]), _fmt(r["end_time"])) for r in rows.data), key=lambda x: x[0])
+    hours = [{"time": f"{st} - {et}"} for st, et in pairs]
+    idx_map = {pair: i for i, pair in enumerate(pairs)}
+    day_names = {1: "lunes", 2: "martes", 3: "miercoles", 4: "jueves", 5: "viernes"}
+    days = {n: [None] * len(hours) for n in day_names.values()}
+
+    for r in rows.data:
+        dow = r.get("day_of_week")
+        subj = (r.get("subjects") or {}).get("name", "")
+        key = (_fmt(r["start_time"]), _fmt(r["end_time"]))
+        if dow in day_names and subj and key in idx_map:
+            days[day_names[dow]][idx_map[key]] = {"subject": subj}
+
+    return JSONResponse(content={"days": days, "hours": hours})

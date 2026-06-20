@@ -9,13 +9,41 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from supabase import Client
 
-from config.database import get_db
+from config.database import get_admin_db
+from config.email import EmailNotConfigured, send_email
 
 logger = logging.getLogger("siee.password_reset")
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 RESET_CODE_LENGTH = 6
 RESET_CODE_TTL_MINUTES = 15
+
+
+def _send_reset_code(email: str, nombre: str, code: str) -> bool:
+    """Deliver the reset code by email. Returns True on success.
+
+    The code is never logged. Delivery failures are logged without the code.
+    """
+    subject = "VYNTRA — Código de recuperación de contraseña"
+    body = (
+        f"Hola {nombre},\n\n"
+        f"Tu código de recuperación es: {code}\n\n"
+        f"Este código expira en {RESET_CODE_TTL_MINUTES} minutos. "
+        "Si no solicitaste este cambio, ignora este mensaje.\n\n"
+        "— Equipo VYNTRA"
+    )
+    try:
+        send_email(email, subject, body)
+        return True
+    except EmailNotConfigured:
+        logger.error(
+            "reset code NOT delivered: SMTP no configurado. "
+            "Define SMTP_HOST/SMTP_USERNAME/SMTP_PASSWORD para habilitar el envío."
+        )
+        return False
+    except Exception as e:
+        logger.error("reset code delivery failed: %s", e)
+        return False
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -36,7 +64,7 @@ def _generate_reset_code(length: int = RESET_CODE_LENGTH) -> str:
 
 @router.post("/forgot-password")
 async def forgot_password(data: ForgotPasswordRequest) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
 
     profile = db.table("profiles").select("id, login_credential, fullname, email").eq("login_credential", data.login_credential).execute()
     if not profile.data:
@@ -61,14 +89,17 @@ async def forgot_password(data: ForgotPasswordRequest) -> JSONResponse:
         "expires_at": expires_at.isoformat(),
     }).execute()
 
-    logger.info("reset code generated for credential=%s (expires %s) code=%s", data.login_credential, expires_at.isoformat(), code)
-    try:
-        email = prof.get("email")
-        nombre = prof.get("fullname", "Usuario")
-        if email:
-            logger.info("[EMAIL PLACEHOLDER] Enviando código a %s: Código=%s para %s", email, code, nombre)
-    except Exception as e:
-        logger.warning("failed to prepare delivery for %s: %s", data.login_credential, e)
+    # SECURITY: never log the reset code. Log only that one was generated.
+    logger.info("reset code generated for credential=%s (expires %s)", data.login_credential, expires_at.isoformat())
+
+    email = prof.get("email")
+    nombre = prof.get("fullname", "Usuario")
+    if email:
+        delivered = _send_reset_code(email, nombre, code)
+        if not delivered:
+            logger.warning("reset code generated but not delivered for credential=%s", data.login_credential)
+    else:
+        logger.warning("reset code generated but profile has no email: credential=%s", data.login_credential)
 
     return JSONResponse(content={
         "message": "Si el usuario existe, recibirás un código de recuperación.",
@@ -77,7 +108,7 @@ async def forgot_password(data: ForgotPasswordRequest) -> JSONResponse:
 
 @router.post("/reset-password")
 async def reset_password(data: ResetPasswordRequest) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
 
     now = datetime.now(timezone.utc)
     result = db.table("password_reset_codes").select("*").eq("login_credential", data.login_credential).eq("code", data.code).eq("used", False).execute()

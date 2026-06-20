@@ -41,13 +41,13 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
           <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Gestión de Alumnado</h2>
-          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="openModal('estudiante')">Matricular</button>
+          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" data-action="open-modal" data-modal="estudiante">Matricular</button>
         </div>
         <div class="flex flex-wrap gap-3 mb-4">
           <input id="search-student" placeholder="Buscar por nombre o documento..." class="flex-1 min-w-[200px] bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon">
           <select id="filter-grade" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none"><option value="">Todos los grados</option>{GRADOS.map(g => <option value={g}>{g}</option>)}</select>
           <select id="filter-payment" class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none"><option value="">Todos los estados</option><option value="paid">Al día</option><option value="debt">En mora</option></select>
-          <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border" onclick="exportCSV()">Exportar CSV</button>
+          <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border" data-action="export-csv">Exportar CSV</button>
         </div>
         <div class="overflow-x-auto -mx-5 sm:mx-0">
           <table class="w-full text-xs min-w-[600px]">
@@ -63,7 +63,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
           <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Cuerpo Docente</h2>
-          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="openModal('docente')">Registrar Docente</button>
+          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" data-action="open-modal" data-modal="docente">Registrar Docente</button>
         </div>
         <div class="overflow-x-auto -mx-5 sm:mx-0"><table class="w-full text-xs min-w-[500px]"><thead><tr class="text-[10px] uppercase tracking-wider text-text-tertiary font-semibold"><th class="text-left p-2 border-b border-border">Docente</th><th class="text-left p-2 border-b border-border">ID</th><th class="text-left p-2 border-b border-border">Carga</th><th class="text-left p-2 border-b border-border">Acciones</th></tr></thead><tbody id="teachers-list"></tbody></table></div>
       </div>
@@ -79,7 +79,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
           <input id="subject-tutor-link" placeholder="Link Agente IA Tutor" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon">
           <input id="subject-planner-link" placeholder="Link Agente IA Planeador" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon">
         </div>
-        <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl" onclick="addSubject()">Crear Materia</button>
+        <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl" data-action="add-subject">Crear Materia</button>
       </div>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="admin-subjects-grid"></div>
     </section>
@@ -91,7 +91,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
         <input id="notice-title" placeholder="Título del aviso" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none mb-3">
         <textarea id="notice-content" rows="4" placeholder="Contenido del aviso..." class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none resize-y mb-3"></textarea>
         <input type="file" id="notice-file" accept="image/*,application/pdf" class="mb-3 text-sm">
-        <button class="w-full max-w-sm py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl" onclick="publishNotice()">Publicar Ahora</button>
+        <button class="w-full max-w-sm py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl" data-action="publish-notice">Publicar Ahora</button>
       </div>
       <div id="admin-notices-list" class="space-y-3"></div>
     </section>
@@ -103,8 +103,8 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
           <h3 class="font-bold text-sm mb-4">Nuevo Candidato</h3>
           <input id="cand-name" placeholder="Nombre completo" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none mb-3">
           <input type="file" id="cand-photo" accept="image/*" class="mb-3 text-sm">
-          <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl mb-3" onclick="addCandidate()">Postular</button>
-          <button class="w-full py-2.5 rounded-lg text-xs font-semibold text-brand-danger bg-brand-danger/10 hover:bg-brand-danger/20 transition-colors" onclick="resetElection()">Reiniciar Conteo</button>
+          <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl mb-3" data-action="add-candidate">Postular</button>
+          <button class="w-full py-2.5 rounded-lg text-xs font-semibold text-brand-danger bg-brand-danger/10 hover:bg-brand-danger/20 transition-colors" data-action="reset-election">Reiniciar Conteo</button>
         </div>
         <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
           <h3 class="font-bold text-sm mb-4">Resultados en Tiempo Real</h3>
@@ -119,7 +119,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
           <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Gestión de Administradores</h2>
-          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="openAdminModal()">Crear Admin</button>
+          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" data-action="open-admin-modal">Crear Admin</button>
         </div>
         <div id="admins-list" class="text-sm text-text-tertiary text-center py-4">Cargando...</div>
       </div>
@@ -136,8 +136,8 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       <h2 id="modal-title" class="font-bold text-brand-maroon dark:text-brand-gold-light mb-4" style="font-family:'Fraunces',serif">Formulario</h2>
       <form id="admin-form" class="space-y-3"></form>
       <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
-        <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border" onclick="document.getElementById('admin-modal').classList.add('hidden');document.getElementById('admin-modal').classList.remove('flex')">Cancelar</button>
-        <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white" onclick="saveForm()">Guardar</button>
+        <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border" data-action="close-modal">Cancelar</button>
+        <button class="px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white" data-action="save-form">Guardar</button>
       </div>
     </div>
   </div>
@@ -152,29 +152,36 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
     if (!['ADMIN','RECTOR'].includes(role)) { window.location.href = '/'; return }
     var userName = localStorage.getItem('userName') || 'Admin'
 
-    var sbName = document.getElementById('sidebar-username-admin'); if (sbName) sbName.textContent = userName
-    var sbMeta = document.getElementById('sidebar-metadata-admin'); if (sbMeta) sbMeta.textContent = 'Administrador'
+     var sbName = document.getElementById('sidebar-username-admin'); if (sbName) sbName.textContent = userName
+     var sbMeta = document.getElementById('sidebar-metadata-admin'); if (sbMeta) sbMeta.textContent = 'Administrador'
 
-    var sectionTitles = { inicio:'Panel de Administración', estudiantes:'Gestión de Alumnado', docentes:'Cuerpo Docente', materias:'Materias e IA', avisos:'Comunicados', elecciones:'Elecciones Escolares', administradores:'Administradores', chats:'Chats por Materia' }
-    var sectionSubs = { inicio:'Vista general del sistema', estudiantes:'Matricular, filtrar y exportar', docentes:'Registrar y asignar', materias:'Configurar materias y enlaces IA', avisos:'Publicar y gestionar avisos', elecciones:'Candidatos y resultados', administradores:'Crear y gestionar', chats:'Conversaciones por materia con el Asistente' }
-    function staggerCards(section) {
-      var cards = section.querySelectorAll('.solar-card')
-      cards.forEach(function(card, i) {
-        card.style.animationDelay = (i * 0.04) + 's'
-        card.classList.add('card-stagger')
-      })
-    }
+     var sectionTitles = { inicio:'Panel de Administración', estudiantes:'Gestión de Alumnado', docentes:'Cuerpo Docente', materias:'Materias e IA', avisos:'Comunicados', elecciones:'Elecciones Escolares', administradores:'Administradores', chats:'Chats por Materia' }
+     var sectionSubs = { inicio:'Vista general del sistema', estudiantes:'Matricular, filtrar y exportar', docentes:'Registrar y asignar', materias:'Configurar materias y enlaces IA', avisos:'Publicar y gestionar avisos', elecciones:'Candidatos y resultados', administradores:'Crear y gestionar', chats:'Conversaciones por materia con el Asistente' }
+     function staggerCards(section) {
+       var cards = section.querySelectorAll('.solar-card')
+       cards.forEach(function(card, i) {
+         card.style.animationDelay = (i * 0.04) + 's'
+         card.classList.add('card-stagger')
+       })
+     }
 
-    window.showSection = function(id) {
-      document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none'; s.classList.remove('section-enter') })
-      var sec = document.getElementById('sec-' + id)
-      if (sec) { sec.style.display = ''; sec.classList.remove('hidden'); sec.classList.add('section-enter'); staggerCards(sec) }
-      var t = document.querySelector('.topbar-heading'), p = document.querySelector('.topbar-subtitle')
-      if (t) t.textContent = sectionTitles[id] || id
-      if (p) p.textContent = sectionSubs[id] || ''
-      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id } }))
-      if (id === 'elecciones') loadElectionData()
-    }
+     // Only elecciones is dynamic — vote counts change
+     var dynamicSections = new Set(['elecciones'])
+     document.addEventListener('DOMContentLoaded', function() {
+       var router = window.createSectionRouter({
+         titles: sectionTitles,
+         subtitles: sectionSubs,
+         loaders: { elecciones: loadElectionData },
+         onNavigate: function(section) {
+           var sec = document.getElementById('sec-' + section)
+           if (sec) staggerCards(sec)
+         },
+         startSection: 'inicio'
+       })
+       window.showSection = function(id) {
+         router.showSection(id, dynamicSections.has(id))
+       }
+     })
 
     // Data cache
     var cache = { stats:null, students:null, teachers:null, notices:null, subjects:null }
@@ -193,10 +200,10 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
           vfetch(API, '/api/subjects',{signal:abortCtrl.signal}).then(function(r){return r.ok ? r.json() : null})
         ])
         cache.stats = results[0].status === 'fulfilled' ? results[0].value : null
-        cache.students = results[1].status === 'fulfilled' ? results[1].value : []
-        cache.teachers = results[2].status === 'fulfilled' ? results[2].value : []
-        cache.notices = results[3].status === 'fulfilled' ? results[3].value : []
-        cache.subjects = results[4].status === 'fulfilled' ? results[4].value : []
+        cache.students = results[1].status === 'fulfilled' ? (results[1].value?.data || results[1].value || []) : []
+        cache.teachers = results[2].status === 'fulfilled' ? (results[2].value?.data || results[2].value || []) : []
+        cache.notices = results[3].status === 'fulfilled' ? (results[3].value?.data || results[3].value || []) : []
+        cache.subjects = results[4].status === 'fulfilled' ? (results[4].value?.data || results[4].value || []) : []
         _fullStudents = (cache.students || []).slice()
         renderAll()
       } catch(e) { window.VyntraToast?.error('Error cargando datos del panel: ' + (e?.message || 'Reintente')) }
@@ -228,7 +235,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       var data = applyFilters()
       tbody.innerHTML = data.sort(function(a,b){return(a.is_paid===b.is_paid)?0:a.is_paid?1:-1}).map(function(s){
         return '<tr class="border-b border-border"><td class="p-2 text-[11px]">'+window.escapeHtml(s.document_id||'')+'</td><td class="p-2 text-xs font-medium">'+window.escapeHtml(s.fullname||'')+'</td><td class="p-2 text-xs">'+window.escapeHtml(s.grade||s.grado||'-')+'</td><td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold '+(s.is_paid!==false?'bg-success/10 text-success':'bg-brand-danger/10 text-brand-danger')+'">'+(s.is_paid!==false?'AL DÍA':'EN MORA')+'</span></td>'+
-          '<td class="p-2"><button class="text-xs text-brand-maroon hover:underline mr-2" onclick="togglePayment(\''+window.escapeHtml(s._id)+'\','+(s.is_paid!==false)+')">Cambiar</button><button class="text-xs text-brand-danger hover:underline" onclick="deleteStudent(\''+window.escapeHtml(s._id)+'\')">Eliminar</button></td></tr>'
+          '<td class="p-2"><button class="text-xs text-brand-maroon hover:underline mr-2" data-action="toggle-payment" data-student="'+window.escapeHtml(s._id)+'" data-paid="'+(s.is_paid!==false)+'">Cambiar</button><button class="text-xs text-brand-danger hover:underline" data-action="delete-student" data-student="'+window.escapeHtml(s._id)+'">Eliminar</button></td></tr>'
       }).join('') || '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">No hay estudiantes registrados</td></tr>'
     }
 
@@ -238,7 +245,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       tbody.innerHTML = data.length ? data.map(function(t){
         return '<tr class="border-b border-border"><td class="p-2"><div class="font-medium text-xs">'+window.escapeHtml(t.fullname)+'</div></td><td class="p-2 text-[11px]">'+window.escapeHtml(t.document_id)+'</td>'+
           '<td class="p-2"><div class="flex flex-wrap gap-1">'+(t.subjects||[]).map(function(s){return'<span class="px-1.5 py-0.5 rounded-full text-[10px] bg-brand-maroon/10 text-brand-maroon font-semibold">'+window.escapeHtml(s.name)+'</span>'}).join('')+'</div></td>'+
-          '<td class="p-2"><button class="text-xs text-brand-danger hover:underline" onclick="deleteTeacher(\''+window.escapeHtml(t.document_id)+'\')">Eliminar</button></td></tr>'
+          '<td class="p-2"><button class="text-xs text-brand-danger hover:underline" data-action="delete-teacher" data-doc-id="'+window.escapeHtml(t.document_id)+'">Eliminar</button></td></tr>'
       }).join('') : '<tr><td colspan="4" class="text-center py-8 text-text-tertiary">No hay docentes registrados</td></tr>'
     }
 
@@ -247,7 +254,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       var data = cache.subjects || []
       grid.innerHTML = data.length ? data.map(function(s){
         return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-4 border-l-3 border-l-brand-gold">'+
-          '<div class="flex justify-between"><h4 class="font-bold text-xs">'+window.escapeHtml(s.name)+'</h4><button class="text-brand-danger text-[10px]" onclick="deleteSubject(\''+window.escapeHtml(s.id)+'\')">Eliminar</button></div>'+
+          '<div class="flex justify-between"><h4 class="font-bold text-xs">'+window.escapeHtml(s.name)+'</h4><button class="text-brand-danger text-[10px]" data-action="delete-subject" data-subject-id="'+window.escapeHtml(s.id)+'">Eliminar</button></div>'+
           '<div class="text-[10px] text-text-tertiary">'+window.escapeHtml(s.grade)+'</div>'+
           (s.tutor_ai?'<a href="'+window.escapeHtml(s.tutor_ai)+'" target="_blank" class="inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-gold/10 text-brand-gold">Tutor IA</a>':'')+'</div>'
       }).join('') : '<p class="col-span-full text-center py-8 text-text-tertiary">No hay materias registradas</p>'
@@ -279,7 +286,7 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
         var res = await vfetch(API, '/api/admin/candidates')
         var data = await res.json()
         document.getElementById('candidates-management-list').innerHTML = (data||[]).map(function(c){
-          return'<div class="flex items-center gap-3 p-3 bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon/10 flex items-center justify-center font-bold text-xs">'+window.escapeHtml((c.name||'?').charAt(0))+'</div><div class="flex-1"><strong class="text-xs">'+window.escapeHtml(c.name)+'</strong> · <span class="text-xs text-text-tertiary">'+c.votes+' votos</span></div><button class="text-brand-danger text-xs" onclick="deleteCandidate(\''+window.escapeHtml(c.id)+'\')">Eliminar</button></div>'
+          return'<div class="flex items-center gap-3 p-3 bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl"><div class="w-8 h-8 rounded-full bg-brand-maroon/10 flex items-center justify-center font-bold text-xs">'+window.escapeHtml((c.name||'?').charAt(0))+'</div><div class="flex-1"><strong class="text-xs">'+window.escapeHtml(c.name)+'</strong> · <span class="text-xs text-text-tertiary">'+c.votes+' votos</span></div><button class="text-brand-danger text-xs" data-action="delete-candidate" data-candidate-id="'+window.escapeHtml(c.id)+'">Eliminar</button></div>'
         }).join('') || '<p class="text-center py-4 text-text-tertiary">No hay candidatos</p>'
         renderElectionChart(data||[])
       } catch(e) { var cl = document.getElementById('candidates-management-list'); if(cl) cl.innerHTML = '<p class="text-center py-4 text-text-tertiary">Error cargando candidatos.</p>' }
@@ -394,9 +401,9 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
       try {
         if (currentModalType === 'estudiante') {
           var grade = document.getElementById('modal-grade')?.value || ''
-          await vfetch(API, '/api/admin/students', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({document_id:doc, fullname:name, password:pass, grade:grade}) })
+          await vfetch(API, '/api/admin/students', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({login_credential:doc, fullname:name, password:pass, grade:grade}) })
         } else if (currentModalType === 'docente') {
-          await vfetch(API, '/api/admin/teachers', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({document_id:doc, teacher_name:name, password:pass}) })
+          await vfetch(API, '/api/admin/assign-teacher', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({document_id:doc, teacher_name:name, password:pass}) })
         } else if (currentModalType === 'admin') {
           await vfetch(API, '/api/admin/admins', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({document_id:doc, fullname:name, password:pass}) })
         }
@@ -409,9 +416,41 @@ const GRADOS = ['1°','2°','3°','4°','5°','6°','7°','8°','9°','10°','11
 
     // Init
     loadAllData()
-    document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') s.style.display = 'none' })
+    document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') { s.style.display = 'none'; s.style.contentVisibility = 'auto' } })
     document.getElementById('filter-grade')?.addEventListener('change', function() { _filterGrade = this.value; renderStudents() })
     document.getElementById('filter-payment')?.addEventListener('change', function() { _filterPayment = this.value; renderStudents() })
     document.getElementById('search-student')?.addEventListener('input', renderStudents)
+
+    // Modal Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var m = document.getElementById('admin-modal')
+        if (m && !m.classList.contains('hidden')) { m.classList.add('hidden'); m.classList.remove('flex') }
+      }
+    })
+
+    // Action delegation
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-action]')
+      if (!btn) return
+      var action = btn.dataset.action
+      var handler = {
+        'open-modal': function() { openModal(btn.dataset.modal) },
+        'export-csv': exportCSV,
+        'add-subject': addSubject,
+        'publish-notice': publishNotice,
+        'add-candidate': addCandidate,
+        'reset-election': resetElection,
+        'open-admin-modal': openAdminModal,
+        'close-modal': function() { var m = document.getElementById('admin-modal'); if (m) { m.classList.add('hidden'); m.classList.remove('flex') } },
+        'save-form': saveForm,
+        'toggle-payment': function() { togglePayment(btn.dataset.student, btn.dataset.paid !== 'false') },
+        'delete-student': function() { deleteStudent(btn.dataset.student) },
+        'delete-teacher': function() { deleteTeacher(btn.dataset.docId) },
+        'delete-subject': function() { deleteSubject(btn.dataset.subjectId) },
+        'delete-candidate': function() { deleteCandidate(btn.dataset.candidateId) },
+      }
+      if (handler[action]) handler[action]()
+    })
   })()
 </script>

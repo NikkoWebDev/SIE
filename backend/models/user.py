@@ -1,15 +1,8 @@
 from datetime import datetime, timezone
-from enum import StrEnum
 from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
-
-
-class UserRole(StrEnum):
-    STUDENT = "ESTUDIANTE"
-    TEACHER = "PROFESOR"
-    ADMIN = "RECTOR"
 
 
 class StudentCreate(BaseModel):
@@ -17,7 +10,7 @@ class StudentCreate(BaseModel):
     fullname: str = Field(..., min_length=3, max_length=120)
     grade: str = Field(..., min_length=1, max_length=10)
     is_paid: bool = Field(default=True)
-    role: UserRole = Field(default=UserRole.STUDENT)
+    role: str = "student"
 
     model_config = {"extra": "forbid"}
 
@@ -70,7 +63,7 @@ class TeacherDB(BaseModel):
     document_id: str
     teacher_name: str
     password: str
-    role: UserRole = UserRole.TEACHER
+    role: str = "teacher"
     subjects: list[str] = Field(default_factory=list)
     grades: list[str] = Field(default_factory=list)
     is_homeroom_teacher: bool = False
@@ -93,7 +86,7 @@ class AdminCreate(BaseModel):
     document_id: str = Field(..., min_length=5, pattern=r"^\d+$")
     fullname: str = Field(..., min_length=3, max_length=120)
     password: str = Field(..., min_length=4, max_length=128)
-    role: UserRole = Field(default=UserRole.ADMIN)
+    role: str = "admin"
 
     model_config = {"extra": "forbid"}
 
@@ -103,7 +96,7 @@ class AdminDB(BaseModel):
     document_id: str
     fullname: str
     password: str
-    role: UserRole = UserRole.ADMIN
+    role: str = "admin"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = {"populate_by_name": True}
@@ -136,7 +129,7 @@ class UserCreate(BaseModel):
     document_id: str = Field(..., min_length=5, pattern=r"^\d+$")
     fullname: str = Field(..., min_length=3, max_length=120)
     password: str = Field(..., min_length=4, max_length=128)
-    role: UserRole = Field(default=UserRole.STUDENT)
+    role: str = "student"
     grade: str = Field(default="", max_length=10)
     is_paid: bool = True
 

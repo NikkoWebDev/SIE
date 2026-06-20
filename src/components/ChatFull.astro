@@ -278,7 +278,7 @@ const rc = cfg[role]
               var p = JSON.parse(d)
               if (p.model) { var mi = document.getElementById('chat-model-indicator-' + role); if(mi) { mi.textContent = p.model; mi.classList.remove('hidden') } }
               else if (p.token) { fullText += p.token; bubble.innerHTML = renderMd(fullText); scrollBottom() }
-              else if (p.error) { bubble.innerHTML = '<span style="color:var(--danger)">' + p.error + '</span>' }
+              else if (p.error) { bubble.textContent = p.error; bubble.style.color = 'var(--danger)' }
             } catch(_) {}
           }
         }

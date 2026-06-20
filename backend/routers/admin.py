@@ -10,7 +10,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from supabase import Client
 
-from config.database import get_db
+from config.database import get_admin_db
+from config.email import send_email
 from dependencies import admin_dependency, audit, auth_dependency
 from models import FinancialToggleSchema, UserCreate, VoteRequest
 
@@ -37,29 +38,29 @@ class AbpProjectUpdate(BaseModel):
 
 @router.get("/stats")
 async def admin_stats() -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     total_students = db.table("profiles").select("*", count="exact").eq("role", "student").execute().count
     total_teachers = db.table("profiles").select("*", count="exact").eq("role", "teacher").execute().count
     total_admins = db.table("profiles").select("*", count="exact").eq("role", "admin").execute().count
 
-    mora_count = 0
-    meta_result = db.table("student_metadata").select("months_in_arrears").execute()
-    for m in meta_result.data:
-        if m.get("months_in_arrears", 0) >= 2:
-            mora_count += 1
+    # mora count via DB filter (was Python-side aggregation across all rows)
+    mora_count = db.table("student_metadata").select("*", count="exact").gte("months_in_arrears", 2).execute().count
 
     total_notices = db.table("notices").select("*", count="exact").execute().count
     total_exams = db.table("exams").select("*", count="exact").execute().count
     total_grades = db.table("grades").select("*", count="exact").execute().count
 
-    grades_data = db.table("grades").select("score").execute()
-    scores = [float(g.get("score", 0)) for g in grades_data.data]
+    # Sampled average for performance — exact value would require a Postgres RPC.
+    # Acceptable since this stat is informational, not critical.
+    grades_sample = db.table("grades").select("score").limit(2000).execute()
+    scores = [float(g.get("score", 0)) for g in (grades_sample.data or [])]
     promedio = round(sum(scores) / len(scores), 1) if scores else 0.0
 
     return JSONResponse(content={
         "total_students": total_students or 0,
-        "mora": mora_count,
-        "total_teachers": (total_teachers or 0) + (total_admins or 0),
+        "mora": mora_count or 0,
+        "total_teachers": total_teachers or 0,
+        "total_admins": total_admins or 0,
         "total_notices": total_notices or 0,
         "total_exams": total_exams or 0,
         "total_grades": total_grades or 0,
@@ -69,7 +70,7 @@ async def admin_stats() -> JSONResponse:
 
 @router.get("/mora-students")
 async def mora_students() -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     meta_result = db.table("student_metadata").select("profile_id, months_in_arrears, total_balance, current_status").gte("months_in_arrears", 2).execute()
     if not meta_result.data:
         return JSONResponse(content=[])
@@ -104,7 +105,7 @@ async def add_candidate(
         logger.error("cloudinary upload failed: %s", exc)
         raise HTTPException(status_code=500, detail="Error al subir la imagen del candidato")
 
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     db.table("candidates").insert({
         "name": name,
         "position": position,
@@ -116,28 +117,28 @@ async def add_candidate(
 
 @router.get("/candidates")
 async def list_candidates() -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     result = db.table("candidates").select("*").order("name").execute()
     return JSONResponse(content=result.data)
 
 
 @router.delete("/candidates/{candidate_id}")
 async def delete_candidate(candidate_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     db.table("candidates").delete().eq("id", candidate_id).execute()
     return JSONResponse(content={"message": "Candidato eliminado"})
 
 
 @router.get("/election-results")
 async def election_results() -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     result = db.table("candidates").select("name, votes, position").order("name").execute()
     return JSONResponse(content=result.data)
 
 
 @router.post("/election-reset")
 async def reset_election(user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     db.table("votes").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
     db.table("candidates").update({"votes": 0}).neq("id", "00000000-0000-0000-0000-000000000000").execute()
     audit.log("election_reset", user_id, detail="All votes and candidate tallies reset")
@@ -146,7 +147,7 @@ async def reset_election(user_id: str = Depends(admin_dependency)) -> JSONRespon
 
 @router.post("/students")
 async def enroll_student(data: UserCreate, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     existing = db.table("profiles").select("id").eq("login_credential", data.login_credential).execute()
     if existing.data:
         raise HTTPException(status_code=409, detail="El documento ID ya está registrado")
@@ -185,7 +186,7 @@ class TeacherRegisterRequest(BaseModel):
 
 @router.post("/assign-teacher", status_code=201)
 async def register_teacher(data: TeacherRegisterRequest, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     existing = db.table("profiles").select("id").eq("login_credential", data.document_id).execute()
     if existing.data:
         raise HTTPException(status_code=409, detail="El docente ya existe")
@@ -215,7 +216,7 @@ class AdminCreateRequest(BaseModel):
 
 @router.post("/admins", status_code=201)
 async def create_admin(data: AdminCreateRequest, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     existing = db.table("profiles").select("id").eq("login_credential", data.login_credential).execute()
     if existing.data:
         raise HTTPException(status_code=409, detail="El usuario ya existe")
@@ -235,7 +236,7 @@ async def create_admin(data: AdminCreateRequest, user_id: str = Depends(admin_de
 
 @router.get("/teachers")
 async def list_teachers_with_subjects(user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     teachers_profiles = db.table("profiles").select("id, login_credential, fullname").eq("role", "teacher").execute()
     assignments = db.table("teacher_assignments").select("teacher_id, subject_id, grade, subjects!inner(name)").execute()
     assign_map: dict[str, list[dict]] = {}
@@ -273,7 +274,7 @@ class SubjectAssignRequest(BaseModel):
 
 @router.put("/teachers/{doc_id}/subjects")
 async def assign_teacher_subject(doc_id: str, data: SubjectAssignRequest, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     teacher = db.table("profiles").select("id").eq("login_credential", doc_id).execute()
     if not teacher.data:
         raise HTTPException(status_code=404, detail="Docente no encontrado")
@@ -292,7 +293,7 @@ class DirectorAssignRequest(BaseModel):
 
 @router.patch("/teachers/{doc_id}/director")
 async def set_teacher_director(doc_id: str, data: DirectorAssignRequest, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     teacher = db.table("profiles").select("id").eq("login_credential", doc_id).execute()
     if not teacher.data:
         raise HTTPException(status_code=404, detail="Docente no encontrado")
@@ -301,8 +302,6 @@ async def set_teacher_director(doc_id: str, data: DirectorAssignRequest, user_id
     if existing.data:
         db.table("teacher_metadata").update({"director_grade": data.grade}).eq("profile_id", teacher_id).execute()
     else:
-        import json
-        # Supabase Python client with .insert() 
         db.table("teacher_metadata").insert({"profile_id": teacher_id, "director_grade": data.grade}).execute()
     course = db.table("courses").select("id").eq("grade", data.grade).execute()
     if course.data:
@@ -312,7 +311,7 @@ async def set_teacher_director(doc_id: str, data: DirectorAssignRequest, user_id
 
 @router.delete("/teachers/{doc_id}")
 async def delete_teacher_profile(doc_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     teacher = db.table("profiles").select("id").eq("login_credential", doc_id).execute()
     if not teacher.data:
         raise HTTPException(status_code=404, detail="Docente no encontrado")
@@ -325,7 +324,9 @@ async def delete_teacher_profile(doc_id: str, user_id: str = Depends(admin_depen
 
 @router.post("/student/cast-vote")
 async def cast_vote(data: VoteRequest, user_id: str = Depends(auth_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
+    if user_id != data.student_id:
+        raise HTTPException(status_code=403, detail="No puedes votar por otro estudiante")
     existing = db.table("votes").select("*").eq("student_id", data.student_id).execute()
     if existing.data:
         raise HTTPException(status_code=400, detail="Ya has votado")
@@ -351,7 +352,7 @@ async def admin_list_students(
     per_page: int = Query(50, ge=1, le=200),
     user_id: str = Depends(admin_dependency),
 ) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     count_result = db.table("profiles").select("id", count="exact").eq("role", "student").execute()
     total = getattr(count_result, 'count', None) or 0
     offset = (page - 1) * per_page
@@ -385,7 +386,7 @@ async def admin_list_students(
 
 @router.patch("/students/{profile_id}/financial")
 async def admin_toggle_financial(profile_id: str, body: FinancialToggleSchema, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     is_paid = body.is_paid
     update = {
         "months_in_arrears": 0 if is_paid else 2,
@@ -398,7 +399,7 @@ async def admin_toggle_financial(profile_id: str, body: FinancialToggleSchema, u
 
 @router.get("/at-risk-students")
 async def risk_students() -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     result = db.table("grades").select("student_id, score").execute()
     if not result.data:
         return JSONResponse(content=[])
@@ -424,7 +425,7 @@ async def risk_students() -> JSONResponse:
 
 @router.get("/financial-summary")
 async def financial_summary() -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
 
     profiles = db.table("profiles").select("id").eq("role", "student").execute()
     total_students = len(profiles.data)
@@ -462,7 +463,7 @@ async def financial_summary() -> JSONResponse:
 
 @router.get("/incidents")
 async def list_incidents(limit: int = Query(50, ge=1, le=200)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     result = db.table("incident_reports").select("id, student_id, exam_id, incident_type, severity, description, created_at").order("created_at", desc=True).limit(limit).execute()
     if not result.data:
         return JSONResponse(content=[])
@@ -500,7 +501,7 @@ async def list_incidents(limit: int = Query(50, ge=1, le=200)) -> JSONResponse:
 
 @router.get("/abp-projects")
 async def list_abp_projects() -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     try:
         result = db.table("abp_projects").select("id, name, description, linked_subject_ids, is_active, project_trigger_keyword, created_at").order("created_at", desc=True).execute()
     except Exception as exc:
@@ -527,7 +528,7 @@ async def list_abp_projects() -> JSONResponse:
 
 @router.post("/abp-projects", status_code=201)
 async def create_abp_project(data: AbpProjectCreate, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     try:
         db.table("abp_projects").select("id").limit(1).execute()
     except Exception as exc:
@@ -542,7 +543,7 @@ async def create_abp_project(data: AbpProjectCreate, user_id: str = Depends(admi
 
 @router.put("/abp-projects/{project_id}")
 async def update_abp_project(project_id: str, data: AbpProjectUpdate, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     update_data = {k: v for k, v in data.model_dump(exclude_none=True).items()}
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -555,7 +556,7 @@ async def update_abp_project(project_id: str, data: AbpProjectUpdate, user_id: s
 
 @router.delete("/abp-projects/{project_id}")
 async def delete_abp_project(project_id: str, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     result = db.table("abp_projects").delete().eq("id", project_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Proyecto ABP no encontrado")
@@ -566,7 +567,7 @@ async def delete_abp_project(project_id: str, user_id: str = Depends(admin_depen
 
 @router.get("/materials-count")
 async def materials_count() -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     try:
         result = db.table("class_materials").select("*", count="exact").execute()
         total = result.count or 0
@@ -585,7 +586,7 @@ async def materials_count() -> JSONResponse:
 
 @router.get("/skill-thermometer")
 async def skill_thermometer() -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     try:
         results = db.table("exam_results").select("score").execute()
         scores = [float(r.get("score", 0)) for r in results.data] if results.data else []
@@ -620,7 +621,7 @@ def _generate_temp_password(length: int = 12) -> str:
 
 @router.get("/identity-directory")
 async def identity_directory(search: str = Query("", max_length=100)) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     profiles = db.table("profiles").select("id, fullname, login_credential, role, is_active").execute()
     items = profiles.data or []
     if search:
@@ -638,20 +639,29 @@ async def identity_directory(search: str = Query("", max_length=100)) -> JSONRes
 
 @router.post("/reset-password")
 async def reset_password(data: ResetPasswordRequest, user_id: str = Depends(admin_dependency)) -> JSONResponse:
-    db: Client = next(get_db())
-    profile = db.table("profiles").select("id, fullname, login_credential").eq("id", data.profile_id).execute()
+    db: Client = next(get_admin_db())
+    profile = db.table("profiles").select("id, fullname, login_credential, email").eq("id", data.profile_id).execute()
     if not profile.data:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
+    prof = profile.data[0]
     temp_pass = _generate_temp_password()
     hashed = bcrypt.hashpw(temp_pass.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
     db.table("profiles").update({"password_hash": hashed}).eq("id", data.profile_id).execute()
 
+    email = prof.get("email")
+    if email:
+        try:
+            send_email(email, "VYNTRA — Contraseña temporal", f"Hola {prof.get('fullname', 'Usuario')},\n\nTu contraseña temporal es: {temp_pass}\n\n— Equipo VYNTRA")
+        except Exception:
+            logger.warning("temp password not delivered by email for profile=%s", data.profile_id)
+    else:
+        logger.warning("temp password not delivered: profile has no email for profile=%s", data.profile_id)
+
     logger.info("password reset profile=%s by admin=%s", data.profile_id, user_id)
     return JSONResponse(content={
         "status": "reset",
-        "temporary_password": temp_pass,
         "profile_id": data.profile_id,
-        "fullname": profile.data[0].get("fullname", ""),
-        "login_credential": profile.data[0].get("login_credential", ""),
+        "fullname": prof.get("fullname", ""),
+        "login_credential": prof.get("login_credential", ""),
     })

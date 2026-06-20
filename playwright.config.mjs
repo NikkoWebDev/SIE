@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
@@ -6,13 +6,12 @@ export default defineConfig({
   timeout: 30000,
   retries: 1,
   webServer: {
-    command: 'npm run dev -- --port 4321',
+    command: 'python3 -m http.server 4321 --directory dist',
     port: 4321,
     reuseExistingServer: !process.env.CI,
-    timeout: 30000,
+    timeout: 15000,
   },
   use: {
-    viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
     video: 'on-first-retry',
     trace: 'on-first-retry'
@@ -21,14 +20,21 @@ export default defineConfig({
     {
       name: 'chromium',
       use: {
-        browserName: 'chromium',
+        ...devices['Desktop Chrome'],
         headless: false
       }
     },
     {
       name: 'ci',
       use: {
-        browserName: 'chromium',
+        ...devices['Desktop Chrome'],
+        headless: true
+      }
+    },
+    {
+      name: 'mobile',
+      use: {
+        ...devices['iPhone 13'],
         headless: true
       }
     }

@@ -14,7 +14,7 @@ class GradeSubmission(BaseModel):
     student_id: str = Field(..., min_length=1)
     teacher_id: str = Field(..., min_length=1)
     course_id: str = Field(default="default")
-    project_id: str = Field(..., min_length=1)
+    project_id: str = Field(default="")
     subject_id: str = Field(..., min_length=1)
     score: float = Field(..., ge=0.0, le=MAX_GRADE)
     observations: str = Field(default="", max_length=500)
@@ -89,7 +89,7 @@ class ExamCreate(BaseModel):
 
 
 class ExamSubmit(BaseModel):
-    student_id: str = Field(..., min_length=1)
+    student_id: str = ""
     exam_id: str = Field(..., min_length=1)
     answers: list[int] = Field(..., min_length=1)
     model_config = {"extra": "forbid"}

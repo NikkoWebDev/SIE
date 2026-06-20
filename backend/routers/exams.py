@@ -86,7 +86,7 @@ async def submit_exam(data: ExamSubmit, user_id: str = Depends(auth_dependency))
     if not questions:
         raise HTTPException(status_code=400, detail="Examen sin preguntas")
 
-    dupe = db.table("exam_results").select("*").eq("student_id", data.student_id).eq("exam_id", data.exam_id).execute()
+    dupe = db.table("exam_results").select("*").eq("student_id", user_id).eq("exam_id", data.exam_id).execute()
     if dupe.data:
         raise HTTPException(status_code=400, detail="Ya has presentado este examen")
 
@@ -99,7 +99,7 @@ async def submit_exam(data: ExamSubmit, user_id: str = Depends(auth_dependency))
     now = datetime.now(timezone.utc).isoformat()
 
     db.table("exam_results").insert({
-        "student_id": data.student_id,
+        "student_id": user_id,
         "exam_id": data.exam_id,
         "score": final_grade,
         "correct": correct_count,
@@ -111,22 +111,26 @@ async def submit_exam(data: ExamSubmit, user_id: str = Depends(auth_dependency))
     subject_lookup = db.table("subjects").select("id").eq("name", subject_name).execute()
     resolved_subject_id = subject_lookup.data[0]["id"] if subject_lookup.data else ""
 
+    # C6: the grade must be attributed to the exam's author, not the student
+    # submitting it (user_id here is the student via auth_dependency).
+    exam_teacher_id = exam.get("teacher_id", "")
+
     db.table("grades").upsert({
-        "student_id": data.student_id,
+        "student_id": user_id,
         "subject_id": resolved_subject_id,
         "project_id": f"exam_{data.exam_id[:8]}",
         "score": final_grade,
         "observations": f"Nota automática: {exam.get('title', 'Examen')}",
         "created_at": now,
-        "teacher_id": user_id,
+        "teacher_id": exam_teacher_id,
         "course_id": exam.get("grade", ""),
     }, on_conflict="student_id, subject_id, project_id").execute()
 
     if final_grade < 3.5:
-        profile = db.table("profiles").select("fullname").eq("id", data.student_id).execute()
+        profile = db.table("profiles").select("fullname").eq("id", user_id).execute()
         student_name = profile.data[0].get("fullname", "") if profile.data else ""
         risk_doc = {
-            "student_id": data.student_id,
+            "student_id": user_id,
             "alert_type": "exam_risk",
             "severity": "high" if final_grade < 2.5 else "medium",
             "avg_score": final_grade,
@@ -136,7 +140,7 @@ async def submit_exam(data: ExamSubmit, user_id: str = Depends(auth_dependency))
         db.table("risk_alerts").insert(risk_doc).execute()
         await ws_manager.broadcast({
             "type": "RISK_ALERT",
-            "student_id": data.student_id,
+            "student_id": user_id,
             "student_name": student_name,
             "avg_score": final_grade,
             "subject": exam.get("title", ""),
@@ -158,7 +162,7 @@ async def save_exam_progress(data: ExamProgressSchema, user_id: str = Depends(au
     doc = data.model_dump()
     doc["last_saved_at"] = now
 
-    existing = db.table("exam_progress").select("*").eq("student_id", data.student_id).eq("exam_id", data.exam_id).execute()
+    existing = db.table("exam_progress").select("*").eq("student_id", user_id).eq("exam_id", data.exam_id).execute()
     if existing.data:
         db.table("exam_progress").update(doc).eq("id", existing.data[0]["id"]).execute()
     else:
@@ -223,7 +227,7 @@ async def handle_disconnect(data: IncidentReport, user_id: str = Depends(auth_de
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     db.table("incident_reports").insert(doc).execute()
 
-    progress = db.table("exam_progress").select("*").eq("student_id", data.student_id).eq("exam_id", data.exam_id).execute()
+    progress = db.table("exam_progress").select("*").eq("student_id", user_id).eq("exam_id", data.exam_id).execute()
     if progress.data:
         db.table("exam_progress").update({"interrupted": True, "last_saved_at": doc["created_at"]}).eq("id", progress.data[0]["id"]).execute()
 

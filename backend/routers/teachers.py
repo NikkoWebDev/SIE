@@ -5,10 +5,9 @@ import json
 import logging
 import os
 import secrets
-import string
 import traceback
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile
@@ -18,7 +17,7 @@ from supabase import Client
 
 from config.database import get_db
 from config.settings import ABP_PROPAGATED_SUBJECTS
-from dependencies import auth_dependency, teacher_dependency
+from dependencies import teacher_dependency
 from managers import ws_manager
 from models import GradeSubmission
 
@@ -90,20 +89,44 @@ def _propagate_abp_grade(
     score: float,
     teacher_id: str,
     course_id: str,
-) -> list[str]:
+) -> tuple[list[str], dict[str, str]]:
+    """Propagate an ABP grade to all linked subjects.
+
+    Returns:
+        (propagated_names, name_to_id_map) — name_to_id_map covers the propagated subjects
+        and lets callers (e.g. propagation_log) skip a second round of name→id lookups.
+    """
     propagated: list[str] = []
+    name_to_id: dict[str, str] = {}
     normalized = project_id.strip().lower()
     if "abp" not in normalized and "proyecto" not in normalized:
-        return propagated
+        return propagated, name_to_id
+
+    target_names = [n for n in ABP_PROPAGATED_SUBJECTS if n != original_subject_name.strip()]
+    if not target_names:
+        return propagated, name_to_id
+
+    # Batch 1: resolve all target subjects in a single query.
+    subjects_res = db.table("subjects").select("id, name").in_("name", target_names).execute()
+    subject_rows = subjects_res.data or []
+    if not subject_rows:
+        return propagated, name_to_id
+    name_to_id = {row["name"]: row["id"] for row in subject_rows if row.get("id") and row.get("name")}
+    target_ids = list(name_to_id.values())
+
+    # Batch 2: find existing grades for this student/project across all target subjects.
+    existing_res = (
+        db.table("grades")
+        .select("id, subject_id")
+        .eq("student_id", student_uuid)
+        .eq("project_id", project_id)
+        .in_("subject_id", target_ids)
+        .execute()
+    )
+    existing_by_subject = {row["subject_id"]: row["id"] for row in (existing_res.data or [])}
 
     now = datetime.now(timezone.utc).isoformat()
-    for target_name in ABP_PROPAGATED_SUBJECTS:
-        if target_name == original_subject_name.strip():
-            continue
-        target = db.table("subjects").select("id").eq("name", target_name).execute()
-        if not target.data:
-            continue
-        target_id = target.data[0]["id"]
+    for target_name, target_id in name_to_id.items():
         doc = {
             "student_id": student_uuid,
             "subject_id": target_id,
@@ -114,13 +137,13 @@ def _propagate_abp_grade(
             "teacher_id": teacher_id,
             "course_id": course_id,
         }
-        existing = db.table("grades").select("*").eq("student_id", student_uuid).eq("subject_id", target_id).eq("project_id", project_id).execute()
-        if existing.data:
-            db.table("grades").update(doc).eq("id", existing.data[0]["id"]).execute()
+        existing_id = existing_by_subject.get(target_id)
+        if existing_id:
+            db.table("grades").update(doc).eq("id", existing_id).execute()
         else:
             db.table("grades").insert(doc).execute()
         propagated.append(target_name)
-    return propagated
+    return propagated, name_to_id
 
 
 @router.post("/submit-grade", status_code=201)
@@ -147,10 +170,11 @@ async def submit_grade(submission: GradeSubmission, user_id: str = Depends(teach
         "subject_id": subject_uuid,
         "score": submission.score,
         "observations": submission.observations,
+        "period": submission.period,
         "created_at": now,
     }
 
-    existing = db.table("grades").select("*").eq("student_id", student_uuid).eq("subject_id", subject_uuid).eq("project_id", submission.project_id).execute()
+    existing = db.table("grades").select("*").eq("student_id", student_uuid).eq("subject_id", subject_uuid).eq("project_id", submission.project_id).eq("period", submission.period).execute()
     if existing.data:
         db.table("grades").update(doc).eq("id", existing.data[0]["id"]).execute()
         grade_id = existing.data[0]["id"]
@@ -158,7 +182,7 @@ async def submit_grade(submission: GradeSubmission, user_id: str = Depends(teach
         result = db.table("grades").insert(doc).execute()
         grade_id = result.data[0]["id"]
 
-    propagated = _propagate_abp_grade(
+    propagated, propagated_name_to_id = _propagate_abp_grade(
         db, student_uuid, original_subject_name,
         submission.project_id, submission.score,
         submission.teacher_id, submission.course_id,
@@ -178,11 +202,8 @@ async def submit_grade(submission: GradeSubmission, user_id: str = Depends(teach
     if is_abp_subject:
         propagation_note = f"Nota propagada automáticamente a las {len(propagated)} materias vinculadas"
         if propagated:
-            subject_ids = []
-            for name in propagated:
-                sid = db.table("subjects").select("id").eq("name", name).execute()
-                if sid.data:
-                    subject_ids.append(sid.data[0]["id"])
+            # Reuse the name→id map from _propagate_abp_grade — no re-query needed.
+            subject_ids = [propagated_name_to_id[name] for name in propagated if name in propagated_name_to_id]
             db.table("propagation_log").insert({
                 "grade_id": grade_id,
                 "original_subject_id": subject_uuid,
@@ -546,11 +567,11 @@ async def get_skill_badges(user_id: str = Depends(teacher_dependency)) -> JSONRe
 
 # ── Planilla: batch grades for a subject+cours ────────────────
 
-@router.get("/teacher/planilla-grades")
+@router.get("/planilla-grades")
 async def get_planilla_grades(
     subject: str = Query(...),
     course: str = Query(...),
-    user_id: str = Depends(auth_dependency),
+    user_id: str = Depends(teacher_dependency),
 ) -> JSONResponse:
     db: Client = next(get_db())
     subject_obj = db.table("subjects").select("id").eq("name", subject).execute()
@@ -574,8 +595,8 @@ async def get_planilla_grades(
 
 # ── Teacher's Subjects (legacy compatible) ──────────────────────
 
-@router.get("/teacher/my-subjects/{teacher_id}")
-async def get_teacher_subjects(teacher_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+@router.get("/my-subjects/{teacher_id}")
+async def get_teacher_subjects(teacher_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     teacher = db.table("profiles").select("id").eq("login_credential", teacher_id).execute()
     if not teacher.data:
@@ -596,9 +617,51 @@ async def get_teacher_subjects(teacher_id: str, user_id: str = Depends(auth_depe
     return JSONResponse(content=subjects)
 
 
+# ── Teacher Schedule ────────────────────────────────────────────
+
+@router.get("/schedule")
+async def get_teacher_schedule(
+    teacher_id: str = Query(..., min_length=1),
+    user_id: str = Depends(teacher_dependency),
+) -> JSONResponse:
+    db: Client = next(get_db())
+    teacher = db.table("profiles").select("id").eq("login_credential", teacher_id).execute()
+    if not teacher.data:
+        return JSONResponse(content={"grado": "No asignado", "days": {}, "hours": []})
+    tid = teacher.data[0]["id"]
+    assignments = db.table("teacher_assignments").select("course_id, courses!inner(name)").eq("teacher_id", tid).execute()
+    if not assignments.data:
+        return JSONResponse(content={"grado": "No asignado", "days": {}, "hours": []})
+
+    course_ids = list(set(a.get("course_id") for a in assignments.data if a.get("course_id")))
+    grado = assignments.data[0].get("courses", {}).get("name", "No asignado")
+
+    rows = db.table("class_schedules").select("*, subjects(name)").in_("course_id", course_ids).execute()
+    if not rows.data:
+        return JSONResponse(content={"grado": grado, "days": {}, "hours": []})
+
+    def _fmt(t):
+        s = str(t)
+        return s[:5] if ":" in s else s
+    pairs = sorted(set((_fmt(r["start_time"]), _fmt(r["end_time"])) for r in rows.data), key=lambda x: x[0])
+    hours = [{"time": f"{st} - {et}"} for st, et in pairs]
+    idx_map = {pair: i for i, pair in enumerate(pairs)}
+    day_names = {1: "lunes", 2: "martes", 3: "miércoles", 4: "jueves", 5: "viernes"}
+    days = {n: [None] * len(hours) for n in day_names.values()}
+
+    for r in rows.data:
+        dow = r.get("day_of_week")
+        subj = (r.get("subjects") or {}).get("name", "")
+        key = (_fmt(r["start_time"]), _fmt(r["end_time"]))
+        if dow in day_names and subj and key in idx_map:
+            days[day_names[dow]][idx_map[key]] = {"subject": subj}
+
+    return JSONResponse(content={"grado": grado, "days": days, "hours": hours})
+
+
 # ── Teacher Guide Upload (legacy compatible) ───────────────────
 
-@router.post("/teacher/guides", status_code=201)
+@router.post("/guides", status_code=201)
 async def upload_guide_v2(
     title: str = Form(...),
     subject_name: str = Form(...),
@@ -629,8 +692,8 @@ async def upload_guide_v2(
     return JSONResponse(content={"message": "Guía publicada"}, status_code=201)
 
 
-@router.get("/teacher/guides/{teacher_id}")
-async def list_teacher_guides(teacher_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+@router.get("/guides/{teacher_id}")
+async def list_teacher_guides(teacher_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("guides").select("*").eq("teacher_id", teacher_id).order("created_at", desc=True).execute()
     guides = []
@@ -649,8 +712,8 @@ async def list_teacher_guides(teacher_id: str, user_id: str = Depends(auth_depen
 
 # ── Teacher's Exams (legacy compatible) ────────────────────────
 
-@router.get("/teacher/my-exams/{teacher_id}")
-async def get_teacher_exams(teacher_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+@router.get("/my-exams/{teacher_id}")
+async def get_teacher_exams(teacher_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("exams").select("*").eq("teacher_id", teacher_id).order("created_at", desc=True).execute()
     exams = []
@@ -669,8 +732,8 @@ async def get_teacher_exams(teacher_id: str, user_id: str = Depends(auth_depende
 
 # ── Delete teacher resources ──────────────────────────────────
 
-@router.delete("/teacher/guides/{guide_id}")
-async def delete_guide(guide_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+@router.delete("/guides/{guide_id}")
+async def delete_guide(guide_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("guides").delete().eq("id", guide_id).execute()
     if not result.data:
@@ -678,8 +741,8 @@ async def delete_guide(guide_id: str, user_id: str = Depends(auth_dependency)) -
     return JSONResponse(content={"message": "Guía eliminada"})
 
 
-@router.delete("/teacher/deliveries/{delivery_id}")
-async def delete_delivery(delivery_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+@router.delete("/deliveries/{delivery_id}")
+async def delete_delivery(delivery_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     result = db.table("deliveries").delete().eq("id", delivery_id).execute()
     if not result.data:
@@ -687,8 +750,8 @@ async def delete_delivery(delivery_id: str, user_id: str = Depends(auth_dependen
     return JSONResponse(content={"message": "Entrega eliminada"})
 
 
-@router.delete("/teacher/exams/{exam_id}")
-async def delete_exam(exam_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+@router.delete("/exams/{exam_id}")
+async def delete_exam(exam_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     db.table("exam_results").delete().eq("exam_id", exam_id).execute()
     result = db.table("exams").delete().eq("id", exam_id).execute()
@@ -699,17 +762,56 @@ async def delete_exam(exam_id: str, user_id: str = Depends(auth_dependency)) -> 
 
 # ── Reset exam attempt (legacy compatible) ─────────────────────
 
-@router.delete("/teacher/reset-attempt/{student_id}/{exam_id}")
-async def reset_exam_attempt(student_id: str, exam_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+@router.delete("/reset-attempt/{student_id}/{exam_id}")
+async def reset_exam_attempt(student_id: str, exam_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     db.table("exam_progress").delete().eq("student_id", student_id).eq("exam_id", exam_id).execute()
     return JSONResponse(content={"message": "Intento reseteado"})
 
 
+# ── Teacher deliveries (aggregated across all assignments) ────
+
+@router.get("/deliveries/{teacher_id}")
+async def get_teacher_deliveries(teacher_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
+    db: Client = next(get_db())
+    teacher = db.table("profiles").select("id").eq("login_credential", teacher_id).execute()
+    if not teacher.data:
+        return JSONResponse(content=[])
+    tid = teacher.data[0]["id"]
+    assignments = db.table("teacher_assignments").select("grade, subjects!inner(name)").eq("teacher_id", tid).execute()
+    deliveries = []
+    student_ids = set()
+    for a in assignments.data:
+        grade = a.get("grade", "")
+        subject = a.get("subjects", {}).get("name", "")
+        if not grade or not subject:
+            continue
+        result = db.table("deliveries").select("*").eq("grade", grade).eq("subject", subject).execute()
+        for d in (result.data or []):
+            deliveries.append({**d, "grade": grade, "subject": subject})
+            if d.get("student_id"):
+                student_ids.add(d["student_id"])
+    profile_map = {}
+    if student_ids:
+        profiles = db.table("profiles").select("id, fullname").in_("id", list(student_ids)).execute()
+        profile_map = {p["id"]: p.get("fullname", "") for p in (profiles.data or [])}
+    enriched = [{
+        "_id": d.get("id"),
+        "student_id": d.get("student_id", ""),
+        "student_name": profile_map.get(d.get("student_id", ""), ""),
+        "subject": d.get("subject", ""),
+        "grade": d.get("grade", ""),
+        "filename": d.get("filename", ""),
+        "file_url": d.get("url", d.get("url", "")),
+        "date": d.get("date", ""),
+    } for d in sorted(deliveries, key=lambda x: x.get("date", ""), reverse=True)]
+    return JSONResponse(content=enriched)
+
+
 # ── Exam incidents by teacher (legacy compatible) ──────────────
 
-@router.get("/teacher/exam-incidents/{teacher_id}")
-async def get_teacher_exam_incidents(teacher_id: str, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+@router.get("/exam-incidents/{teacher_id}")
+async def get_teacher_exam_incidents(teacher_id: str, user_id: str = Depends(teacher_dependency)) -> JSONResponse:
     db: Client = next(get_db())
     teacher = db.table("profiles").select("id").eq("login_credential", teacher_id).execute()
     if not teacher.data:

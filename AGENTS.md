@@ -112,6 +112,19 @@ npm run test:backend # cd backend && python3 -m pytest tests/ -v
 - **E9**: `backend/models/academic.py` imports `bson` (MongoDB) → crash if imported
 - **E14**: Password reset generates code but never delivers it to user
 - **E15**: E2E test credentials don't match seed.sql data
+- **Q1**: Admin materias grid empty — `renderSubjects()` doesn't populate grid
+- **Q2**: 16 TypeScript errors (non-blocking): Topbar null checks, Toast implicit any
+- **Q3-Q5**: Unimplemented handlers: `exportCSV`, `generarBoletinPDF`, `exportGradesPDF`
+- **Q6**: Double event listener on `filter-grade-notas` in admin
+- **Q7**: Inline `oninput` handlers violate CSP convention
+
+## QA Testing (2026-06-20)
+- **Suite**: `tests/comprehensive-qa.spec.js` — 143 tests, 143 pass, 0 fail (8.2 min)
+- **Config**: `playwright.config.mjs` — webServer: `python3 -m http.server 4321 --directory dist`
+- **Coverage**: Auth, 3 dashboards (10/8/8 sections), sidebar nav, theme, AI chat, topbar, console errors, a11y, mobile, animations, section hiding, cross-role isolation, landing, 404, form validation, rapid nav, page structure, noise overlay, chart.js
+- **Credenciales**: 101/alumno (student), 11/profe (teacher), 1/admin (admin)
+- **API mocking**: 40+ routes via `page.route('**/api/**', ...)` — all API calls mocked (backend on Render, not local)
+- **Run**: `npm run test -- tests/comprehensive-qa.spec.js --project=ci`
 
 ## Files that DON'T exist (despite being documented)
 - `src/scripts/api.ts` ❌ — use `window.vfetch()` instead

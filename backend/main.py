@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
@@ -20,7 +21,6 @@ import traceback
 
 import jwt
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from supabase import Client
@@ -74,6 +74,7 @@ FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
 # migrate to Redis-backed limiter (e.g. Upstash Redis, slowapi + redis).
 # See Others.md §8 for discussion.
 _api_calls: dict[str, list[float]] = defaultdict(list)
+_api_calls_lock = threading.Lock()
 API_RATE_LIMIT: int = int(os.getenv("API_RATE_LIMIT", "120"))  # requests per window
 API_RATE_WINDOW: int = 60  # 1 minute window
 
@@ -81,11 +82,13 @@ API_RATE_WINDOW: int = 60  # 1 minute window
 def _check_api_rate_limit(ip: str) -> bool:
     now = time.time()
     window = API_RATE_WINDOW
-    _api_calls[ip] = [t for t in _api_calls[ip] if now - t < window]
-    if len(_api_calls[ip]) >= API_RATE_LIMIT:
-        return False
-    _api_calls[ip].append(now)
-    return True
+    # Lock guards the compound read-modify-write against threadpool races.
+    with _api_calls_lock:
+        _api_calls[ip] = [t for t in _api_calls[ip] if now - t < window]
+        if len(_api_calls[ip]) >= API_RATE_LIMIT:
+            return False
+        _api_calls[ip].append(now)
+        return True
 
 
 @asynccontextmanager
@@ -239,7 +242,7 @@ async def security_headers_middleware(request: Request, call_next: Any) -> Respo
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next: Any) -> Response:
     path = request.url.path
-    if request.method == "OPTIONS" or path.startswith("/ws") or path in SKIP_AUTH_PATHS or (request.method == "GET" and path.startswith("/api/notices")):
+    if request.method == "OPTIONS" or path in SKIP_AUTH_PATHS or (request.method == "GET" and path.startswith("/api/notices")):
         return await call_next(request)
     origin = _get_cors_origin(request)
     # Support both Authorization header and httpOnly cookie
@@ -266,14 +269,9 @@ async def auth_middleware(request: Request, call_next: Any) -> Response:
 async def financial_guard_middleware(request: Request, call_next: Any) -> Response:
     if not is_financial_locked_path(request.url.path):
         return await call_next(request)
+    # All FINANCIAL_LOCKED_PATHS are GET endpoints (download-pdf, report).
+    # student_id comes from query params only — no body reading required.
     student_id = request.query_params.get("student_id")
-    if not student_id and request.method == "POST":
-        try:
-            body = await request.body()
-            parsed = json.loads(body)
-            student_id = parsed.get("student_id")
-        except Exception:
-            pass
     origin = _get_cors_origin(request)
     if not student_id:
         return JSONResponse(status_code=422, content={"detail": "Query param student_id required"}, headers={"Access-Control-Allow-Origin": origin})
@@ -293,6 +291,13 @@ async def financial_guard_middleware(request: Request, call_next: Any) -> Respon
             )
     except Exception as e:
         logger.error("financial guard error: %s", e)
+        # Fail-closed: never let a download proceed when the security check
+        # itself fails. A transient DB error must not become a bypass vector.
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "No se pudo verificar el estatus financiero. Intenta de nuevo."},
+            headers={"Access-Control-Allow-Origin": origin},
+        )
     return await call_next(request)
 
 
@@ -316,17 +321,6 @@ async def root() -> dict[str, Any]:
 
 # ── Pre-warmed cache ──
 _warmup_done = False
-
-@app.on_event("startup")
-async def prewarm():
-    global _warmup_done
-    try:
-        db: Client = next(dep_get_db())
-        db.table("profiles").select("count").limit(1).execute()
-        logger.info("prewarm: database connection OK")
-        _warmup_done = True
-    except Exception as e:
-        logger.warning("prewarm: %s", e)
 
 
 @app.get("/api/warmup")

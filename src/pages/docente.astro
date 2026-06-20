@@ -42,7 +42,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
           <h2 class="font-bold text-sm" style="font-family:'Fraunces',serif">Planilla de Calificaciones</h2>
-          <button class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border hover:bg-solar-200 transition-colors" onclick="exportGradesPDF()">Exportar PDF</button>
+          <button class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border hover:bg-solar-200 transition-colors" data-action="export-pdf">Exportar PDF</button>
         </div>
         <div class="flex flex-wrap gap-3 mb-4">
           <select id="filter-grade-notas" class="flex-1 min-w-[140px] bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-4 py-2.5 text-sm outline-none focus:border-brand-maroon"><option value="">Grado...</option></select>
@@ -76,7 +76,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
           <input type="file" id="guide-file" accept=".pdf" class="hidden">
         </div>
         <div id="guide-preview" class="mb-3"></div>
-        <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl" onclick="uploadGuide()">Publicar Guía</button>
+        <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl" data-action="upload-guide">Publicar Guía</button>
       </div>
       <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
         <h3 class="font-bold text-sm mb-3">Guías Publicadas</h3>
@@ -99,8 +99,8 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
         </div>
         <div id="questions-area" class="mb-3"></div>
         <div class="flex gap-3">
-          <button class="flex-1 py-2.5 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border hover:bg-solar-200 transition-colors" onclick="addQuestion()">+ Añadir Pregunta</button>
-          <button class="flex-1 py-2.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white" onclick="saveExam()">Publicar Examen</button>
+          <button class="flex-1 py-2.5 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border hover:bg-solar-200 transition-colors" data-action="add-question">+ Añadir Pregunta</button>
+          <button class="flex-1 py-2.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white" data-action="save-exam">Publicar Examen</button>
         </div>
       </div>
       <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
@@ -165,31 +165,40 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     var userName = localStorage.getItem('userName') || 'Docente'
 
     document.getElementById('teacher-name').textContent = userName
-    var sbName = document.getElementById('sidebar-username-teacher'); if (sbName) sbName.textContent = userName
-    var sbMeta = document.getElementById('sidebar-metadata-teacher'); if (sbMeta) sbMeta.textContent = 'Docente'
+     var sbName = document.getElementById('sidebar-username-teacher'); if (sbName) sbName.textContent = userName
+     var sbMeta = document.getElementById('sidebar-metadata-teacher'); if (sbMeta) sbMeta.textContent = 'Docente'
 
-    var sectionTitles = { inicio:'Panel Docente', notas:'Control de Notas', contenidos:'Guías y Tareas', examenes:'Exámenes', horario:'Horario Semanal', incidentes:'Incidentes de Seguridad', alertas:'Alertas de Riesgo', chats:'Chats por Materia' }
-    var sectionSubs = { inicio:'Vista general', notas:'Registrar calificaciones', contenidos:'Subir guías y revisar entregas', examenes:'Crear y publicar evaluaciones', horario:'Clases programadas', incidentes:'Monitoreo de seguridad', alertas:'Estudiantes con rendimiento crítico', chats:'Conversaciones por materia con el Asistente' }
-    function staggerCards(section) {
-      var cards = section.querySelectorAll('.solar-card')
-      cards.forEach(function(card, i) {
-        card.style.animationDelay = (i * 0.04) + 's'
-        card.classList.add('card-stagger')
-      })
-    }
+     var sectionTitles = { inicio:'Panel Docente', notas:'Control de Notas', contenidos:'Guías y Tareas', examenes:'Exámenes', horario:'Horario Semanal', incidentes:'Incidentes de Seguridad', alertas:'Alertas de Riesgo', chats:'Chats por Materia' }
+     var sectionSubs = { inicio:'Vista general', notas:'Registrar calificaciones', contenidos:'Subir guías y revisar entregas', examenes:'Crear y publicar evaluaciones', horario:'Clases programadas', incidentes:'Monitoreo de seguridad', alertas:'Estudiantes con rendimiento crítico', chats:'Conversaciones por materia con el Asistente' }
+     function staggerCards(section) {
+       var cards = section.querySelectorAll('.solar-card')
+       cards.forEach(function(card, i) {
+         card.style.animationDelay = (i * 0.04) + 's'
+         card.classList.add('card-stagger')
+       })
+     }
 
-    window.showSection = function(id) {
-      document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none'; s.classList.remove('section-enter') })
-      var sec = document.getElementById('sec-' + id)
-      if (sec) { sec.style.display = ''; sec.classList.remove('hidden'); sec.classList.add('section-enter'); staggerCards(sec) }
-      var t = document.querySelector('.topbar-heading'), p = document.querySelector('.topbar-subtitle')
-      if (t) t.textContent = sectionTitles[id] || id
-      if (p) p.textContent = sectionSubs[id] || ''
-      window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id } }))
-      if (id === 'contenidos') { loadGuides(); loadTasks() }
-      if (id === 'examenes') loadMyExams()
-      if (id === 'incidentes') loadIncidents()
-    }
+     // All data-loading sections are dynamic — reload on every visit
+     var dynamicSections = new Set(['contenidos', 'examenes', 'incidentes'])
+     document.addEventListener('DOMContentLoaded', function() {
+       var router = window.createSectionRouter({
+         titles: sectionTitles,
+         subtitles: sectionSubs,
+         loaders: {
+           contenidos: function() { loadGuides(); loadTasks() },
+           examenes: loadMyExams,
+           incidentes: loadIncidents
+         },
+         onNavigate: function(section) {
+           var sec = document.getElementById('sec-' + section)
+           if (sec) staggerCards(sec)
+         },
+         startSection: 'inicio'
+       })
+       window.showSection = function(id) {
+         router.showSection(id, dynamicSections.has(id))
+       }
+     })
 
     async function loadData() {
       try {
@@ -251,17 +260,20 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
     function loadGradesSheet() {
       var val = document.getElementById('filter-subject-notas').value
       if (!val) return
-      var parts = val.split('|'), subject = parts[0], grade = parts[1]
+      var parts = val.split('|')
+      if (parts.length < 2) return
+      var subject = parts[0], grade = parts.slice(1).join('|')
       var tbody = document.getElementById('grades-tbody')
-      vfetch(API, '/api/admin/students').then(function(r){return r.json()}).then(function(students) {
-        var filtered = (Array.isArray(students) ? students : []).filter(function(s){ return (s.grade||s.grado)==grade })
+      vfetch(API, '/api/students?per_page=200').then(function(r){return r.json()}).then(function(resp) {
+        var students = resp.data || []
+        var filtered = students.filter(function(s){ return (s.grade||s.grado)==grade })
         tbody.innerHTML = filtered.map(function(s){
           return '<tr>'+
             '<td class="font-semibold p-2 border-b border-border text-xs">'+window.escapeHtml(s.fullname)+'</td>'+
             ['P1','P2','P3','P4'].map(function(){return '<td class="p-1 text-center border-b border-border"><input type="number" class="w-full text-center bg-[var(--input-bg)] border border-[var(--input-border)] rounded px-2 py-1 text-xs min-w-[50px]" min="0" max="5" step="0.1" placeholder="0.0" oninput="calcAvg(this)"></td>'}).join('')+
             '<td class="text-center font-bold text-xs p-2 border-b border-border avg-cell text-brand-gold">0.00</td>'+
             '<td class="p-1 border-b border-border"><input class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded px-2 py-1 text-xs" placeholder="Obs."></td>'+
-            '<td class="text-center p-1 border-b border-border"><button class="px-2 py-1 rounded text-xs bg-brand-maroon text-white" onclick="saveGradeRow(\''+window.escapeHtml(s.document_id||s._id)+'\',\''+subject.replace(/'/g,"\\'")+'\',this)">Guardar</button></td></tr>'
+            '<td class="text-center p-1 border-b border-border"><button class="px-2 py-1 rounded text-xs bg-brand-maroon text-white js-save-grade-btn" data-student="'+window.escapeHtml(s.document_id||s._id)+'" data-subject="'+window.escapeHtml(subject)+'" data-grade="'+window.escapeHtml(grade)+'">Guardar</button></td></tr>'
         }).join('') || '<tr><td colspan="8" class="text-center py-8 text-text-tertiary">Sin estudiantes en este grado</td></tr>'
       })
     }
@@ -272,28 +284,53 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var vals = Array.from(notes).map(function(i){ return parseFloat(i.value)||0 })
       var avg = (vals.reduce(function(a,b){return a+b},0)/vals.length).toFixed(2)
       var cell = row.querySelector('.avg-cell')
-      if (cell) { cell.textContent = avg; cell.style.color = parseFloat(avg)<3?'var(--brand-danger)':'var(--success)' }
+      if (cell) { cell.textContent = avg; cell.style.color = parseFloat(avg)<3?'#DC2626':'#10B981' }
     }
 
     window.saveGradeRow = async function(studentId, subject, btn) {
       var row = btn.closest('tr')
       var inputs = row.querySelectorAll('input[type="number"]')
-      var avg = row.querySelector('.avg-cell')
       var obs = row.querySelector('td:nth-child(7) input')
+      var periods = ['P1', 'P2', 'P3', 'P4']
+      var courseId = btn.dataset.grade || ''
       try {
-        await vfetch(API, '/api/teacher/submit-grade', {
-          method:'POST',
-          body:JSON.stringify({
-            student_id:String(studentId),subject:String(subject),
-            p1:inputs[0]?.value||'0',p2:inputs[1]?.value||'0',p3:inputs[2]?.value||'0',p4:inputs[3]?.value||'0',
-            final_grade:window.formatNum(avg?.textContent,1),observations:obs?.value||'',
-            teacher_id:userId
+        for (var i = 0; i < 4; i++) {
+          await vfetch(API, '/api/teacher/submit-grade', {
+            method:'POST',
+            body:JSON.stringify({
+              student_id:String(studentId),subject_id:String(subject),
+              score:parseFloat(inputs[i]?.value||'0'),observations:obs?.value||'',
+              period:periods[i],
+              teacher_id:userId,
+              course_id:courseId
+            })
           })
-        })
+        }
         btn.textContent = '✓'; btn.classList.add('bg-success')
         Array.from(inputs).forEach(function(i){ i.disabled = true })
       } catch(e) { window.VyntraToast?.error('Error al guardar calificación: ' + (e?.message || 'Reintente')) }
     }
+    // Action delegation
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-action]')
+      if (btn) {
+        var action = btn.dataset.action
+        if (action === 'export-pdf') exportGradesPDF()
+        else if (action === 'upload-guide') uploadGuide()
+        else if (action === 'add-question') addQuestion()
+        else if (action === 'save-exam') saveExam()
+        return
+      }
+      if (e.target.closest('.js-save-grade-btn')) {
+        var b = e.target.closest('.js-save-grade-btn')
+        saveGradeRow(b.dataset.student, b.dataset.subject, b)
+        return
+      }
+      if (e.target.closest('.js-remove-question')) {
+        e.target.closest('.q-card').remove()
+        return
+      }
+    })
 
     window.exportGradesPDF = function() { window.VyntraToast?.info('Exportación PDF no disponible aún') }
 
@@ -302,12 +339,12 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var subjectVal = document.getElementById('guide-subject').value
       var file = document.getElementById('guide-file').files[0]
       if (!title || !subjectVal || !file) { window.VyntraToast?.warning('Todos los campos son requeridos'); return }
-      var parts = subjectVal.split('|'), subject=parts[0], grade=parts[1]
+      var parts = subjectVal.split('|'), subject=parts[0], grade=parts.slice(1).join('|')
       var fd = new FormData()
       fd.append('title',title); fd.append('subject_name',subject); fd.append('grade',grade)
       fd.append('teacher_id',userId); fd.append('file',file)
       try {
-        await fetch(API+'/api/teacher/guides', { method:'POST', credentials:'include', body:fd })
+        await vfetch(API, '/api/teacher/guides', { method:'POST', body:fd })
         window.VyntraToast?.success('Guía publicada')
         loadGuides(); loadTasks()
       } catch(e) { window.VyntraToast?.error('Error publicando guía: ' + (e?.message || 'Reintente')) }
@@ -327,7 +364,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       if (!list) return
       try {
         var data = await vfetch(API, '/api/teacher/deliveries/'+userId).then(function(r){return r.json()})
-        list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(t){ return '<div class="flex justify-between p-2.5 border-b border-border"><div><strong class="text-xs">'+window.escapeHtml(t.student_name)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(t.subject)+'</span></div>'+(t.file_url?'<a href="'+t.file_url+'" target="_blank" class="text-xs text-brand-maroon">Ver</a>':'')+'</div>' }).join('') : '<p class="py-4">Buzón vacío.</p>'
+        list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(t){ return '<div class="flex justify-between p-2.5 border-b border-border"><div><strong class="text-xs">'+window.escapeHtml(t.student_name||t.student_id)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(t.subject)+'</span></div>'+(t.file_url?'<a href="'+t.file_url+'" target="_blank" class="text-xs text-brand-maroon">Ver</a>':'')+'</div>' }).join('') : '<p class="py-4">Buzón vacío.</p>'
       } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando entregas. Intenta de nuevo.</p>'; console.error('[docente] loadTasks:', e) }
     }
 
@@ -336,7 +373,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var count = area.querySelectorAll('.q-card').length + 1
       var div = document.createElement('div')
       div.className = 'q-card border border-border rounded-xl p-4 mb-3'
-      div.innerHTML = '<div class="flex justify-between mb-2"><strong class="text-xs">#'+count+'</strong><button class="text-brand-danger text-xs" onclick="this.closest(\'.q-card\').remove()">Eliminar</button></div>'+
+      div.innerHTML = '<div class="flex justify-between mb-2"><strong class="text-xs">#'+count+'</strong><button class="text-brand-danger text-xs js-remove-question">Eliminar</button></div>'+
         '<input class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-3 py-2 text-xs mb-2" placeholder="Pregunta...">'+
         '<div class="grid grid-cols-2 gap-2 mb-2">'+['A','B','C','D'].map(function(l){return'<input class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg px-3 py-2 text-xs" placeholder="'+(l==='A'?'Opción correcta':'Opción '+l)+'">'}).join('')+'</div>'+
         '<div class="flex items-center gap-2"><span class="text-[10px] text-text-tertiary uppercase">Correcta:</span><select class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded px-2 py-1 text-xs">'+['A','B','C','D'].map(function(l){return'<option>'+l+'</option>'}).join('')+'</select></div>'
@@ -354,9 +391,9 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
         var correct = card.querySelector('select').value
         questions.push({ text:inputs[0].value, options:{A:inputs[1].value,B:inputs[2].value,C:inputs[3].value,D:inputs[4].value}, correct:correct })
       })
-      var parts = subjectVal.split('|'), subject=parts[0], grade=parts[1]
+      var parts = subjectVal.split('|'), subject=parts[0], grade=parts.slice(1).join('|')
       try {
-        await vfetch(API, '/api/teacher/exams', { method:'POST', body:JSON.stringify({ title,subject_name:subject,grade,teacher_id:userId,questions,duration_minutes:30 }) })
+        await vfetch(API, '/api/teacher/create-exam', { method:'POST', body:JSON.stringify({ title,subject_name:subject,grade,teacher_id:userId,questions,duration_minutes:30 }) })
         window.VyntraToast?.success('Examen publicado')
         loadMyExams()
       } catch(e) { window.VyntraToast?.error('Error publicando examen: ' + (e?.message || 'Reintente')) }
@@ -366,7 +403,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var list = document.getElementById('my-exams-list')
       if (!list) return
       try {
-        var data = await vfetch(API, '/api/teacher/exams/'+userId).then(function(r){return r.json()})
+        var data = await vfetch(API, '/api/teacher/my-exams/'+userId).then(function(r){return r.json()})
         list.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(e){ return '<div class="p-3 border border-border rounded-xl mb-2"><strong class="text-xs">'+window.escapeHtml(e.title)+'</strong><br><span class="text-[10px] text-text-tertiary">'+window.escapeHtml(e.subject_name)+' · '+(e.questions?e.questions.length:0)+' preguntas</span></div>' }).join('') : '<p class="py-4">No hay exámenes.</p>'
       } catch(e) { list.innerHTML = '<p class="py-4 text-text-tertiary">Error cargando exámenes. Intenta de nuevo.</p>'; console.error('[docente] loadMyExams:', e) }
     }
@@ -375,7 +412,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       var tbody = document.getElementById('incidents-tbody')
       if (!tbody) return
       try {
-        var data = await vfetch(API, '/api/teacher/incidents').then(function(r){return r.json()})
+        var data = await vfetch(API, '/api/teacher/exam-incidents/'+userId).then(function(r){return r.json()})
         tbody.innerHTML = (Array.isArray(data)&&data.length) ? data.map(function(i){ return '<tr class="border-b border-border"><td class="p-2 text-xs">'+window.escapeHtml(i.student_name)+'</td><td class="p-2 text-xs">'+window.escapeHtml(i.exam_title)+'</td><td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold '+(i.strikes>=3?'bg-brand-danger/10 text-brand-danger':'bg-brand-gold/10 text-brand-gold')+'">'+i.strikes+'</span></td><td class="p-2 text-xs">'+window.escapeHtml(i.incident_type)+'</td></tr>' }).join('') : '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">Sin incidentes registrados.</td></tr>'
       } catch(e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-text-tertiary">Error cargando incidentes. Intenta de nuevo.</td></tr>'; console.error('[docente] loadIncidents:', e) }
     }
@@ -429,7 +466,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000'
       loadSubjectsForGrade(this.value, 'exam-subject')
     })
 
-    document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') s.style.display = 'none' })
+    document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') { s.style.display = 'none'; s.style.contentVisibility = 'auto' } })
 
     var guideDrop = document.getElementById('guide-drop-zone')
     var guideFile = document.getElementById('guide-file')

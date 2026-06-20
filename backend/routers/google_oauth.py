@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from supabase import Client
 
-from config.database import get_db
+from config.database import get_admin_db
 from dependencies import TOKEN_EXPIRY_HOURS, encode_jwt, set_jwt_cookie, set_csrf_cookie
 
 logger = logging.getLogger("siee.google_oauth")
@@ -42,7 +42,7 @@ async def google_auth(data: GoogleAuthRequest, request: Request) -> JSONResponse
     if not email:
         raise HTTPException(status_code=400, detail="El token de Google no contiene un email.")
 
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     profile = db.table("profiles").select("*").eq("email", email).execute()
     if not profile.data:
         profile = db.table("profiles").select("*").eq("login_credential", email).execute()

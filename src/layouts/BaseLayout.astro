@@ -1,5 +1,4 @@
 ---
-import '../styles/solaris-landing.css'
 import '../styles/theme.css'
 
 export interface Props {
@@ -17,14 +16,11 @@ const {
 } = Astro.props
 
 const title = `VYNTRA · ${titulo}`
-const scriptSrc = "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com"
 const apiUrl = (import.meta.env.PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
-const apiHost = new URL(apiUrl).host
-const wsScheme = apiUrl.startsWith('https') ? 'wss' : 'ws'
-const connectSrc = `'self' ${apiUrl} ${wsScheme}://${apiHost}`
-const CSP = `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src ${connectSrc}; frame-src 'self' https:; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'`
 
-Astro.response.headers.set('Content-Security-Policy', CSP)
+// CSP is enforced via public/_headers (Netlify) with hash-based script-src.
+// Astro.response.headers is a no-op for output:'static' pages — headers must
+// live in _headers for the Netlify CDN to apply them.
 ---
 
 <!doctype html>
@@ -152,20 +148,43 @@ Astro.response.headers.set('Content-Security-Policy', CSP)
         } catch (_) { return false }
       }
 
-      // XHR interceptor for 401 handling
+      // XHR interceptor for 401 handling — guard against duplicate listeners
       var origOpen = XMLHttpRequest.prototype.open
       XMLHttpRequest.prototype.open = function () {
         var xhr = this
-        xhr.addEventListener('load', function () {
-          if (xhr.status === 401) {
-            try { if (localStorage.getItem('userId')) { localStorage.clear(); window.location.href = '/login/' } } catch (_) {}
-          }
-        })
+        if (!xhr._vyntraPatched) {
+          xhr._vyntraPatched = true
+          xhr.addEventListener('load', function () {
+            if (xhr.status === 401) {
+              try { if (localStorage.getItem('userId')) { localStorage.clear(); window.location.href = '/login/' } } catch (_) {}
+            }
+          })
+        }
         return origOpen.apply(this, arguments)
       }
 
       checkAuth()
       wakeUp()
+
+      // Verify cookie auth against backend — catch expired/invalid sessions early
+      function verifyCookieAuth() {
+        try {
+          var uid = localStorage.getItem('userId')
+          if (!uid) return
+          fetch(API_URL + '/api/auth/verify', { credentials: 'include' })
+            .then(function(r) {
+              if (r.status === 401) {
+                localStorage.clear()
+                window.location.href = '/login/'
+              }
+            })
+            .catch(function() {
+              // Network error — backend may be cold-starting on Render
+              // Don't kick everyone out, just skip silently
+            })
+        } catch (_) {}
+      }
+      verifyCookieAuth()
 
       window.VYNTRA = window.VYNTRA || {}
       window.VYNTRA.isAuthenticated = function () {

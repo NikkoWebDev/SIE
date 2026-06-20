@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import re
+import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -126,6 +127,9 @@ class ChatRequest(BaseModel):
 
 
 # In-memory conversation cache (DB is primary storage, cache reduces latency)
+# All four module-level dicts below are mutated by sync helpers that FastAPI
+# may run in a threadpool. _state_lock guards every compound read-modify-write.
+_state_lock = threading.Lock()
 _conversation_cache: dict[str, list[dict[str, str]]] = {}
 _user_context_cache: dict[str, tuple[str, float]] = {}
 CONVERSATION_CACHE_MAX = 100
@@ -137,12 +141,13 @@ tool_usage_counters: dict[str, dict[str, int]] = {}
 def _check_rate_limit(user_id: str) -> None:
     now = time.time()
     window = 60.0
-    if user_id not in rate_limit_store:
-        rate_limit_store[user_id] = []
-    rate_limit_store[user_id] = [t for t in rate_limit_store[user_id] if now - t < window]
-    if len(rate_limit_store[user_id]) >= RATE_LIMIT_PER_MINUTE:
-        raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Espera un momento antes de continuar.")
-    rate_limit_store[user_id].append(now)
+    with _state_lock:
+        if user_id not in rate_limit_store:
+            rate_limit_store[user_id] = []
+        rate_limit_store[user_id] = [t for t in rate_limit_store[user_id] if now - t < window]
+        if len(rate_limit_store[user_id]) >= RATE_LIMIT_PER_MINUTE:
+            raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Espera un momento antes de continuar.")
+        rate_limit_store[user_id].append(now)
 
 
 def _get_api_key(role: str) -> str:
@@ -159,10 +164,11 @@ def _get_db() -> Client:
 def _cache_put(role: str, user_id: str, messages: list[dict[str, str]]) -> None:
     """Store conversation in in-memory cache (LRU, max CONVERSATION_CACHE_MAX)."""
     key = f"{role}:{user_id}"
-    _conversation_cache[key] = messages
-    if len(_conversation_cache) > CONVERSATION_CACHE_MAX:
-        oldest = next(iter(_conversation_cache))
-        del _conversation_cache[oldest]
+    with _state_lock:
+        _conversation_cache[key] = messages
+        if len(_conversation_cache) > CONVERSATION_CACHE_MAX:
+            oldest = next(iter(_conversation_cache))
+            del _conversation_cache[oldest]
 
 
 def _cache_get(role: str, user_id: str) -> list[dict[str, str]] | None:
@@ -170,7 +176,8 @@ def _cache_get(role: str, user_id: str) -> list[dict[str, str]] | None:
 
 
 def _cache_evict(role: str, user_id: str) -> None:
-    _conversation_cache.pop(f"{role}:{user_id}", None)
+    with _state_lock:
+        _conversation_cache.pop(f"{role}:{user_id}", None)
 
 
 def _thread_cache_key(thread_id: str) -> str:
@@ -523,7 +530,7 @@ async def _tool_run_sql_query(db: Client, args: dict[str, Any], user_id: str) ->
         return json.dumps({"error": "La consulta no referencia ninguna tabla permitida."}, ensure_ascii=False, default=str)
 
     # Block dangerous patterns regardless
-    dangerous = re.search(r'(drop|truncate|delete|insert|update|alter|create|grant|revoke|exec|execute|call|fetch|copy|set|reset|load|import|export|pg_sleep|dblink|lo_import|lo_export|pg_read_file|pg_write_file|pg_stat_file|generate_series|unnest)\s', query_lower, re.I)
+    dangerous = re.search(r'\b(drop|truncate|delete|insert|update|alter|create|grant|revoke|exec|execute|call|fetch|copy|set|reset|load|import|export|pg_sleep|dblink|lo_import|lo_export|pg_read_file|pg_write_file|pg_stat_file|generate_series|unnest)\b', query_lower, re.DOTALL | re.MULTILINE)
     if dangerous:
         return json.dumps({"error": "Operación no permitida."}, ensure_ascii=False, default=str)
 
@@ -765,9 +772,10 @@ async def _execute_tool_call(db: Client, tool_call: dict[str, Any], user_id: str
         if func_name in CACHEABLE_TOOLS:
             tool_cache.set(func_name, user_id, args, result)
         # Track usage
-        if user_id not in tool_usage_counters:
-            tool_usage_counters[user_id] = {}
-        tool_usage_counters[user_id][func_name] = tool_usage_counters[user_id].get(func_name, 0) + 1
+        with _state_lock:
+            if user_id not in tool_usage_counters:
+                tool_usage_counters[user_id] = {}
+            tool_usage_counters[user_id][func_name] = tool_usage_counters[user_id].get(func_name, 0) + 1
         return _truncate_tool_result(result)
     except Exception as e:
         elapsed = time.time() - t0

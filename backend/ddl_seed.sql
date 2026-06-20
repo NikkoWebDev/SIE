@@ -292,7 +292,34 @@ CROSS JOIN (SELECT id FROM public.courses WHERE name = '11-A') c
 WHERE tp.login_credential = '11';
 
 -- ─────────────────────────────────────────────────────────────────────
--- STEP 10: Sample Grades (tests ABP propagation trigger)
+-- STEP 10: Class Schedules
+-- ─────────────────────────────────────────────────────────────────────
+
+INSERT INTO public.class_schedules (course_id, subject_id, day_of_week, start_time, end_time)
+SELECT c.id, s.id, d.dow, d.st_time::TIME, d.et_time::TIME
+FROM public.courses c,
+(VALUES
+  (1,'07:00','07:50','Investigación Guiada'),   (1,'07:50','08:40','Investigación Guiada'),
+  (2,'07:00','07:50','Matemáticas Aplicadas'),   (2,'07:50','08:40','Matemáticas Aplicadas'),
+  (3,'07:00','07:50','Inglés Avanzado'),         (3,'07:50','08:40','Inglés Avanzado'),
+  (4,'07:00','07:50','Ciencias Naturales'),      (4,'07:50','08:40','Ciencias Naturales'),
+  (5,'07:00','07:50','Arte y Creatividad'),      (5,'07:50','08:40','Música y Expresión'),
+  (1,'08:40','09:30','Lenguaje y Literatura'),   (1,'09:30','10:20','Lenguaje y Literatura'),
+  (2,'08:40','09:30','Ciencias Sociales'),       (2,'09:30','10:20','Ciencias Sociales'),
+  (3,'08:40','09:30','Matemáticas Aplicadas'),   (3,'09:30','10:20','Matemáticas Aplicadas'),
+  (4,'08:40','09:30','Tecnología e Informática'),(4,'09:30','10:20','Tecnología e Informática'),
+  (5,'08:40','09:30','Educación Física'),        (5,'09:30','10:20','Inglés Avanzado'),
+  (1,'10:20','11:10','Ciencias Naturales'),      (1,'11:10','12:00','Educación Física'),
+  (2,'10:20','11:10','Inglés Avanzado'),         (2,'11:10','12:00','Tecnología e Informática'),
+  (3,'10:20','11:10','Arte y Creatividad'),      (3,'11:10','12:00','Música y Expresión'),
+  (4,'10:20','11:10','Lenguaje y Literatura'),   (4,'11:10','12:00','Ciencias Sociales'),
+  (5,'10:20','11:10','Matemáticas Aplicadas'),   (5,'11:10','12:00','Investigación Guiada')
+) AS d(dow, st_time, et_time, subj_name)
+JOIN public.subjects s ON s.name = d.subj_name
+WHERE c.name = '11-A';
+
+-- ─────────────────────────────────────────────────────────────────────
+-- STEP 11: Sample Grades (tests ABP propagation trigger)
 -- ─────────────────────────────────────────────────────────────────────
 
 INSERT INTO public.grades (student_id, subject_id, project_id, score)

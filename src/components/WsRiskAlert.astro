@@ -11,6 +11,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
     if (!container) return
     var ws = null, reconnectTimer = null, delay = 1000, maxDelay = 30000
     var destroyed = false
+    var retryCount = 0, maxRetries = 5
     var audioCtx = null
     var hasUserGesture = false
 
@@ -24,7 +25,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
       var token = localStorage.getItem('ws_access_token')
       if (!token) { scheduleReconnect(); return }
       try { ws = new WebSocket(wsUrl + '?token=' + encodeURIComponent(token)) } catch(e) { scheduleReconnect(); return }
-      ws.onopen = function() { delay = 1000 }
+      ws.onopen = function() { delay = 1000; retryCount = 0 }
       ws.onmessage = function(e) {
         try {
           var msg = JSON.parse(e.data)
@@ -36,10 +37,10 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
     }
 
     function scheduleReconnect() {
-      if (destroyed) return
+      if (destroyed || retryCount >= maxRetries) return
       if (reconnectTimer) clearTimeout(reconnectTimer)
       reconnectTimer = setTimeout(function() {
-        delay = Math.min(delay * 1.5, maxDelay)
+        delay = Math.min(delay * 1.5, maxDelay); retryCount++
         connect()
       }, delay)
     }
@@ -53,8 +54,8 @@ const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws'
         '<svg class="h-5 w-5 text-brand-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>' +
         '</div>' +
         '<div class="flex-1 min-w-0">' +
-        '<p class="text-xs sm:text-sm font-bold text-brand-danger truncate">' + window.escapeHtml(msg.msg || 'Alerta académica') + '</p>' +
-        '<p class="text-[10px] sm:text-xs text-text-tertiary mt-0.5">Estudiante: ' + window.escapeHtml(msg.student_id || '') + ' · Nota: ' + window.escapeHtml(String(msg.score || '--')) + '</p>' +
+        '<p class="text-xs sm:text-sm font-bold text-brand-danger truncate">' + window.escapeHtml(msg.severity || msg.msg || 'Alerta académica') + '</p>' +
+        '<p class="text-[10px] sm:text-xs text-text-tertiary mt-0.5">Estudiante: ' + window.escapeHtml(msg.student_id || '') + ' · Nota: ' + window.escapeHtml(String(msg.avg_score || msg.score || '--')) + '</p>' +
         '</div>' +
         '<button class="shrink-0 rounded-lg p-1 text-text-tertiary hover:text-brand-danger hover:bg-brand-danger/10 transition-colors text-sm" onclick="this.parentElement.remove()">&times;</button>'
       container.appendChild(el)

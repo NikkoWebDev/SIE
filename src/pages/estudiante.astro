@@ -69,7 +69,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
         {['P1','P2','P3','P4'].map(p => (
           <button class="px-4 py-1.5 rounded-full text-xs font-semibold bg-[var(--input-bg)] border border-border text-text-tertiary transition-all data-[active]:bg-brand-maroon data-[active]:text-white data-[active]:border-brand-maroon" data-period={p}>{p}</button>
         ))}
-        <button class="ml-auto px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border hover:bg-solar-200 transition-colors" onclick="generarBoletinPDF()">Exportar PDF</button>
+        <button class="ml-auto px-4 py-2 rounded-lg text-xs font-semibold bg-solar-100 dark:bg-surface-dark-card border border-border hover:bg-solar-200 transition-colors" data-action="export-pdf">Exportar PDF</button>
       </div>
       <div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 overflow-x-auto">
         <table class="w-full text-xs">
@@ -127,7 +127,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
               <input type="file" id="hw-file" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg" class="hidden" />
               <div id="file-name-display" class="text-xs text-brand-maroon mt-2 font-semibold"></div>
             </div>
-            <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl hover:shadow-glow-maroon transition-all" onclick="sendHomework()">Enviar Entrega</button>
+            <button class="w-full py-3 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-sm font-semibold rounded-xl hover:shadow-glow-maroon transition-all" data-action="send-homework">Enviar Entrega</button>
           </div>
         </div>
         <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
@@ -154,7 +154,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
         <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
           <h3 class="font-bold text-sm mb-2">Practica tus Conocimientos</h3>
           <p class="text-xs text-text-secondary mb-4">Preguntas tipo ICFES con autocorrección.</p>
-          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg hover:shadow-glow-maroon transition-all mr-2" onclick="iniciarSimulacroSaber()">Iniciar Simulacro</button>
+          <button class="px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg hover:shadow-glow-maroon transition-all mr-2" data-action="start-simulacro">Iniciar Simulacro</button>
         </div>
         <div class="solar-card bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5">
           <h3 class="font-bold text-sm mb-2">Mi Progreso</h3>
@@ -226,7 +226,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       </div>
       <div class="flex items-center gap-3">
         <span class="text-lg font-bold tabular-nums text-white" id="timer-display">00:00</span>
-        <button class="px-3 py-1.5 rounded-lg text-xs text-white/50 border border-white/10 hover:bg-white/5 transition-colors" onclick="intentarSalirManual()">Salir</button>
+        <button class="px-3 py-1.5 rounded-lg text-xs text-white/50 border border-white/10 hover:bg-white/5 transition-colors" data-action="exit-exam">Salir</button>
       </div>
     </div>
     <div class="flex-1 overflow-y-auto p-4 sm:p-6 grid gap-4" id="examen-preguntas-render"></div>
@@ -253,6 +253,9 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       gradesCache = grades
       gradesCachePromise = null
       return grades
+    }).catch(function(err) {
+      gradesCachePromise = null
+      throw err
     })
     return gradesCachePromise
   }
@@ -293,25 +296,32 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
     })
   }
 
-  window.showSection = function(id) {
-    currentSection = id
-    document.querySelectorAll('[id^="sec-"]').forEach(function(s){ s.style.display = 'none'; s.classList.remove('section-enter') })
-    var sec = document.getElementById('sec-' + id)
-    if (sec) { sec.style.display = ''; sec.classList.remove('hidden'); sec.classList.add('section-enter'); staggerCards(sec) }
-    var titleEl = document.querySelector('.topbar-heading')
-    var subEl = document.querySelector('.topbar-subtitle')
-    if (titleEl) titleEl.textContent = pageTitles[id] || id
-    if (subEl) subEl.textContent = pageSubs[id] || ''
-    window.dispatchEvent(new CustomEvent('vyntra:navigate', { detail: { section: id }}))
-    if (id === 'notas') { loadGrades(); loadChartData() }
-    if (id === 'examenes') loadExams()
-    if (id === 'horarios') loadSchedule()
-    if (id === 'tareas') { loadSubjects(); loadHomeworkHistory() }
-    if (id === 'saber') loadSaberContent()
-    if (id === 'biblioteca') loadLibrary()
-    if (id === 'votaciones') loadCandidates()
-    if (id === 'perfil') { loadGrades(); loadRecentActivity() }
-  }
+  // Dynamic sections force reload on every visit; static sections are cached
+  var dynamicSections = new Set(['notas', 'examenes', 'tareas', 'saber', 'votaciones', 'perfil'])
+  document.addEventListener('DOMContentLoaded', function() {
+    var router = window.createSectionRouter({
+      titles: pageTitles,
+      subtitles: pageSubs,
+      loaders: {
+        notas: function() { loadGrades(); loadChartData() },
+        examenes: loadExams,
+        horarios: loadSchedule,
+        tareas: function() { loadSubjects(); loadHomeworkHistory() },
+        saber: loadSaberContent,
+        biblioteca: loadLibrary,
+        votaciones: loadCandidates,
+        perfil: function() { loadGrades(); loadRecentActivity() }
+      },
+      onNavigate: function(section) {
+        var sec = document.getElementById('sec-' + section)
+        if (sec) staggerCards(sec)
+      },
+      startSection: 'inicio'
+    })
+    window.showSection = function(id) {
+      router.showSection(id, dynamicSections.has(id))
+    }
+  })
 
   var clockInterval = setInterval(function() {
     var el = document.getElementById('live-clock')
@@ -336,8 +346,8 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       var passing = values.filter(function(v){return v>=3.5}).length
       document.getElementById('student-name').textContent = userName
       document.getElementById('student-meta').textContent = userGrade || 'Panel de rendimiento'
-      document.getElementById('welcome-badge-grade').innerHTML = userGrade || 'Cargando...'
-      document.getElementById('welcome-badge-avg').innerHTML = 'Promedio: ' + (overallAvg ? overallAvg.toFixed(1) : '--') + ' / 5.0'
+      document.getElementById('welcome-badge-grade').textContent = userGrade || 'Cargando...'
+      document.getElementById('welcome-badge-avg').textContent = 'Promedio: ' + (overallAvg ? overallAvg.toFixed(1) : '--') + ' / 5.0'
       document.getElementById('welcome-badge-risk').innerHTML = passing + ' aprobadas'
       document.getElementById('stat-avg').textContent = overallAvg ? overallAvg.toFixed(1) : '--'
       document.getElementById('stat-subjects').textContent = labels.length
@@ -370,7 +380,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
         return '<div class="pb-3 mb-3 border-b border-border last:border-0">' +
           '<strong class="text-xs">' + window.escapeHtml(n.titulo || '') + '</strong>' +
           '<span class="block text-[10px] text-text-tertiary">' + window.escapeHtml(n.fecha || '') + '</span>' +
-          (hasImg ? '<img src="' + window.escapeHtml(n.archivo_url) + '" class="mt-2 max-h-32 rounded-lg object-cover cursor-pointer" onclick="window.open(this.src)" alt="Imagen adjunta">' : '') +
+          (hasImg ? '<img src="' + window.escapeHtml(n.archivo_url) + '" class="mt-2 max-h-32 rounded-lg object-cover cursor-pointer" data-action="open-image" data-src="' + window.escapeHtml(n.archivo_url) + '" alt="Imagen adjunta">' : '') +
           (n.archivo_url && !hasImg ? '<a href="' + window.escapeHtml(n.archivo_url) + '" target="_blank" class="inline-block mt-1 text-xs text-brand-maroon">Ver adjunto</a>' : '') +
           '</div>'
       }).join('')
@@ -444,16 +454,16 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
             options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'var(--text-secondary)'}},y:{min:0,max:5,ticks:{stepSize:1,color:'var(--text-tertiary)'}}}}
           })
         })
-      }).catch(function(err) { console.error('Error loading chart:', err) })
+      }).catch(function(err) { console.error('Error loading chart:', err); window.VyntraToast?.error('Error al cargar el gráfico de notas') })
   }
 
   function loadExams() {
-    apiFetch('/api/exams?student_grade=' + encodeURIComponent(userGrade)).then(function(exams) {
+    apiFetch('/api/student/exams?grade=' + encodeURIComponent(userGrade)).then(function(exams) {
       var el = document.getElementById('available-exams')
       var items = Array.isArray(exams) ? exams : (exams.data || [])
       if (!items.length) { el.innerHTML = '<div class="text-center py-8 text-text-tertiary">No hay exámenes disponibles.</div>'; return }
       el.innerHTML = items.map(function(ex) {
-        return '<div class="flex items-center justify-between p-4 border border-border rounded-xl mb-3 hover:border-brand-gold/30 transition-colors cursor-pointer" onclick="startExam(\'' + window.escapeHtml(ex.id) + '\',\'' + window.escapeHtml(ex.title||'') + '\',' + (ex.duration_minutes||30) + ')">' +
+        return '<div class="flex items-center justify-between p-4 border border-border rounded-xl mb-3 hover:border-brand-gold/30 transition-colors cursor-pointer" data-action="start-exam" data-exam-id="' + window.escapeHtml(ex.id) + '" data-exam-title="' + window.escapeHtml(ex.title||'') + '" data-exam-duration="' + (ex.duration_minutes||30) + '">' +
           '<div><strong class="text-sm">' + window.escapeHtml(ex.title||'Examen') + '</strong><br><span class="text-xs text-text-tertiary">' + window.escapeHtml(ex.subject_name||'') + ' · ' + (ex.duration_minutes||30) + ' min</span></div>' +
           '<span class="px-3 py-1.5 bg-brand-maroon text-white text-xs font-semibold rounded-lg">Iniciar</span></div>'
       }).join('')
@@ -478,13 +488,21 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
     document.getElementById('saber-content').innerHTML = '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 mt-4">' +
       '<h3 class="font-bold text-sm mb-2">' + saberArea.charAt(0).toUpperCase() + saberArea.slice(1) + ' — Bimestre ' + saberBimestre + '</h3>' +
       '<p class="text-xs text-text-secondary">' + (materials[saberArea]?.[saberBimestre] || 'Contenido no disponible') + '</p>' +
-      '<div class="mt-4 flex gap-2"><button class="px-3 py-1.5 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" onclick="iniciarSimulacroSaber()">Estudiar Ahora</button></div></div>'
+      '<div class="mt-4 flex gap-2"><button class="px-3 py-1.5 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg" data-action="start-simulacro">Estudiar Ahora</button></div></div>'
   }
   document.getElementById('saber-area-tabs')?.addEventListener('click', function(e) {
-    if (e.target.dataset.area) { saberArea = e.target.dataset.area; loadSaberContent() }
+    if (e.target.dataset.area) {
+      saberArea = e.target.dataset.area; loadSaberContent()
+      this.querySelectorAll('button').forEach(function(b){ b.removeAttribute('data-active') })
+      e.target.setAttribute('data-active', '')
+    }
   })
   document.getElementById('saber-period-tabs')?.addEventListener('click', function(e) {
-    if (e.target.dataset.bimestre) { saberBimestre = e.target.dataset.bimestre; loadSaberContent() }
+    if (e.target.dataset.bimestre) {
+      saberBimestre = e.target.dataset.bimestre; loadSaberContent()
+      this.querySelectorAll('button').forEach(function(b){ b.removeAttribute('data-active') })
+      e.target.setAttribute('data-active', '')
+    }
   })
   window.iniciarSimulacroSaber = function() { window.VyntraToast?.info('Simulacro Saber en desarrollo') }
   document.getElementById('period-filters')?.addEventListener('click', function(e) {
@@ -529,10 +547,11 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       if (sel) { sel.innerHTML = '<option value="">Seleccionar...</option>' + items.map(function(s){ return '<option value="' + window.escapeHtml(s.id) + '">' + window.escapeHtml(s.name) + '</option>' }).join('') }
     }).catch(function(err) {
       console.error('[loadSubjects]', err)
+      window.VyntraToast?.error('Error al cargar materias')
     })
   }
   function loadHomeworkHistory() {
-    apiFetch('/api/students/' + studentId + '/homework').then(function(data) {
+    apiFetch('/api/student/deliveries/' + studentId).then(function(data) {
       var items = Array.isArray(data) ? data : (data.data || [])
       var el = document.getElementById('homework-history')
       if (!items.length) { el.innerHTML = 'Sin entregas registradas.'; return }
@@ -543,6 +562,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       }).join('')
     }).catch(function(err) {
       console.error('[loadHomeworkHistory]', err)
+      window.VyntraToast?.error('Error al cargar historial de tareas')
     })
   }
   document.getElementById('dropzoneArea')?.addEventListener('click', function() { document.getElementById('hw-file').click() })
@@ -552,11 +572,11 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
   })
   window.sendHomework = function() {
     var fd = new FormData()
-    fd.append('subject_id', document.getElementById('hw-subject').value)
-    fd.append('title', document.getElementById('hw-title').value)
-    fd.append('comment', document.getElementById('hw-comment').value)
+    fd.append('student_id', studentId)
+    fd.append('grade', userGrade)
+    fd.append('subject', document.getElementById('hw-subject').value)
     if (homeworkFile) fd.append('file', homeworkFile)
-    apiFetch('/api/students/' + studentId + '/homework', { method:'POST', body:fd }).then(function() {
+    apiFetch('/api/student/upload-homework', { method:'POST', body:fd }).then(function() {
       window.VyntraToast?.success('Tarea enviada') || alert('Tarea enviada')
       loadHomeworkHistory()
     })
@@ -587,11 +607,10 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
       var el = document.getElementById('candidates-list')
       if (!items.length) { el.innerHTML = '<div class="col-span-full text-center py-12 text-text-tertiary">No hay candidatos registrados.</div>'; return }
       el.innerHTML = items.map(function(c) {
-        return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 text-center hover:border-brand-gold/30 transition-colors cursor-pointer" onclick="voteFor(\'' + window.escapeHtml(c.id) + '\')">' +
+        return '<div class="bg-white/40 dark:bg-surface-dark-card border border-border rounded-xl p-5 text-center hover:border-brand-gold/30 transition-colors cursor-pointer" data-action="vote-for" data-candidate-id="' + window.escapeHtml(c.id) + '">' +
           (c.photo_url ? '<img src="' + window.escapeHtml(c.photo_url) + '" class="w-14 h-14 rounded-full object-cover mx-auto mb-3" alt="Candidato">' : '<div class="w-14 h-14 rounded-full bg-brand-maroon/10 mx-auto mb-3 flex items-center justify-center text-xl font-bold text-brand-maroon">' + window.escapeHtml((c.name||'?').charAt(0)) + '</div>') +
           '<div class="font-bold text-sm">' + window.escapeHtml(c.name) + '</div>' +
           '<div class="text-xs text-text-tertiary mt-1">' + (c.votes||0) + ' votos</div>' +
-          '<button class="mt-3 px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Votar</button></div>'
           '<button class="mt-3 px-4 py-2 bg-gradient-to-r from-brand-maroon to-brand-maroon-dark text-white text-xs font-semibold rounded-lg">Votar</button></div>'
       }).join('')
     }).catch(function(err) {
@@ -603,7 +622,7 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
   }
   window.voteFor = async function(candId) {
     try {
-      await apiFetch('/api/vote', { method:'POST', body:{ candidate_id:candId, student_id:studentId } })
+      await apiFetch('/api/admin/student/cast-vote', { method:'POST', body:{ candidate_id:candId, student_id:studentId } })
       window.VyntraToast?.success('Voto registrado') || alert('Voto registrado')
       loadCandidates()
     } catch(e) { window.VyntraToast?.error('Error al votar') }
@@ -662,6 +681,20 @@ const wsUrl = apiUrl.replace(/^http/, 'ws')
     grid.innerHTML = cells.join('')
   }
 
-  document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') s.style.display = 'none' })
+  document.querySelectorAll('[id^="sec-"]').forEach(function(s) { if (s.id !== 'sec-inicio') { s.style.display = 'none'; s.style.contentVisibility = 'auto' } })
+
+  // Action delegation
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]')
+    if (!btn) return
+    var action = btn.dataset.action
+    if (action === 'export-pdf') generarBoletinPDF()
+    else if (action === 'send-homework') sendHomework()
+    else if (action === 'start-simulacro') iniciarSimulacroSaber()
+    else if (action === 'exit-exam') intentarSalirManual()
+    else if (action === 'open-image') window.open(btn.dataset.src)
+    else if (action === 'start-exam') startExam(btn.dataset.examId, btn.dataset.examTitle, parseInt(btn.dataset.examDuration) || 30)
+    else if (action === 'vote-for') voteFor(btn.dataset.candidateId)
+  })
 })()
 </script>

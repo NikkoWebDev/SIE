@@ -4,12 +4,12 @@ from collections import defaultdict
 from typing import Any
 
 import bcrypt
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from supabase import Client
 
-from config.database import get_db
-from dependencies import encode_jwt, set_jwt_cookie, clear_jwt_cookie, set_csrf_cookie, clear_csrf_cookie, TOKEN_EXPIRY_HOURS
+from config.database import get_admin_db
+from dependencies import encode_jwt, set_jwt_cookie, clear_jwt_cookie, set_csrf_cookie, clear_csrf_cookie, TOKEN_EXPIRY_HOURS, auth_dependency
 from models import LoginRequest, UserCreate, UserLogin
 
 logger = logging.getLogger("siee.auth")
@@ -61,7 +61,7 @@ def _safe_query(db: Client, **kwargs):
 
 @router.post("/register", status_code=201)
 async def register(data: UserCreate) -> JSONResponse:
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     res = _safe_query(
         db,
         action=lambda: db.table("profiles")
@@ -76,7 +76,7 @@ async def register(data: UserCreate) -> JSONResponse:
         "login_credential": data.login_credential,
         "fullname": data.fullname,
         "password_hash": hashed,
-        "role": data.role.value,
+        "role": data.role,
         "is_active": True,
     }).execute()
 
@@ -97,7 +97,7 @@ async def login(data: UserLogin, request: Request) -> JSONResponse:
     if not _check_login_rate_limit(client_ip):
         logger.warning("rate limit exceeded for login from %s", client_ip)
         raise HTTPException(status_code=429, detail="Demasiados intentos. Intenta de nuevo en 5 minutos.")
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     res = _safe_query(
         db,
         action=lambda: db.table("profiles")
@@ -118,6 +118,18 @@ async def login(data: UserLogin, request: Request) -> JSONResponse:
         logger.warning("login failed: wrong password credential=%s ip=%s", data.login_credential, client_ip)
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
+    user_grade = profile.get("grade", "")
+    if not user_grade and profile.get("role") == "student":
+        try:
+            meta_result = db.table("student_metadata").select("course_id").eq("profile_id", profile["id"]).execute()
+            if meta_result.data and meta_result.data[0].get("course_id"):
+                course_id = meta_result.data[0]["course_id"]
+                course_result = db.table("courses").select("name").eq("id", course_id).execute()
+                if course_result.data:
+                    user_grade = course_result.data[0].get("name", "")
+        except Exception:
+            pass
+
     claims: dict[str, Any] = {
         "sub": profile["id"],
         "login_credential": profile["login_credential"],
@@ -135,6 +147,7 @@ async def login(data: UserLogin, request: Request) -> JSONResponse:
             "login_credential": profile["login_credential"],
             "rol": profile["role"],
             "nombre": profile["fullname"],
+            "grado": user_grade,
         },
     })
     set_jwt_cookie(response, token, request=request)
@@ -148,7 +161,7 @@ async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
     if not _check_login_rate_limit(client_ip):
         logger.warning("rate limit exceeded for login-legacy from %s", client_ip)
         raise HTTPException(status_code=429, detail="Demasiados intentos. Intenta de nuevo en 5 minutos.")
-    db: Client = next(get_db())
+    db: Client = next(get_admin_db())
     res = _safe_query(
         db,
         action=lambda: db.table("profiles")
@@ -159,8 +172,21 @@ async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     profile = res.data[0]
+    if not profile.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Usuario desactivado. Contacta al administrador.")
     stored_hash = profile.get("password_hash", "")
     if data.password and stored_hash and _verify_password(data.password, stored_hash):
+        user_grade = profile.get("grade", "")
+        if not user_grade and profile.get("role") == "student":
+            try:
+                meta_result = db.table("student_metadata").select("course_id").eq("profile_id", profile["id"]).execute()
+                if meta_result.data and meta_result.data[0].get("course_id"):
+                    course_id = meta_result.data[0]["course_id"]
+                    course_result = db.table("courses").select("name").eq("id", course_id).execute()
+                    if course_result.data:
+                        user_grade = course_result.data[0].get("name", "")
+            except Exception:
+                pass
         claims: dict[str, Any] = {
             "sub": profile["id"],
             "login_credential": profile["login_credential"],
@@ -178,6 +204,7 @@ async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
                 "rol": profile["role"],
                 "nombre": profile["fullname"],
                 "documento": data.document_id,
+                "grado": user_grade,
             },
         })
         set_jwt_cookie(response, token, request=request)
@@ -185,6 +212,12 @@ async def login_legacy(data: LoginRequest, request: Request) -> JSONResponse:
         return response
 
     raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+
+@router.get("/verify")
+async def verify_auth(request: Request, user_id: str = Depends(auth_dependency)) -> JSONResponse:
+    """Verify that the current session token/cookie is still valid."""
+    return JSONResponse(content={"valid": True, "user_id": user_id})
 
 
 @router.post("/logout")

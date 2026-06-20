@@ -42,7 +42,7 @@ FINANCIAL_LOCKED_PATHS: tuple[str, ...] = (
     "/api/reports/",
 )
 
-TOKEN_EXPIRY_HOURS: int = int(os.getenv("TOKEN_EXPIRY_HOURS", "8"))
+TOKEN_EXPIRY_HOURS: int = int(os.getenv("TOKEN_EXPIRY_HOURS", "4"))
 
 
 def encode_jwt(payload: dict[str, Any], expires_hours: int = TOKEN_EXPIRY_HOURS) -> str:
@@ -131,7 +131,7 @@ def auth_dependency(request: Request) -> str:
 def teacher_dependency(request: Request) -> str:
     user_id = auth_dependency(request)
     role: str = getattr(request.state, "user_role", "")
-    if role.lower() not in ("teacher", "profesor"):
+    if role.lower() != "teacher":
         raise HTTPException(status_code=403, detail="Se requieren permisos de docente")
     return user_id
 
@@ -139,7 +139,7 @@ def teacher_dependency(request: Request) -> str:
 def admin_dependency(request: Request) -> str:
     user_id = auth_dependency(request)
     role: str = getattr(request.state, "user_role", "")
-    if role.lower() not in ("admin", "rector"):
+    if role.lower() != "admin":
         raise HTTPException(status_code=403, detail="Se requieren permisos de administrador")
     return user_id
 
@@ -216,7 +216,7 @@ def validate_csrf(request: Request) -> None:
         return
     cookie_token = request.cookies.get("csrf_token", "")
     header_token = request.headers.get("X-CSRF-Token", "")
-    if not cookie_token or not header_token or cookie_token != header_token:
+    if not cookie_token or not header_token or not secrets.compare_digest(cookie_token, header_token):
         raise HTTPException(
             status_code=403,
             detail="CSRF validation failed. Recarga la página e intenta de nuevo.",

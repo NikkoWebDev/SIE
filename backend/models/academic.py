@@ -1,3 +1,6 @@
+import warnings
+warnings.warn("academic.py is deprecated. Use schemas.py instead.", DeprecationWarning, stacklevel=2)
+
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
